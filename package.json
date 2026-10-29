@@ -4,7 +4,7 @@
   "type": "module",
   "description": "نظام إدارة الحضور والانصراف والطلبات — جمعية نوى للثقافة والفنون",
   "scripts": {
-    "test": "node --test"
+    "test": "node --no-warnings --test test/*.test.js"
   },
   "engines": { "node": ">=20" }
 }
