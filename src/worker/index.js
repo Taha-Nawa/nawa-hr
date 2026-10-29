@@ -1,4 +1,5 @@
 import { handleGate } from './gate.js';
+import { handleApi } from './api.js';
 import { json } from './util.js';
 
 export default {
@@ -10,7 +11,9 @@ export default {
         return json({ ok: r?.ok === 1, service: 'nawa-hr' });
       }
       if (url.pathname === '/api/gate') return await handleGate(request, env);
-      if (url.pathname.startsWith('/api/')) return json({ ok: false, error: 'غير موجود' }, 404);
+      if (url.pathname.startsWith('/api/')) {
+        return (await handleApi(request, env, url)) || json({ ok: false, error: 'غير موجود' }, 404);
+      }
       // ما عدا /api يُخدَّم من الملفات الثابتة (لا يصل إلى هنا عادةً: run_worker_first يحصر الاستدعاء في /api/*)
       return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });
     } catch (err) {

@@ -4,7 +4,14 @@
   "type": "module",
   "description": "نظام إدارة الحضور والانصراف والطلبات — جمعية نوى للثقافة والفنون",
   "scripts": {
-    "test": "node --no-warnings --test test/*.test.js"
+    "test": "node --no-warnings --test test/*.test.js",
+    "dev": "wrangler dev --local",
+    "db:migrate:local": "wrangler d1 migrations apply nawa-hr --local"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "wrangler": "^4.155.0"
+  }
 }

@@ -1,0 +1,21 @@
+{
+  // نظام الحضور والطلبات — جمعية نوى. معرّفات الحساب والقاعدة ليست أسراراً (الأسرار لا تُكتب هنا أبداً).
+  "name": "nawa-hr",
+  "main": "src/worker/index.js",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    // الملفات الثابتة تُخدَّم بلا استدعاء للـ Worker (لا تُحسب من حدّ 100 ألف طلب/يوم)؛ الـ Worker يُستدعى للـ API فقط.
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "nawa-hr",
+      "database_id": "2cdbd754-9f75-40e6-b41d-57dec74bd82d",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": { "enabled": true }
+}
