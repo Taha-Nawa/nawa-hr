@@ -21,9 +21,9 @@
   "triggers": { "crons": ["30 22 * * *"] },
   "vars": {
     "TIMEZONE": "Asia/Hebron",
-    // قيم عامة (ليست أسراراً) لتطبيق Microsoft Entra — تُملأ بعد تسجيل التطبيق. فارغة = الدخول الموحّد معطّل.
-    "ENTRA_TENANT_ID": "",
-    "ENTRA_CLIENT_ID": ""
+    // قيم عامة (ليست أسراراً) لتطبيق Microsoft Entra — تطبيق «Nawa HR» (صفحة واحدة، مستأجر واحد، بلا سرّ). فارغة = الدخول الموحّد معطّل.
+    "ENTRA_TENANT_ID": "c5e3d63e-d4e2-4df5-a2ac-958665df3bf4",
+    "ENTRA_CLIENT_ID": "33c8d376-53fc-4597-8236-b69d03a4fa15"
   },
   "observability": { "enabled": true }
 }
