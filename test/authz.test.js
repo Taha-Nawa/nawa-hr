@@ -63,7 +63,10 @@ test('المدير لا يرى مرؤوسي غيره، والمرؤوس لا ي�
 const WRITE = {
   createEmployee: (e, c) => call(e, 'POST', '/api/employees', { cookie: c, body: { code: `NW-${Math.floor(Math.random() * 1e6)}`, name: 'جديد' } }),
   patchEmployee: (e, c) => call(e, 'PATCH', '/api/employees/3', { cookie: c, body: { name: 'اسم معدّل' } }),
+  createCenter: (e, c) => call(e, 'POST', '/api/centers', { cookie: c, body: { name: `مركز ${Math.random()}` } }),
   addBadge: (e, c) => call(e, 'POST', '/api/badges', { cookie: c, body: { card: `C-${Math.random()}`, employeeId: 4 } }),
+  listBadges: (e, c) => call(e, 'GET', '/api/employees/3/badges', { cookie: c }),
+  importBadges: (e, c) => call(e, 'POST', '/api/import/badges', { cookie: c, body: { rows: [{ card: `B-${Math.random()}`, code: 'NW-004' }] } }),
   revokeBadge: (e, c) => call(e, 'POST', '/api/badges/NW-004-A/revoke', { cookie: c }),
   readSettings: (e, c) => call(e, 'GET', '/api/settings', { cookie: c }),
   writeSettings: (e, c) => call(e, 'PUT', '/api/settings/work', { cookie: c, body: { start: '08:00', end: '15:00', toleranceMinutes: 10, weekdays: ['عمل', 'عمل', 'عمل', 'عمل', 'عمل', 'عطلة أسبوعية', 'عطلة أسبوعية'], leaveTypes: { 'إجازة سنوية': true } } }),
@@ -82,7 +85,10 @@ const MATRIX = {
   //                     employee manager hr  director admin
   createEmployee: [403, 403, 201, 403, 201],
   patchEmployee: [403, 403, 200, 403, 200],
+  createCenter: [403, 403, 201, 403, 201],
   addBadge: [403, 403, 201, 403, 201],
+  listBadges: [403, 403, 200, 403, 200],
+  importBadges: [403, 403, 200, 403, 200],
   revokeBadge: [403, 403, 200, 403, 200],
   readSettings: [403, 403, 200, 200, 200],
   writeSettings: [403, 403, 403, 403, 200],
@@ -107,7 +113,7 @@ for (const [action, expected] of Object.entries(MATRIX)) {
 }
 
 test('المصفوفة تغطي كل إجراءات authz.ACTIONS الفعلية (لا إجراء بلا اختبار)', () => {
-  const covered = new Set(['employee.create', 'employee.update', 'badge.manage', 'settings.read', 'settings.write', 'device.manage', 'user.manage', 'audit.read', 'holiday.write', 'import.run', 'recompute.run']);
+  const covered = new Set(['employee.create', 'employee.update', 'badge.manage', 'center.manage', 'settings.read', 'settings.write', 'device.manage', 'user.manage', 'audit.read', 'holiday.write', 'import.run', 'recompute.run']);
   const uncovered = Object.keys(ACTIONS).filter((a) => !covered.has(a));
   // day.correct (التصحيح اليدوي) مخصص لمرحلة 2 ولا مسار له بعد
   assert.deepEqual(uncovered.sort(), ['day.correct']);
@@ -127,9 +133,9 @@ test('لا مسار بلا مصادقة عدا الدخول وبوابة الأ�
   const { env } = await apiEnv();
   const paths = [
     ['GET', '/api/me'], ['GET', '/api/employees'], ['POST', '/api/employees'], ['PATCH', '/api/employees/1'], ['GET', '/api/employees/1/days?from=2026-03-01&to=2026-03-02'],
-    ['POST', '/api/badges'], ['POST', '/api/badges/x/revoke'], ['GET', '/api/settings'], ['PUT', '/api/settings/work'], ['GET', '/api/devices'], ['POST', '/api/devices'],
+    ['GET', '/api/centers'], ['POST', '/api/centers'], ['POST', '/api/badges'], ['POST', '/api/badges/x/revoke'], ['GET', '/api/settings'], ['PUT', '/api/settings/work'], ['GET', '/api/devices'], ['POST', '/api/devices'],
     ['POST', '/api/devices/DEV-01/rotate'], ['POST', '/api/devices/DEV-01/deactivate'], ['GET', '/api/users'], ['POST', '/api/users'], ['PATCH', '/api/users/1'], ['GET', '/api/audit'],
-    ['GET', '/api/day?date=2026-03-02'], ['GET', '/api/holidays?year=2026'], ['PUT', '/api/holidays'], ['POST', '/api/recompute'], ['POST', '/api/import/employees'], ['POST', '/api/import/movements'],
+    ['GET', '/api/day?date=2026-03-02'], ['GET', '/api/holidays?year=2026'], ['PUT', '/api/holidays'], ['POST', '/api/recompute'], ['POST', '/api/import/employees'], ['POST', '/api/import/badges'], ['GET', '/api/employees/1/badges'], ['POST', '/api/import/movements'],
   ];
   for (const [m, p] of paths) {
     const r = await call(env, m, p, { body: m === 'GET' ? undefined : {} });

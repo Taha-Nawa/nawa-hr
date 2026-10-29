@@ -218,3 +218,32 @@ test('POST /api/recompute: يتحقق من المدخلات ويكتب التد�
   await db.prepare('DELETE FROM settings').run();
   assert.equal((await post({ from: '2026-03-01', to: '2026-03-02' })).status, 409, 'لا إعدادات');
 });
+
+test('استيراد البطاقات: ربط بالكود، إلغاء الملغاة، رفض المجهول والمكرر، وعدم نقل بطاقة بين موظفين', async () => {
+  const { db, env } = await apiEnv();
+  await seedOrg(db);
+  const hr = await login(db, 'hr@nawaculture.org', 'hr');
+  const r = await call(env, 'POST', '/api/import/badges', {
+    cookie: hr.cookie,
+    body: { rows: [
+      { card: 'NW-002-A', code: 'NW-002' },
+      { card: 'NW-002-B', code: 'NW-002', status: 'revoked' },
+      { card: 'NW-099-A', code: 'NW-099' },
+      { card: 'NW-002-A', code: 'NW-003' },
+      { card: '', code: 'NW-003' },
+    ] },
+  });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.imported, 1, 'NW-002-A موجودة أصلاً من التهيئة، فالجديدة هي الملغاة فقط');
+  assert.equal(r.body.rejected.length, 3);
+  const rows = (await db.prepare("SELECT card, employee_id AS e, status FROM badges WHERE card LIKE 'NW-002%' ORDER BY card").all()).results;
+  assert.deepEqual(rows.map((x) => [x.card, x.e, x.status]), [['NW-002-A', 2, 'active'], ['NW-002-B', 2, 'revoked']]);
+
+  // إعادة الاستيراد لا تكرّر ولا تنقل البطاقة لموظف آخر
+  const again = await call(env, 'POST', '/api/import/badges', { cookie: hr.cookie, body: { rows: [{ card: 'NW-002-A', code: 'NW-003' }] } });
+  assert.equal(again.body.imported, 0);
+  assert.equal(await db.prepare("SELECT employee_id FROM badges WHERE card = 'NW-002-A'").first('employee_id'), 2);
+
+  const list = await call(env, 'GET', '/api/employees/2/badges', { cookie: hr.cookie });
+  assert.deepEqual(list.body.badges.map((b) => [b.card, b.status]), [['NW-002-A', 'active'], ['NW-002-B', 'revoked']]);
+});

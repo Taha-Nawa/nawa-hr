@@ -238,6 +238,28 @@ add('GET', '/api/employees/:id/days', async ({ db, user, params, url }) => {
   return json({ ok: true, days: r.results });
 });
 
+// ---------------------------------------------------------------- المراكز
+add('GET', '/api/centers', async ({ db }) => {
+  const r = await db.prepare('SELECT id, name, active FROM centers ORDER BY name').all();
+  return json({ ok: true, centers: r.results });
+});
+
+add('POST', '/api/centers', async ({ request, db, user }) => {
+  if (!can(user, 'center.manage')) return forbidden();
+  const { body, error } = await readJson(request);
+  if (error) return error;
+  const name = clip(body.name, 120);
+  if (!name || name.length < 2) return bad('اسم المركز مطلوب');
+  let id;
+  try {
+    const [r] = await db.batch([db.prepare('INSERT INTO centers (name) VALUES (?)').bind(name), auditStmt(db, user, 'center.create', 'center', name, null)]);
+    id = r.meta.last_row_id;
+  } catch (e) {
+    return isUnique(e) ? bad('المركز موجود من قبل', 409) : Promise.reject(e);
+  }
+  return json({ ok: true, center: { id, name, active: 1 } }, 201);
+});
+
 // ---------------------------------------------------------------- البطاقات
 add('POST', '/api/badges', async ({ request, db, user }) => {
   if (!can(user, 'badge.manage')) return forbidden();
@@ -255,6 +277,15 @@ add('POST', '/api/badges', async ({ request, db, user }) => {
     return isUnique(e) ? bad('البطاقة مسجّلة من قبل', 409) : Promise.reject(e);
   }
   return json({ ok: true }, 201);
+});
+
+add('GET', '/api/employees/:id/badges', async ({ db, user, params }) => {
+  if (!can(user, 'badge.manage')) return forbidden();
+  const r = await db
+    .prepare('SELECT card, status, created_at AS createdAt FROM badges WHERE employee_id = ? ORDER BY created_at, card')
+    .bind(Number(params.id))
+    .all();
+  return json({ ok: true, badges: r.results });
 });
 
 add('POST', '/api/badges/:card/revoke', async ({ db, user, params }) => {
@@ -526,6 +557,50 @@ add('POST', '/api/import/employees', async ({ request, db, user }) => {
     }
   }
   return json({ ok: true, imported: good.length, rejected });
+});
+
+add('POST', '/api/import/badges', async ({ request, db, user }) => {
+  if (!can(user, 'import.run')) return forbidden();
+  const { body, error } = await readJson(request);
+  if (error) return error;
+  if (!Array.isArray(body.rows) || body.rows.length === 0 || body.rows.length > IMPORT_MAX_ROWS) return bad(`الصفوف مطلوبة (1–${IMPORT_MAX_ROWS})`);
+  const good = [];
+  const rejected = [];
+  const seen = new Set();
+  for (const [i, r] of body.rows.entries()) {
+    const card = clip(r?.card, 120);
+    const code = clip(r?.code, 20);
+    const status = r?.status === 'revoked' ? 'revoked' : 'active';
+    let why = null;
+    if (!card) why = 'محتوى البطاقة مفقود';
+    else if (!code) why = 'كود الموظف مفقود';
+    else if (seen.has(card)) why = 'بطاقة مكررة في الملف';
+    if (why) {
+      rejected.push({ row: i + 1, card: card || null, reason: why });
+      continue;
+    }
+    seen.add(card);
+    good.push({ card, code, status });
+  }
+  let imported = 0;
+  if (good.length) {
+    // البطاقة المسجّلة سابقاً تُحدَّث حالتها فقط (إلغاء)، ولا تُنقل من موظف لآخر بصمت.
+    const [ins] = await db.batch([
+      db.prepare(
+        `INSERT OR IGNORE INTO badges (card, employee_id, status)
+         SELECT json_extract(j.value,'$.card'), e.id, json_extract(j.value,'$.status')
+         FROM json_each(?) j JOIN employees e ON e.code = json_extract(j.value,'$.code') WHERE true`,
+      ).bind(JSON.stringify(good)),
+      db.prepare(
+        `UPDATE badges SET status = 'revoked' WHERE card IN (SELECT json_extract(value,'$.card') FROM json_each(?) WHERE json_extract(value,'$.status') = 'revoked')`,
+      ).bind(JSON.stringify(good)),
+    ]);
+    imported = ins.meta.changes;
+    const known = new Set((await db.prepare('SELECT code FROM employees WHERE code IN (SELECT json_extract(value,\'$.code\') FROM json_each(?))').bind(JSON.stringify(good)).all()).results.map((x) => x.code));
+    for (const g of good) if (!known.has(g.code)) rejected.push({ row: null, card: g.card, reason: `الموظف غير موجود: ${g.code}` });
+  }
+  await auditStmt(db, user, 'import.badges', 'badges', null, { imported, rejected: rejected.length }).run();
+  return json({ ok: true, imported, rejected });
 });
 
 add('POST', '/api/import/movements', async ({ request, db, user }) => {

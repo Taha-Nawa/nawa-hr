@@ -18,6 +18,7 @@ export const ACTIONS = {
   'employee.create': ['hr', 'admin'],
   'employee.update': ['hr', 'admin'],
   'badge.manage': ['hr', 'admin'],
+  'center.manage': ['hr', 'admin'],
   'day.correct': ['hr', 'admin'],
   'holiday.write': ['hr', 'admin'],
   'import.run': ['hr', 'admin'],

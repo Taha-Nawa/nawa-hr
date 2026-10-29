@@ -213,3 +213,18 @@ test('كوكي مسروقة من مستخدم آخر لا تمنح أكثر من
   assert.equal(r.res.headers.get('access-control-allow-origin'), null);
   assert.equal(emp.cookie.startsWith(COOKIE), true);
 });
+
+test('المراكز: قائمة لكل مستخدم، وإنشاء بلا تكرار', async () => {
+  const { db, env } = await apiEnv();
+  const hr = await login(db, 'hr@nawaculture.org', 'hr');
+  const emp = await login(db, 'emp@nawaculture.org', 'employee');
+  const list = await call(env, 'GET', '/api/centers', { cookie: emp.cookie });
+  assert.equal(list.status, 200);
+  assert.ok(Array.isArray(list.body.centers));
+  const made = await call(env, 'POST', '/api/centers', { cookie: hr.cookie, body: { name: 'مركز الأمل' } });
+  assert.equal(made.status, 201);
+  assert.equal(made.body.center.name, 'مركز الأمل');
+  assert.equal((await call(env, 'POST', '/api/centers', { cookie: hr.cookie, body: { name: 'مركز الأمل' } })).status, 409);
+  assert.equal((await call(env, 'POST', '/api/centers', { cookie: hr.cookie, body: { name: 'ا' } })).status, 400);
+  assert.equal((await call(env, 'POST', '/api/centers', { cookie: emp.cookie, body: { name: 'مركز آخر' } })).status, 403);
+});
