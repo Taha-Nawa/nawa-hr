@@ -1,0 +1,10 @@
+node_modules/
+.dev.vars
+.wrangler/
+*.sqlite
+*.sqlite3
+*.dump
+*.sql.gz
+backups/
+.env
+.env.*
