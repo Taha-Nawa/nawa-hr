@@ -13,7 +13,7 @@ import { loadWorkSettings } from './settings.js';
 import { recomputePairs } from './recompute.js';
 
 const MAX_BODY_BYTES = 256 * 1024;
-const MAX_MOVES = 100;
+export const MAX_MOVES = 100;
 const TYPES = new Set(['حضور', 'خروج', 'عودة', 'انصراف']);
 const LAST_SEEN_STALE_MIN = 5;
 
@@ -117,7 +117,14 @@ async function ingest(db, device, body) {
   const moves = Array.isArray(body?.moves) ? body.moves : null;
   if (!moves) return json({ ok: false, error: 'لا توجد حركات في الطلب' }, 400);
   if (moves.length > MAX_MOVES) return json({ ok: false, error: `الحد الأقصى ${MAX_MOVES} حركة في الطلب` }, 413);
+  return json(await ingestMoves(db, device.id, moves, { touchDevice: true }));
+}
 
+/**
+ * يحفظ حركات ويعيد حساب أيامها. يُستعمل من البوابة (جهاز مصادَق) ومن استيراد الإدارة (deviceId = 'IMPORT').
+ * يُرجع كائن الاستجابة { ok, saved, skipped, rejected?, unmatched?, warning? }.
+ */
+export async function ingestMoves(db, deviceId, moves, { touchDevice = false } = {}) {
   const good = [];
   const rejected = [];
   for (const m of moves) {
@@ -144,17 +151,18 @@ async function ingest(db, device, body) {
   if (rejected.length) out.rejected = rejected;
 
   const staleBefore = new Date(Date.now() - LAST_SEEN_STALE_MIN * 60000).toISOString().replace('T', ' ').slice(0, 19);
-  const touchDevice = db
-    .prepare("UPDATE devices SET last_seen = datetime('now') WHERE id = ? AND (last_seen IS NULL OR last_seen < ?)")
-    .bind(device.id, staleBefore);
+  const touch = touchDevice
+    ? db.prepare("UPDATE devices SET last_seen = datetime('now') WHERE id = ? AND (last_seen IS NULL OR last_seen < ?)").bind(deviceId, staleBefore)
+    : null;
+  const touchNow = async () => touch && touch.run();
 
   if (good.length === 0) {
-    await touchDevice.run();
-    return json(out);
+    await touchNow();
+    return out;
   }
 
   // 1) الحفظ أولاً وبشكل مستقل عن الحساب: لا تضيع حركة لأن الإعدادات ناقصة.
-  const ins = await db.prepare(INSERT_SQL).bind(JSON.stringify(good), device.id).all();
+  const ins = await db.prepare(INSERT_SQL).bind(JSON.stringify(good), deviceId).all();
   out.saved = ins.results.length;
   out.skipped = good.length - out.saved;
   const unmatched = ins.results.filter((r) => r.employee_id === null).length;
@@ -163,15 +171,15 @@ async function ingest(db, device, body) {
   // 2) إعادة حساب الأيام المتأثرة (الجديدة فقط؛ المكرَّرة لا تغيّر شيئاً).
   const pairs = ins.results.filter((r) => r.employee_id !== null).map((r) => ({ e: r.employee_id, d: r.date }));
   if (pairs.length === 0) {
-    await touchDevice.run();
-    return json(out);
+    await touchNow();
+    return out;
   }
   const settings = await loadWorkSettings(db);
   if (!settings) {
     out.warning = 'settings_missing';
-    await touchDevice.run();
-    return json(out);
+    await touchNow();
+    return out;
   }
-  await recomputePairs(db, pairs, settings, [touchDevice]);
-  return json(out);
+  await recomputePairs(db, pairs, settings, touch ? [touch] : []);
+  return out;
 }

@@ -17,5 +17,13 @@
       "migrations_dir": "migrations"
     }
   ],
+  // الإقفال الليلي: 22:30 UTC = 00:30 شتاءً / 01:30 صيفاً بتوقيت فلسطين (الحد المجاني: 5 مهام مجدولة للحساب).
+  "triggers": { "crons": ["30 22 * * *"] },
+  "vars": {
+    "TIMEZONE": "Asia/Hebron",
+    // قيم عامة (ليست أسراراً) لتطبيق Microsoft Entra — تُملأ بعد تسجيل التطبيق. فارغة = الدخول الموحّد معطّل.
+    "ENTRA_TENANT_ID": "",
+    "ENTRA_CLIENT_ID": ""
+  },
   "observability": { "enabled": true }
 }

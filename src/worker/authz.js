@@ -20,6 +20,8 @@ export const ACTIONS = {
   'badge.manage': ['hr', 'admin'],
   'day.correct': ['hr', 'admin'],
   'holiday.write': ['hr', 'admin'],
+  'import.run': ['hr', 'admin'],
+  'recompute.run': ['hr', 'admin'],
   'settings.read': ['hr', 'director', 'admin'],
   'settings.write': ['admin'],
   'device.manage': ['admin'],

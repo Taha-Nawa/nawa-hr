@@ -1,6 +1,7 @@
 import { handleGate } from './gate.js';
 import { handleApi } from './api.js';
 import { json } from './util.js';
+import { closeDay } from './close.js';
 
 export default {
   async fetch(request, env) {
@@ -20,5 +21,10 @@ export default {
       console.error('unhandled', err?.stack || err);
       return json({ ok: false, error: 'خطأ داخلي في الخادم' }, 500);
     }
+  },
+
+  // الإقفال الليلي (cron في wrangler.jsonc): يحسب «أمس» لكل الموظفين فيظهر الغياب والعطل.
+  async scheduled(_controller, env, ctx) {
+    ctx.waitUntil(closeDay(env).catch((e) => console.error('close-day failed', e?.stack || e)));
   },
 };

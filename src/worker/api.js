@@ -9,6 +9,8 @@ import {
 } from './auth.js';
 import { can, canReadEmployee, employeeScope, ROLES } from './authz.js';
 import { loadWorkSettings, validateWorkSettings } from './settings.js';
+import { ingestMoves, MAX_MOVES } from './gate.js';
+import { recomputeSlice } from './close.js';
 
 const MAX_BODY = 64 * 1024;
 const MAX_RANGE_DAYS = 366;
@@ -110,7 +112,9 @@ add('GET', '/api/me', async ({ user }) => json({ ok: true, user }));
 
 // ---------------------------------------------------------------- الموظفون
 const EMP_COLS = `e.id, e.code, e.name, e.email, e.center_id AS centerId, c.name AS center, e.manager_id AS managerId,
-  e.status, e.photo_url AS photo, e.start_date AS startDate, e.end_date AS endDate`;
+  e.status, e.photo_url AS photo, e.start_date AS startDate, e.end_date AS endDate,
+  e.job_title AS jobTitle, e.department, e.contract_type AS contractType, e.project, e.manager_label AS managerLabel`;
+const TEXT_FIELDS = { jobTitle: 'job_title', department: 'department', contractType: 'contract_type', project: 'project', managerLabel: 'manager_label' };
 
 add('GET', '/api/employees', async ({ db, user }) => {
   const scope = employeeScope(user);
@@ -135,8 +139,11 @@ add('POST', '/api/employees', async ({ request, db, user }) => {
   const centerId = body.centerId ?? null;
   const managerId = body.managerId ?? null;
   const stmts = [
-    db.prepare('INSERT INTO employees (code, name, email, center_id, manager_id, start_date) VALUES (?, ?, ?, ?, ?, ?)')
-      .bind(code, name, email, centerId, managerId, isDate(body.startDate) ? body.startDate : null),
+    db.prepare(
+      `INSERT INTO employees (code, name, email, center_id, manager_id, start_date, job_title, department, contract_type, project, manager_label)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).bind(code, name, email, centerId, managerId, isDate(body.startDate) ? body.startDate : null,
+      clip(body.jobTitle, 120), clip(body.department, 120), clip(body.contractType, 60), clip(body.project, 160), clip(body.managerLabel, 120)),
   ];
   if (card) stmts.push(db.prepare('INSERT INTO badges (card, employee_id) VALUES (?, (SELECT id FROM employees WHERE code = ?))').bind(card, code));
   stmts.push(auditStmt(db, user, 'employee.create', 'employee', code, { name, email, card: !!card }));
@@ -159,8 +166,13 @@ const PATCHABLE = {
   photo: (v) => (v === null || v === '' ? null : /^https:\/\//.test(String(v)) ? clip(v, 500) : undefined),
   startDate: (v) => (v === null || isDate(v) ? v : undefined),
   endDate: (v) => (v === null || isDate(v) ? v : undefined),
+  jobTitle: (v) => (v === null ? null : clip(v, 120)),
+  department: (v) => (v === null ? null : clip(v, 120)),
+  contractType: (v) => (v === null ? null : clip(v, 60)),
+  project: (v) => (v === null ? null : clip(v, 160)),
+  managerLabel: (v) => (v === null ? null : clip(v, 120)),
 };
-const COLUMN = { name: 'name', email: 'email', centerId: 'center_id', managerId: 'manager_id', status: 'status', photo: 'photo_url', startDate: 'start_date', endDate: 'end_date' };
+const COLUMN = { name: 'name', email: 'email', centerId: 'center_id', managerId: 'manager_id', status: 'status', photo: 'photo_url', startDate: 'start_date', endDate: 'end_date', ...TEXT_FIELDS };
 
 add('PATCH', '/api/employees/:id', async ({ request, db, user, params }) => {
   if (!can(user, 'employee.update')) return forbidden();
@@ -379,4 +391,149 @@ add('GET', '/api/audit', async ({ db, user, url }) => {
   const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 100, 1), 500);
   const r = await db.prepare('SELECT id, at, actor, action, entity, entity_id AS entityId, detail FROM audit_log ORDER BY id DESC LIMIT ?').bind(limit).all();
   return json({ ok: true, entries: r.results });
+});
+
+// ---------------------------------------------------------------- لوحة اليوم
+const DAY_COLS = `r.status, r.check_in AS checkIn, r.exit_first AS exitFirst, r.return_last AS returnLast, r.departure,
+  r.net_hours AS netHours, r.late_minutes AS lateMinutes, r.deficit_hours AS deficitHours, r.overtime_hours AS overtimeHours, r.alert`;
+
+add('GET', '/api/day', async ({ db, user, url }) => {
+  const date = url.searchParams.get('date');
+  if (!isDate(date)) return bad('التاريخ غير صالح');
+  const scope = employeeScope(user);
+  const r = await db
+    .prepare(
+      `SELECT e.id, e.code, e.name, c.name AS center, e.department, ${DAY_COLS}
+       FROM employees e LEFT JOIN centers c ON c.id = e.center_id
+       LEFT JOIN daily_results r ON r.employee_id = e.id AND r.date = ?
+       WHERE e.status = 'active' AND ${scope.sql} ORDER BY e.code`,
+    )
+    .bind(date, ...scope.params)
+    .all();
+  return json({ ok: true, date, rows: r.results });
+});
+
+// ---------------------------------------------------------------- العطل الرسمية
+add('GET', '/api/holidays', async ({ db, url }) => {
+  const year = Number(url.searchParams.get('year'));
+  if (!Number.isInteger(year) || year < 2000 || year > 2100) return bad('السنة غير صالحة');
+  const r = await db.prepare('SELECT date, name FROM holidays WHERE date BETWEEN ? AND ? ORDER BY date').bind(`${year}-01-01`, `${year}-12-31`).all();
+  return json({ ok: true, year, holidays: r.results });
+});
+
+add('PUT', '/api/holidays', async ({ request, db, user }) => {
+  if (!can(user, 'holiday.write')) return forbidden();
+  const { body, error } = await readJson(request);
+  if (error) return error;
+  const year = body.year;
+  if (!Number.isInteger(year) || year < 2000 || year > 2100) return bad('السنة غير صالحة');
+  if (!Array.isArray(body.holidays) || body.holidays.length > 60) return bad('قائمة العطل غير صالحة (60 يوماً كحد أقصى)');
+  const seen = new Set();
+  const list = [];
+  for (const h of body.holidays) {
+    if (!isDate(h?.date) || !h.date.startsWith(`${year}-`)) return bad(`تاريخ عطلة غير صالح: ${h?.date}`);
+    if (seen.has(h.date)) return bad(`تاريخ مكرر: ${h.date}`);
+    seen.add(h.date);
+    list.push({ date: h.date, name: clip(h.name, 120) });
+  }
+  await db.batch([
+    db.prepare('DELETE FROM holidays WHERE date BETWEEN ? AND ?').bind(`${year}-01-01`, `${year}-12-31`),
+    db.prepare("INSERT INTO holidays (date, name) SELECT json_extract(value,'$.date'), json_extract(value,'$.name') FROM json_each(?) WHERE true").bind(JSON.stringify(list)),
+    auditStmt(db, user, 'holidays.set', 'holidays', year, { count: list.length }),
+  ]);
+  return json({ ok: true, count: list.length, needsRecompute: true });
+});
+
+// ---------------------------------------------------------------- إعادة الحساب (شرائح)
+add('POST', '/api/recompute', async ({ request, env, user }) => {
+  if (!can(user, 'recompute.run')) return forbidden();
+  const { body, error } = await readJson(request);
+  if (error) return error;
+  const offset = body.offset ?? 0;
+  if (!isDate(body.from) || !isDate(body.to) || body.from > body.to) return bad('المدى الزمني غير صالح');
+  if (daysBetweenSafe(body.from, body.to) > MAX_RANGE_DAYS) return bad(`المدى الأقصى ${MAX_RANGE_DAYS} يوماً`);
+  if (!Number.isInteger(offset) || offset < 0) return bad('الإزاحة غير صالحة');
+  const r = await recomputeSlice(env, { from: body.from, to: body.to, offset });
+  if (r.error === 'settings_missing') return bad('أدخل إعدادات الدوام أولاً', 409);
+  if (offset === 0) await auditStmt(env.DB, user, 'recompute', 'range', `${body.from}..${body.to}`, null).run();
+  return json({ ok: true, ...r });
+});
+
+const daysBetweenSafe = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000) + 1;
+
+// ---------------------------------------------------------------- الاستيراد (من إكسل عبر المتصفح)
+const IMPORT_MAX_ROWS = 100;
+
+add('POST', '/api/import/employees', async ({ request, db, user }) => {
+  if (!can(user, 'import.run')) return forbidden();
+  const { body, error } = await readJson(request);
+  if (error) return error;
+  if (!Array.isArray(body.rows) || body.rows.length === 0 || body.rows.length > IMPORT_MAX_ROWS) return bad(`الصفوف مطلوبة (1–${IMPORT_MAX_ROWS})`);
+
+  const good = [];
+  const rejected = [];
+  const seenCodes = new Set();
+  for (const [i, r] of body.rows.entries()) {
+    const code = clip(r?.code, 20);
+    const name = clip(r?.name, 120);
+    const email = clip(r?.email, 200);
+    let why = null;
+    if (!code || !CODE_RE.test(code)) why = 'كود غير صالح';
+    else if (seenCodes.has(code.toLowerCase())) why = 'كود مكرر في الملف';
+    else if (!name || name.length < 2) why = 'اسم مفقود';
+    else if (email && !EMAIL_RE.test(email)) why = 'بريد غير صالح';
+    if (why) {
+      rejected.push({ row: i + 1, code: code || null, reason: why });
+      continue;
+    }
+    seenCodes.add(code.toLowerCase());
+    good.push({
+      code, name, email,
+      center: clip(r.center, 120),
+      jobTitle: clip(r.jobTitle, 120), department: clip(r.department, 120), contractType: clip(r.contractType, 60),
+      project: clip(r.project, 160), managerLabel: clip(r.managerLabel, 120),
+      startDate: isDate(r.startDate) ? r.startDate : null,
+      card: clip(r.card, 120),
+    });
+  }
+  if (good.length) {
+    const json1 = JSON.stringify(good);
+    const centers = JSON.stringify([...new Set(good.map((g) => g.center).filter(Boolean))]);
+    try {
+      await db.batch([
+        db.prepare('INSERT OR IGNORE INTO centers (name) SELECT value FROM json_each(?) WHERE true').bind(centers),
+        db.prepare(
+          `INSERT INTO employees (code, name, email, center_id, start_date, job_title, department, contract_type, project, manager_label)
+           SELECT json_extract(j.value,'$.code'), json_extract(j.value,'$.name'), json_extract(j.value,'$.email'),
+                  (SELECT id FROM centers WHERE name = json_extract(j.value,'$.center')), json_extract(j.value,'$.startDate'),
+                  json_extract(j.value,'$.jobTitle'), json_extract(j.value,'$.department'), json_extract(j.value,'$.contractType'),
+                  json_extract(j.value,'$.project'), json_extract(j.value,'$.managerLabel')
+           FROM json_each(?) j WHERE true
+           ON CONFLICT(code) DO UPDATE SET name = excluded.name, center_id = excluded.center_id, job_title = excluded.job_title,
+             department = excluded.department, contract_type = excluded.contract_type, project = excluded.project,
+             manager_label = excluded.manager_label, start_date = COALESCE(excluded.start_date, employees.start_date),
+             email = COALESCE(excluded.email, employees.email)`,
+        ).bind(json1),
+        db.prepare(
+          `INSERT OR IGNORE INTO badges (card, employee_id)
+           SELECT json_extract(j.value,'$.card'), e.id FROM json_each(?) j JOIN employees e ON e.code = json_extract(j.value,'$.code')
+           WHERE json_extract(j.value,'$.card') IS NOT NULL`,
+        ).bind(json1),
+        auditStmt(db, user, 'import.employees', 'employees', null, { rows: good.length, rejected: rejected.length }),
+      ]);
+    } catch (e) {
+      return isUnique(e) ? bad('بريد مكرر بين موظفين مختلفين', 409) : Promise.reject(e);
+    }
+  }
+  return json({ ok: true, imported: good.length, rejected });
+});
+
+add('POST', '/api/import/movements', async ({ request, db, user }) => {
+  if (!can(user, 'import.run')) return forbidden();
+  const { body, error } = await readJson(request);
+  if (error) return error;
+  if (!Array.isArray(body.rows) || body.rows.length === 0 || body.rows.length > MAX_MOVES) return bad(`الصفوف مطلوبة (1–${MAX_MOVES})`);
+  const out = await ingestMoves(db, 'IMPORT', body.rows);
+  await auditStmt(db, user, 'import.movements', 'movements', null, { saved: out.saved, skipped: out.skipped, rejected: out.rejected?.length || 0 }).run();
+  return json(out);
 });

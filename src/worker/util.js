@@ -36,3 +36,16 @@ export function clip(v, max) {
   const s = String(v).trim();
   return s === '' ? null : s.slice(0, max);
 }
+
+/** تاريخ اليوم بتوقيت المنطقة (YYYY-MM-DD). المنطقة من إعداد النشر TIMEZONE (الافتراضي القدس/الخليل). */
+export function localDate(tz = 'Asia/Hebron', now = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+}
+
+export function addDays(date, n) {
+  return new Date(Date.parse(`${date}T00:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
+}
+
+export function daysBetween(from, to) {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86400000);
+}
