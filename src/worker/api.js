@@ -143,7 +143,7 @@ add('POST', '/api/employees', async ({ request, db, user }) => {
       `INSERT INTO employees (code, name, email, center_id, manager_id, start_date, job_title, department, contract_type, project, manager_label)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(code, name, email, centerId, managerId, isDate(body.startDate) ? body.startDate : null,
-      clip(body.jobTitle, 120), clip(body.department, 120), clip(body.contractType, 60), clip(body.project, 160), clip(body.managerLabel, 120)),
+      clip(body.jobTitle, 120), clip(body.department, 120), clip(body.contractType, 60), clip(body.project, 300), clip(body.managerLabel, 120)),
   ];
   if (card) stmts.push(db.prepare('INSERT INTO badges (card, employee_id) VALUES (?, (SELECT id FROM employees WHERE code = ?))').bind(card, code));
   stmts.push(auditStmt(db, user, 'employee.create', 'employee', code, { name, email, card: !!card }));
@@ -169,7 +169,7 @@ const PATCHABLE = {
   jobTitle: (v) => (v === null ? null : clip(v, 120)),
   department: (v) => (v === null ? null : clip(v, 120)),
   contractType: (v) => (v === null ? null : clip(v, 60)),
-  project: (v) => (v === null ? null : clip(v, 160)),
+  project: (v) => (v === null ? null : clip(v, 300)),
   managerLabel: (v) => (v === null ? null : clip(v, 120)),
 };
 const COLUMN = { name: 'name', email: 'email', centerId: 'center_id', managerId: 'manager_id', status: 'status', photo: 'photo_url', startDate: 'start_date', endDate: 'end_date', ...TEXT_FIELDS };
@@ -522,7 +522,7 @@ add('POST', '/api/import/employees', async ({ request, db, user }) => {
       code, name, email,
       center: clip(r.center, 120),
       jobTitle: clip(r.jobTitle, 120), department: clip(r.department, 120), contractType: clip(r.contractType, 60),
-      project: clip(r.project, 160), managerLabel: clip(r.managerLabel, 120),
+      project: clip(r.project, 300), managerLabel: clip(r.managerLabel, 120),
       startDate: isDate(r.startDate) ? r.startDate : null,
       card: clip(r.card, 120),
     });
