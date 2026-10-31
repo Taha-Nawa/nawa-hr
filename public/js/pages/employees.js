@@ -18,6 +18,10 @@ export async function employeeForm({ emp, onSaved }) {
     department: h('input', { value: v.department || '' }),
     contractType: h('input', { value: v.contractType || '', placeholder: 'عقد كامل / جزئي …' }),
     project: h('input', { value: v.project || '' }),
+    nameEn: h('input', { value: v.nameEn || '', dir: 'ltr', lang: 'en' }),
+    jobTitleEn: h('input', { value: v.jobTitleEn || '', dir: 'ltr', lang: 'en' }),
+    departmentEn: h('input', { value: v.departmentEn || '', dir: 'ltr', lang: 'en' }),
+    managerLabelEn: h('input', { value: v.managerLabelEn || '', dir: 'ltr', lang: 'en', placeholder: 'Manager name – Title' }),
     startDate: h('input', { type: 'date', value: v.startDate || '' }),
     endDate: h('input', { type: 'date', value: v.endDate || '' }),
     status: select([['active', 'على رأس العمل'], ['inactive', 'متوقف']], v.status || 'active'),
@@ -33,6 +37,7 @@ export async function employeeForm({ emp, onSaved }) {
       name: f.name.value, email: f.email.value || null, centerId: idOrNull(f.center), managerId: idOrNull(f.manager),
       jobTitle: f.jobTitle.value || null, department: f.department.value || null, contractType: f.contractType.value || null,
       project: f.project.value || null, startDate: f.startDate.value || null,
+      nameEn: f.nameEn.value || null, jobTitleEn: f.jobTitleEn.value || null, departmentEn: f.departmentEn.value || null, managerLabelEn: f.managerLabelEn.value || null,
     };
     try {
       if (isNew) await post('/api/employees', { ...common, code: f.code.value, card: f.card.value || undefined });
@@ -55,6 +60,10 @@ export async function employeeForm({ emp, onSaved }) {
   field('نوع التعاقد', f.contractType),
   field('المشروع / الممول', f.project),
   field('تاريخ التعيين', f.startDate),
+  field('الاسم بالإنجليزية', f.nameEn),
+  field('المسمى بالإنجليزية', f.jobTitleEn),
+  field('القسم بالإنجليزية', f.departmentEn),
+  field('المدير المباشر بالإنجليزية', f.managerLabelEn),
   isNew ? field('البطاقة (اختياري)', f.card, 'محتوى رمز البطاقة، مثل NW-014-A') : field('تاريخ انتهاء الخدمة', f.endDate),
   isNew ? null : field('الحالة', f.status),
   h('div', { class: 'span-all' }, err),

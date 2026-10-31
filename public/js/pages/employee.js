@@ -35,6 +35,13 @@ export default async function render({ user, params }) {
     ...row('القسم', emp.department), ...row('المدير المباشر', manager ? manager.name : emp.managerLabel), ...row('التعاقد', emp.contractType),
     ...row('المشروع', emp.project), ...row('التعيين', emp.startDate), ...row('الحالة', emp.status === 'active' ? 'على رأس العمل' : 'متوقف'),
   );
+  // بالإنجليزية (للتايم شيت المرسل للممولين)
+  const en = h('dl', { class: 'info', dir: 'ltr', lang: 'en' });
+  en.append(
+    ...row('Name', emp.nameEn), ...row('Job title', emp.jobTitleEn), ...row('Department', emp.departmentEn),
+    ...row('Center', emp.centerEn), ...row('Line manager', emp.managerLabelEn));
+  const hasEn = [emp.nameEn, emp.jobTitleEn, emp.departmentEn, emp.centerEn, emp.managerLabelEn].some(Boolean);
+  const allocBox = h('section', { class: 'panel' });
 
   async function loadMonth() {
     const { from, to } = monthRange(ym);
@@ -70,6 +77,19 @@ export default async function render({ user, params }) {
         h('td', { class: 'num' }, dash(d.checkIn)), h('td', { class: 'num' }, dash(d.exitFirst)), h('td', { class: 'num' }, dash(d.returnLast)), h('td', { class: 'num' }, dash(d.departure)),
         h('td', { class: 'num' }, d.netHours ? hrs(d.netHours) : '—'), h('td', { class: 'num' }, d.requiredHours ? hrs(d.requiredHours) : '—'),
         h('td', { class: 'num' }, d.lateMinutes ? `${d.lateMinutes} د` : '—'), h('td', { class: 'num' }, d.deficitHours ? hrs(d.deficitHours) : '—'), h('td', { class: 'num' }, d.overtimeHours ? hrs(d.overtimeHours) : '—'))))));
+  }
+
+  async function loadAllocations() {
+    const { allocations } = await get(`/api/employees/${id}/projects`);
+    clear(allocBox).append(h('h2', null, 'توزيع الموظف على المشاريع والممولين'));
+    if (!allocations.length) {
+      allocBox.append(h('p', { class: 'muted' }, 'لا توزيع مسجّل (يظهر «مشروع غير محدد» في التايم شيت حتى يُحدَّد).'));
+      return;
+    }
+    allocBox.append(h('table', { class: 'tbl' },
+      h('thead', null, h('tr', null, ['الممول / المشروع', 'النسبة', 'من', 'إلى'].map((t, i) => h('th', { class: i ? 'num' : '' }, t)))),
+      h('tbody', null, allocations.map((a) => h('tr', null,
+        h('td', { dir: 'ltr', lang: 'en' }, a.funder), h('td', { class: 'num' }, `${Math.round(a.share * 10000) / 100}%`), h('td', { class: 'num' }, a.from), h('td', { class: 'num' }, a.to))))));
   }
 
   async function loadBadges() {
@@ -108,9 +128,10 @@ export default async function render({ user, params }) {
     h('header', { class: 'page-head' },
       h('div', null, h('a', { href: '#/employees', class: 'back' }, 'كل الموظفين'), h('h1', null, emp.name)),
       canEdit ? h('button', { type: 'button', class: 'btn', onclick: () => employeeForm({ emp, onSaved: () => location.reload() }) }, 'تعديل البيانات') : null),
-    h('section', { class: 'panel' }, info),
+    h('section', { class: 'panel' }, info, hasEn ? en : null),
+    allocBox,
     badgeBox,
     h('section', { class: 'panel-plain' }, h('div', { class: 'page-head' }, h('h2', null, 'سجل الدوام'), monthBar), sums, tableBox));
-  await Promise.all([loadMonth(), loadBadges()]);
+  await Promise.all([loadMonth(), loadBadges(), loadAllocations().catch(() => {})]);
   return page;
 }
