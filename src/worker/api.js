@@ -12,6 +12,7 @@ import { loadWorkSettings, validateWorkSettings } from './settings.js';
 import { ingestMoves, MAX_MOVES } from './gate.js';
 import { recomputeSlice } from './close.js';
 import { validateAllocations, replaceStatements } from './projects.js';
+import { timesheetReport } from './reports.js';
 
 const MAX_BODY = 64 * 1024;
 const MAX_RANGE_DAYS = 366;
@@ -272,6 +273,9 @@ add('GET', '/api/employees/:id/days', async ({ db, user, params, url }) => {
     .all();
   return json({ ok: true, days: r.results });
 });
+
+// ---------------------------------------------------------------- التقارير
+add('GET', '/api/reports/timesheet', timesheetReport);
 
 // ---------------------------------------------------------------- المراكز
 add('GET', '/api/centers', async ({ db }) => {
