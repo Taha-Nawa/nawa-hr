@@ -5,8 +5,10 @@
  * كل القواعد (بداية/نهاية الدوام، السماحية، أيام العطلة، أنواع الإجازات) تأتي من `settings`
  * ولا يوجد أي رقم مكتوب داخل الكود.
  *
- * ملاحظات على قواعد إكسل الأصلية نُقلت كما هي عمداً (انظر docs/DECISIONS.md):
- *  - التأخير بالدقائق يُحسب من بداية الدوام مباشرة؛ السماحية تؤثر على تسمية الحالة فقط («متأخر»).
+ * القواعد مطابقة للصيغ الحالية في ورقة «سجل الدوام اليومي» (نسخة 2026 المعتمدة، انظر docs/DECISIONS.md):
+ *  - التأخير بالدقائق يُحسب من بداية الدوام مباشرة. إن كان التأخير ضمن السماحية (أكبر من صفر وحتى السماحية)
+ *    يُضاف إلى الساعات المعتمدة فلا يُسجَّل عجزاً؛ وإن تجاوزها فلا يُسامَح ويُخصم كاملاً وتصير الحالة «متأخر».
+ *  - الساعات المعتمدة لا تتجاوز الساعات المطلوبة؛ ما زاد عنها يظهر إضافياً.
  *  - «الخروج» المعروض هو أول خروج و«العودة» هي آخر عودة، لكن ساعات المغادرة تُجمع من كل الأزواج
  *    إذا تساوى عدد الخروج وعدد العودة، وإلا تُحتسب صفراً ويظهر تنبيه «خروج بلا عودة».
  *  - يوم فيه حضور بلا انصراف: ساعات التواجد = 0 (يظهر عجز كامل + تنبيه) حتى يُصحَّح يدوياً.
@@ -100,19 +102,36 @@ export function computeDay(input, settings) {
   const isWork = dayType === DAY_WORK;
   const requiredHours = isWork ? officialHours(settings) : 0;
 
-  let approvedHours = netHours;
-  if (leaveType !== '' && settings.leaveTypes[leaveType] === true) {
-    approvedHours = Math.max(netHours, requiredHours);
-  }
+  // الساعات المعتمدة والإضافي (مطابق لعمودي «الساعات المعتمدة» و«الإضافي» في إكسل):
+  //  - بلا إجازة: min(المطلوب، الصافي + دقائق التأخير المسموحة/60)، والباقي إضافي
+  //  - إجازة محتسبة: المطلوب كاملاً، وما زاد عن الصافي فوق المطلوب إضافي
+  //  - إجازة غير محتسبة: min(المطلوب، الصافي)
+  const start0 = toMin(settings.start);
+  const lateRaw = !isWork || checkIn === null || leaveType !== '' ? 0 : Math.max(0, checkIn - start0);
+  const forgiven = leaveType === '' && lateRaw > 0 && lateRaw <= settings.toleranceMinutes ? lateRaw / 60 : 0;
+  const counted = leaveType !== '' && settings.leaveTypes[leaveType] === true;
 
-  const start = toMin(settings.start);
+  let approvedRaw;
+  let overtimeRaw;
+  if (leaveType === '') {
+    approvedRaw = Math.min(requiredHours, netHours + forgiven);
+    overtimeRaw = Math.max(0, netHours + forgiven - requiredHours);
+  } else if (counted) {
+    approvedRaw = requiredHours;
+    overtimeRaw = Math.max(0, Math.max(netHours, requiredHours) - requiredHours);
+  } else {
+    approvedRaw = Math.min(requiredHours, netHours);
+    overtimeRaw = Math.max(0, netHours - requiredHours);
+  }
+  const approvedHours = Math.round(approvedRaw * 1e6) / 1e6;
+
   const end = toMin(settings.end);
-  const lateMinutes = !isWork || checkIn === null || leaveType !== '' ? 0 : Math.max(0, checkIn - start);
+  const lateMinutes = lateRaw;
   const earlyLeaveMinutes =
     !isWork || departure === null || leaveType !== '' ? 0 : Math.max(0, end - departure);
 
   const deficitHours = round2(Math.max(0, requiredHours - approvedHours));
-  const overtimeHours = round2(Math.max(0, approvedHours - requiredHours));
+  const overtimeHours = round2(overtimeRaw);
 
   let status;
   if (!isWork) status = dayType;

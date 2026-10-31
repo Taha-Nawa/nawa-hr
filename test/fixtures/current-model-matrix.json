@@ -1,0 +1,9591 @@
+{
+ "source": "صيغ ملف الإدارة 2026 (أعيد حسابها في LibreOffice على مدخلات اصطناعية)",
+ "settings": {
+  "start": "08:30",
+  "end": "15:00",
+  "toleranceMinutes": 10,
+  "monthlyExitCapHours": 6.0,
+  "weekdays": [
+   "عمل",
+   "عمل",
+   "عمل",
+   "عمل",
+   "عمل",
+   "عطلة أسبوعية",
+   "عطلة أسبوعية"
+  ],
+  "leaveTypes": {
+   "إجازة سنوية": true,
+   "إجازة مرضية": true,
+   "إجازة رسمية / طارئة": true,
+   "مهمة عمل خارجية": true,
+   "عمل عن بعد": true,
+   "إجازة أمومة / أبوة": true,
+   "إجازة بدون راتب": false,
+   "غياب بدون إذن": false
+  }
+ },
+ "holidays": [
+  "2026-01-01",
+  "2026-03-20",
+  "2026-03-21",
+  "2026-03-22",
+  "2026-05-01",
+  "2026-05-27",
+  "2026-05-28",
+  "2026-05-29",
+  "2026-05-30",
+  "2026-06-16",
+  "2026-08-25"
+ ],
+ "days": [
+  {
+   "date": "2026-01-01",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:37"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة رسمية",
+    "presenceHours": 6.37,
+    "exitHours": 0.0,
+    "netHours": 6.37,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.37,
+    "status": "عطلة رسمية"
+   }
+  },
+  {
+   "date": "2026-01-02",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "خروج",
+     "time": "13:04"
+    },
+    {
+     "type": "عودة",
+     "time": "13:37"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:57"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.43,
+    "exitHours": 0.55,
+    "netHours": 5.88,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.88,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-01-03",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-01-04",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:43"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:42"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.98,
+    "exitHours": 0.0,
+    "netHours": 5.98,
+    "requiredHours": 6.5,
+    "approvedHours": 5.98,
+    "lateMinutes": 13.0,
+    "earlyLeaveMinutes": 18.0,
+    "deficitHours": 0.52,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-01-05",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:32"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.48,
+    "exitHours": 0.0,
+    "netHours": 6.48,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 2.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.01,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-01-06",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:32"
+    },
+    {
+     "type": "خروج",
+     "time": "12:06"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.5,
+    "exitHours": 0.0,
+    "netHours": 6.5,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 2.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.03,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-01-07",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:26"
+    },
+    {
+     "type": "انصراف",
+     "time": "13:10"
+    }
+   ],
+   "leaveType": "مهمة عمل خارجية",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 4.73,
+    "exitHours": 0.0,
+    "netHours": 4.73,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "مهمة عمل خارجية"
+   }
+  },
+  {
+   "date": "2026-01-08",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "07:45"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:13"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 7.47,
+    "exitHours": 0.0,
+    "netHours": 7.47,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.97,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-01-09",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:42"
+    },
+    {
+     "type": "خروج",
+     "time": "13:04"
+    },
+    {
+     "type": "عودة",
+     "time": "13:55"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.3,
+    "exitHours": 0.85,
+    "netHours": 5.45,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.45,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-01-10",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:22"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:07"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 5.75,
+    "exitHours": 0.0,
+    "netHours": 5.75,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.75,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-01-11",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:16"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.78,
+    "exitHours": 0.0,
+    "netHours": 5.78,
+    "requiredHours": 6.5,
+    "approvedHours": 5.78,
+    "lateMinutes": 46.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.72,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-01-12",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.5,
+    "exitHours": 0.0,
+    "netHours": 6.5,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-01-13",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:32"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.48,
+    "exitHours": 0.0,
+    "netHours": 6.48,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 2.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.01,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-01-14",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:50"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.18,
+    "exitHours": 0.0,
+    "netHours": 5.18,
+    "requiredHours": 6.5,
+    "approvedHours": 5.18,
+    "lateMinutes": 20.0,
+    "earlyLeaveMinutes": 59.0,
+    "deficitHours": 1.32,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-01-15",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.53,
+    "exitHours": 0.0,
+    "netHours": 6.53,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.03,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-01-16",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.53,
+    "exitHours": 0.0,
+    "netHours": 6.53,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.53,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-01-17",
+   "movements": [],
+   "leaveType": "مهمة عمل خارجية",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-01-18",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:21"
+    },
+    {
+     "type": "انصراف",
+     "time": "17:12"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 8.85,
+    "exitHours": 0.0,
+    "netHours": 8.85,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 2.35,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-01-19",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:32"
+    },
+    {
+     "type": "خروج",
+     "time": "11:50"
+    },
+    {
+     "type": "عودة",
+     "time": "13:07"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:52"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.33,
+    "exitHours": 1.28,
+    "netHours": 5.05,
+    "requiredHours": 6.5,
+    "approvedHours": 5.083333,
+    "lateMinutes": 2.0,
+    "earlyLeaveMinutes": 8.0,
+    "deficitHours": 1.42,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-01-20",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:40"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.33,
+    "exitHours": 0.0,
+    "netHours": 6.33,
+    "requiredHours": 6.5,
+    "approvedHours": 6.496667,
+    "lateMinutes": 10.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-01-21",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "07:45"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:20"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 7.58,
+    "exitHours": 0.0,
+    "netHours": 7.58,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 1.08,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-01-22",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:38"
+    },
+    {
+     "type": "خروج",
+     "time": "12:43"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:51"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.22,
+    "exitHours": 0.0,
+    "netHours": 6.22,
+    "requiredHours": 6.5,
+    "approvedHours": 6.353333,
+    "lateMinutes": 8.0,
+    "earlyLeaveMinutes": 9.0,
+    "deficitHours": 0.15,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-01-23",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-01-24",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.55,
+    "exitHours": 0.0,
+    "netHours": 6.55,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.55,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-01-25",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-01-26",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:06"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:49"
+    }
+   ],
+   "leaveType": "إجازة سنوية",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.72,
+    "exitHours": 0.0,
+    "netHours": 6.72,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.22,
+    "status": "إجازة سنوية"
+   }
+  },
+  {
+   "date": "2026-01-27",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.07,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-01-28",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:39"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.4,
+    "exitHours": 0.0,
+    "netHours": 6.4,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 9.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.05,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-01-29",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-01-30",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-01-31",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:34"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:06"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.53,
+    "exitHours": 0.0,
+    "netHours": 6.53,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.53,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-02-01",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:01"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.98,
+    "exitHours": 0.0,
+    "netHours": 5.98,
+    "requiredHours": 6.5,
+    "approvedHours": 5.98,
+    "lateMinutes": 31.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.52,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-02-02",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:39"
+    },
+    {
+     "type": "خروج",
+     "time": "09:36"
+    },
+    {
+     "type": "عودة",
+     "time": "09:47"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:06"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.45,
+    "exitHours": 0.18,
+    "netHours": 6.27,
+    "requiredHours": 6.5,
+    "approvedHours": 6.42,
+    "lateMinutes": 9.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.08,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-02-03",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:04"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.07,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-02-04",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "خروج",
+     "time": "13:50"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:54"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.38,
+    "exitHours": 0.0,
+    "netHours": 6.38,
+    "requiredHours": 6.5,
+    "approvedHours": 6.396667,
+    "lateMinutes": 1.0,
+    "earlyLeaveMinutes": 6.0,
+    "deficitHours": 0.1,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-02-05",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:40"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.37,
+    "exitHours": 0.0,
+    "netHours": 6.37,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 10.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.04,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-02-06",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.57,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-02-07",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:34"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.42,
+    "exitHours": 0.0,
+    "netHours": 6.42,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.42,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-02-08",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "16:34"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 8.08,
+    "exitHours": 0.0,
+    "netHours": 8.08,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 1.58,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-02-09",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-02-10",
+   "movements": [
+    {
+     "type": "انصراف",
+     "time": "14:55"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 5.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-02-11",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:08"
+    },
+    {
+     "type": "انصراف",
+     "time": "13:18"
+    }
+   ],
+   "leaveType": "إجازة رسمية / طارئة",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 4.17,
+    "exitHours": 0.0,
+    "netHours": 4.17,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "إجازة رسمية / طارئة"
+   }
+  },
+  {
+   "date": "2026-02-12",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:51"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:09"
+    }
+   ],
+   "leaveType": "إجازة أمومة / أبوة",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.3,
+    "exitHours": 0.0,
+    "netHours": 6.3,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "إجازة أمومة / أبوة"
+   }
+  },
+  {
+   "date": "2026-02-13",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:35"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:04"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.48,
+    "exitHours": 0.0,
+    "netHours": 6.48,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.48,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-02-14",
+   "movements": [],
+   "leaveType": "مهمة عمل خارجية",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-02-15",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:06"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:56"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.83,
+    "exitHours": 0.0,
+    "netHours": 5.83,
+    "requiredHours": 6.5,
+    "approvedHours": 5.83,
+    "lateMinutes": 36.0,
+    "earlyLeaveMinutes": 4.0,
+    "deficitHours": 0.67,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-02-16",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:40"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.32,
+    "exitHours": 0.0,
+    "netHours": 6.32,
+    "requiredHours": 6.5,
+    "approvedHours": 6.486667,
+    "lateMinutes": 10.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.01,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-02-17",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.07,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-02-18",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:35"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.47,
+    "exitHours": 0.0,
+    "netHours": 6.47,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 5.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.05,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-02-19",
+   "movements": [],
+   "leaveType": "إجازة أمومة / أبوة",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "إجازة أمومة / أبوة"
+   }
+  },
+  {
+   "date": "2026-02-20",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:47"
+    },
+    {
+     "type": "خروج",
+     "time": "11:59"
+    },
+    {
+     "type": "عودة",
+     "time": "12:34"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:10"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.38,
+    "exitHours": 0.58,
+    "netHours": 5.8,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.8,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-02-21",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:32"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.47,
+    "exitHours": 0.0,
+    "netHours": 6.47,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.47,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-02-22",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:55"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:03"
+    }
+   ],
+   "leaveType": "إجازة سنوية",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.13,
+    "exitHours": 0.0,
+    "netHours": 5.13,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "إجازة سنوية"
+   }
+  },
+  {
+   "date": "2026-02-23",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-02-24",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:40"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:58"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.3,
+    "exitHours": 0.0,
+    "netHours": 6.3,
+    "requiredHours": 6.5,
+    "approvedHours": 6.466667,
+    "lateMinutes": 10.0,
+    "earlyLeaveMinutes": 2.0,
+    "deficitHours": 0.03,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-02-25",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-02-26",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:41"
+    },
+    {
+     "type": "خروج",
+     "time": "11:38"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:58"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.28,
+    "exitHours": 0.0,
+    "netHours": 6.28,
+    "requiredHours": 6.5,
+    "approvedHours": 6.28,
+    "lateMinutes": 11.0,
+    "earlyLeaveMinutes": 2.0,
+    "deficitHours": 0.22,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-02-27",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-02-28",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "خروج",
+     "time": "11:09"
+    },
+    {
+     "type": "عودة",
+     "time": "11:58"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:06"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.58,
+    "exitHours": 0.82,
+    "netHours": 5.76,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.76,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-03-01",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:25"
+    },
+    {
+     "type": "انصراف",
+     "time": "17:15"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 8.83,
+    "exitHours": 0.0,
+    "netHours": 8.83,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 2.33,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-03-02",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "16:29"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 8.03,
+    "exitHours": 0.0,
+    "netHours": 8.03,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 1.53,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-03-03",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:35"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.43,
+    "exitHours": 0.0,
+    "netHours": 6.43,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 5.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.01,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-03-04",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:40"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:04"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.4,
+    "exitHours": 0.0,
+    "netHours": 5.4,
+    "requiredHours": 6.5,
+    "approvedHours": 5.4,
+    "lateMinutes": 70.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 1.1,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-03-05",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.48,
+    "exitHours": 0.0,
+    "netHours": 6.48,
+    "requiredHours": 6.5,
+    "approvedHours": 6.496667,
+    "lateMinutes": 1.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-03-06",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:34"
+    },
+    {
+     "type": "انصراف",
+     "time": "12:50"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 4.27,
+    "exitHours": 0.0,
+    "netHours": 4.27,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 4.27,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-03-07",
+   "movements": [
+    {
+     "type": "انصراف",
+     "time": "14:45"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-03-08",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:26"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:04"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.63,
+    "exitHours": 0.0,
+    "netHours": 5.63,
+    "requiredHours": 6.5,
+    "approvedHours": 5.63,
+    "lateMinutes": 56.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.87,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-03-09",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "07:45"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:08"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 7.38,
+    "exitHours": 0.0,
+    "netHours": 7.38,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.88,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-03-10",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:39"
+    },
+    {
+     "type": "انصراف",
+     "time": "13:36"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 4.95,
+    "exitHours": 0.0,
+    "netHours": 4.95,
+    "requiredHours": 6.5,
+    "approvedHours": 5.1,
+    "lateMinutes": 9.0,
+    "earlyLeaveMinutes": 84.0,
+    "deficitHours": 1.4,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-03-11",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:58"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.45,
+    "exitHours": 0.0,
+    "netHours": 6.45,
+    "requiredHours": 6.5,
+    "approvedHours": 6.466667,
+    "lateMinutes": 1.0,
+    "earlyLeaveMinutes": 2.0,
+    "deficitHours": 0.03,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-03-12",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:40"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.32,
+    "exitHours": 0.0,
+    "netHours": 6.32,
+    "requiredHours": 6.5,
+    "approvedHours": 6.486667,
+    "lateMinutes": 10.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.01,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-03-13",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:04"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.6,
+    "exitHours": 0.0,
+    "netHours": 6.6,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.6,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-03-14",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.55,
+    "exitHours": 0.0,
+    "netHours": 6.55,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.55,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-03-15",
+   "movements": [],
+   "leaveType": "عمل عن بعد",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عمل عن بعد"
+   }
+  },
+  {
+   "date": "2026-03-16",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-03-17",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:23"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:05"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.7,
+    "exitHours": 0.0,
+    "netHours": 5.7,
+    "requiredHours": 6.5,
+    "approvedHours": 5.7,
+    "lateMinutes": 53.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.8,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-03-18",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:21"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:06"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.75,
+    "exitHours": 0.0,
+    "netHours": 5.75,
+    "requiredHours": 6.5,
+    "approvedHours": 5.75,
+    "lateMinutes": 51.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.75,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-03-19",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:26"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:29"
+    }
+   ],
+   "leaveType": "إجازة أمومة / أبوة",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.05,
+    "exitHours": 0.0,
+    "netHours": 6.05,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "إجازة أمومة / أبوة"
+   }
+  },
+  {
+   "date": "2026-03-20",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:23"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:32"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة رسمية",
+    "presenceHours": 7.15,
+    "exitHours": 0.0,
+    "netHours": 7.15,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 7.15,
+    "status": "عطلة رسمية"
+   }
+  },
+  {
+   "date": "2026-03-21",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة رسمية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة رسمية"
+   }
+  },
+  {
+   "date": "2026-03-22",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:58"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة رسمية",
+    "presenceHours": 6.45,
+    "exitHours": 0.0,
+    "netHours": 6.45,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.45,
+    "status": "عطلة رسمية"
+   }
+  },
+  {
+   "date": "2026-03-23",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:48"
+    },
+    {
+     "type": "خروج",
+     "time": "09:29"
+    },
+    {
+     "type": "عودة",
+     "time": "10:05"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:14"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.43,
+    "exitHours": 0.6,
+    "netHours": 5.83,
+    "requiredHours": 6.5,
+    "approvedHours": 5.83,
+    "lateMinutes": 18.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.67,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-03-24",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:46"
+    },
+    {
+     "type": "انصراف",
+     "time": "13:11"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 4.42,
+    "exitHours": 0.0,
+    "netHours": 4.42,
+    "requiredHours": 6.5,
+    "approvedHours": 4.42,
+    "lateMinutes": 16.0,
+    "earlyLeaveMinutes": 109.0,
+    "deficitHours": 2.08,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-03-25",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:39"
+    },
+    {
+     "type": "خروج",
+     "time": "10:58"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:58"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.32,
+    "exitHours": 0.0,
+    "netHours": 6.32,
+    "requiredHours": 6.5,
+    "approvedHours": 6.47,
+    "lateMinutes": 9.0,
+    "earlyLeaveMinutes": 2.0,
+    "deficitHours": 0.03,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-03-26",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:40"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.38,
+    "exitHours": 0.0,
+    "netHours": 6.38,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 10.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.05,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-03-27",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.53,
+    "exitHours": 0.0,
+    "netHours": 6.53,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.53,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-03-28",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.53,
+    "exitHours": 0.0,
+    "netHours": 6.53,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.53,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-03-29",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "خروج",
+     "time": "13:30"
+    },
+    {
+     "type": "عودة",
+     "time": "14:49"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.52,
+    "exitHours": 1.32,
+    "netHours": 5.2,
+    "requiredHours": 6.5,
+    "approvedHours": 5.2,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 1.3,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-03-30",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "خروج",
+     "time": "10:02"
+    },
+    {
+     "type": "عودة",
+     "time": "11:19"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.5,
+    "exitHours": 1.28,
+    "netHours": 5.22,
+    "requiredHours": 6.5,
+    "approvedHours": 5.22,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 1.28,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-03-31",
+   "movements": [],
+   "leaveType": "عمل عن بعد",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عمل عن بعد"
+   }
+  },
+  {
+   "date": "2026-04-01",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.07,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-04-02",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "خروج",
+     "time": "13:59"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:05"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 1.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.09,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-04-03",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:33"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:30"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.95,
+    "exitHours": 0.0,
+    "netHours": 6.95,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.95,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-04-04",
+   "movements": [
+    {
+     "type": "انصراف",
+     "time": "14:48"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-04-05",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:37"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.4,
+    "exitHours": 0.0,
+    "netHours": 6.4,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 7.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.02,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-04-06",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:37"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.43,
+    "exitHours": 0.0,
+    "netHours": 6.43,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 7.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.05,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-04-07",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.53,
+    "exitHours": 0.0,
+    "netHours": 6.53,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.03,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-04-08",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.58,
+    "exitHours": 0.0,
+    "netHours": 6.58,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.08,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-04-09",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:06"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.58,
+    "exitHours": 0.0,
+    "netHours": 6.58,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 1.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.1,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-04-10",
+   "movements": [],
+   "leaveType": "إجازة أمومة / أبوة",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-04-11",
+   "movements": [],
+   "leaveType": "إجازة مرضية",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-04-12",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-04-13",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.52,
+    "exitHours": 0.0,
+    "netHours": 5.52,
+    "requiredHours": 6.5,
+    "approvedHours": 5.52,
+    "lateMinutes": 58.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.98,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-04-14",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:37"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:58"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.35,
+    "exitHours": 0.0,
+    "netHours": 5.35,
+    "requiredHours": 6.5,
+    "approvedHours": 5.35,
+    "lateMinutes": 67.0,
+    "earlyLeaveMinutes": 2.0,
+    "deficitHours": 1.15,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-04-15",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:25"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.58,
+    "exitHours": 0.0,
+    "netHours": 6.58,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.08,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-04-16",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:40"
+    },
+    {
+     "type": "انصراف",
+     "time": "13:42"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.03,
+    "exitHours": 0.0,
+    "netHours": 5.03,
+    "requiredHours": 6.5,
+    "approvedHours": 5.196667,
+    "lateMinutes": 10.0,
+    "earlyLeaveMinutes": 78.0,
+    "deficitHours": 1.3,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-04-17",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.52,
+    "exitHours": 0.0,
+    "netHours": 6.52,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.52,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-04-18",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-04-19",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:34"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:58"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.4,
+    "exitHours": 0.0,
+    "netHours": 6.4,
+    "requiredHours": 6.5,
+    "approvedHours": 6.466667,
+    "lateMinutes": 4.0,
+    "earlyLeaveMinutes": 2.0,
+    "deficitHours": 0.03,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-04-20",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.55,
+    "exitHours": 0.0,
+    "netHours": 6.55,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.05,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-04-21",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.07,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-04-22",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "07:55"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:18"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 7.38,
+    "exitHours": 0.0,
+    "netHours": 7.38,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.88,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-04-23",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.47,
+    "exitHours": 0.0,
+    "netHours": 6.47,
+    "requiredHours": 6.5,
+    "approvedHours": 6.486667,
+    "lateMinutes": 1.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.01,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-04-24",
+   "movements": [
+    {
+     "type": "انصراف",
+     "time": "14:33"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-04-25",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:26"
+    },
+    {
+     "type": "خروج",
+     "time": "13:27"
+    },
+    {
+     "type": "عودة",
+     "time": "13:34"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:14"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.8,
+    "exitHours": 0.12,
+    "netHours": 6.68,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.68,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-04-26",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-04-27",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:37"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.43,
+    "exitHours": 0.0,
+    "netHours": 6.43,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 7.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.05,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-04-28",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:37"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:58"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.35,
+    "exitHours": 0.0,
+    "netHours": 6.35,
+    "requiredHours": 6.5,
+    "approvedHours": 6.466667,
+    "lateMinutes": 7.0,
+    "earlyLeaveMinutes": 2.0,
+    "deficitHours": 0.03,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-04-29",
+   "movements": [
+    {
+     "type": "انصراف",
+     "time": "14:43"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 17.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-04-30",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.07,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-05-01",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة رسمية",
+    "presenceHours": 6.5,
+    "exitHours": 0.0,
+    "netHours": 6.5,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.5,
+    "status": "عطلة رسمية"
+   }
+  },
+  {
+   "date": "2026-05-02",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-05-03",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:44"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:10"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.43,
+    "exitHours": 0.0,
+    "netHours": 6.43,
+    "requiredHours": 6.5,
+    "approvedHours": 6.43,
+    "lateMinutes": 14.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.07,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-05-04",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:35"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.4,
+    "exitHours": 0.0,
+    "netHours": 6.4,
+    "requiredHours": 6.5,
+    "approvedHours": 6.483333,
+    "lateMinutes": 5.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.02,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-05-05",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.58,
+    "exitHours": 0.0,
+    "netHours": 6.58,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.08,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-05-06",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:04"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.62,
+    "exitHours": 0.0,
+    "netHours": 6.62,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.12,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-05-07",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-05-08",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "07:53"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:14"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 7.35,
+    "exitHours": 0.0,
+    "netHours": 7.35,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 7.35,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-05-09",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-05-10",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:47"
+    },
+    {
+     "type": "انصراف",
+     "time": "13:17"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 4.5,
+    "exitHours": 0.0,
+    "netHours": 4.5,
+    "requiredHours": 6.5,
+    "approvedHours": 4.5,
+    "lateMinutes": 17.0,
+    "earlyLeaveMinutes": 103.0,
+    "deficitHours": 2.0,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-05-11",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.53,
+    "exitHours": 0.0,
+    "netHours": 6.53,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.03,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-05-12",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.53,
+    "exitHours": 0.0,
+    "netHours": 6.53,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.03,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-05-13",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.5,
+    "exitHours": 0.0,
+    "netHours": 6.5,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-05-14",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:22"
+    },
+    {
+     "type": "انصراف",
+     "time": "18:20"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 9.97,
+    "exitHours": 0.0,
+    "netHours": 9.97,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 3.47,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-05-15",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:36"
+    },
+    {
+     "type": "انصراف",
+     "time": "13:12"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 4.6,
+    "exitHours": 0.0,
+    "netHours": 4.6,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 4.6,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-05-16",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:32"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:06"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.57,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-05-17",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.6,
+    "exitHours": 0.0,
+    "netHours": 6.6,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.1,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-05-18",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:37"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:05"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.47,
+    "exitHours": 0.0,
+    "netHours": 6.47,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 7.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.09,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-05-19",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:19"
+    },
+    {
+     "type": "انصراف",
+     "time": "16:08"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 7.82,
+    "exitHours": 0.0,
+    "netHours": 7.82,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 1.32,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-05-20",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:37"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:05"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.47,
+    "exitHours": 0.0,
+    "netHours": 6.47,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 7.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.09,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-05-21",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:35"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.4,
+    "exitHours": 0.0,
+    "netHours": 6.4,
+    "requiredHours": 6.5,
+    "approvedHours": 6.483333,
+    "lateMinutes": 5.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.02,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-05-22",
+   "movements": [
+    {
+     "type": "انصراف",
+     "time": "14:54"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-05-23",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:39"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.37,
+    "exitHours": 0.0,
+    "netHours": 6.37,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.37,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-05-24",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-05-25",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "16:23"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 7.9,
+    "exitHours": 0.0,
+    "netHours": 7.9,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 1.4,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-05-26",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:47"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:58"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.18,
+    "exitHours": 0.0,
+    "netHours": 6.18,
+    "requiredHours": 6.5,
+    "approvedHours": 6.18,
+    "lateMinutes": 17.0,
+    "earlyLeaveMinutes": 2.0,
+    "deficitHours": 0.32,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-05-27",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:51"
+    },
+    {
+     "type": "خروج",
+     "time": "09:40"
+    },
+    {
+     "type": "عودة",
+     "time": "10:22"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:06"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة رسمية",
+    "presenceHours": 6.25,
+    "exitHours": 0.7,
+    "netHours": 5.55,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.55,
+    "status": "عطلة رسمية"
+   }
+  },
+  {
+   "date": "2026-05-28",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة رسمية",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.57,
+    "status": "عطلة رسمية"
+   }
+  },
+  {
+   "date": "2026-05-29",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:50"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة رسمية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة رسمية"
+   }
+  },
+  {
+   "date": "2026-05-30",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة رسمية",
+    "presenceHours": 6.52,
+    "exitHours": 0.0,
+    "netHours": 6.52,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.52,
+    "status": "عطلة رسمية"
+   }
+  },
+  {
+   "date": "2026-05-31",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:43"
+    },
+    {
+     "type": "انصراف",
+     "time": "13:32"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 4.82,
+    "exitHours": 0.0,
+    "netHours": 4.82,
+    "requiredHours": 6.5,
+    "approvedHours": 4.82,
+    "lateMinutes": 13.0,
+    "earlyLeaveMinutes": 88.0,
+    "deficitHours": 1.68,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-06-01",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.6,
+    "exitHours": 0.0,
+    "netHours": 6.6,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.1,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-06-02",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.53,
+    "exitHours": 0.0,
+    "netHours": 6.53,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.03,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-06-03",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:36"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.38,
+    "exitHours": 0.0,
+    "netHours": 6.38,
+    "requiredHours": 6.5,
+    "approvedHours": 6.48,
+    "lateMinutes": 6.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.02,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-06-04",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:45"
+    },
+    {
+     "type": "خروج",
+     "time": "12:07"
+    },
+    {
+     "type": "عودة",
+     "time": "12:49"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:58"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.22,
+    "exitHours": 0.7,
+    "netHours": 5.52,
+    "requiredHours": 6.5,
+    "approvedHours": 5.52,
+    "lateMinutes": 15.0,
+    "earlyLeaveMinutes": 2.0,
+    "deficitHours": 0.98,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-06-05",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "خروج",
+     "time": "11:47"
+    },
+    {
+     "type": "عودة",
+     "time": "12:20"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:13"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.7,
+    "exitHours": 0.55,
+    "netHours": 6.15,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.15,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-06-06",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "خروج",
+     "time": "11:13"
+    },
+    {
+     "type": "عودة",
+     "time": "11:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:13"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.72,
+    "exitHours": 0.23,
+    "netHours": 6.49,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.49,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-06-07",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.47,
+    "exitHours": 0.0,
+    "netHours": 6.47,
+    "requiredHours": 6.5,
+    "approvedHours": 6.486667,
+    "lateMinutes": 1.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.01,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-06-08",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-06-09",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:48"
+    },
+    {
+     "type": "خروج",
+     "time": "11:59"
+    },
+    {
+     "type": "عودة",
+     "time": "12:06"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:07"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.32,
+    "exitHours": 0.12,
+    "netHours": 6.2,
+    "requiredHours": 6.5,
+    "approvedHours": 6.2,
+    "lateMinutes": 18.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.3,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-06-10",
+   "movements": [],
+   "leaveType": "إجازة أمومة / أبوة",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "إجازة أمومة / أبوة"
+   }
+  },
+  {
+   "date": "2026-06-11",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.58,
+    "exitHours": 0.0,
+    "netHours": 6.58,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.08,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-06-12",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-06-13",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "خروج",
+     "time": "11:52"
+    },
+    {
+     "type": "عودة",
+     "time": "12:06"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:58"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.52,
+    "exitHours": 0.23,
+    "netHours": 6.29,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.29,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-06-14",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:35"
+    },
+    {
+     "type": "خروج",
+     "time": "09:36"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:05"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.5,
+    "exitHours": 0.0,
+    "netHours": 6.5,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 5.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.08,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-06-15",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:36"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:05"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.48,
+    "exitHours": 0.0,
+    "netHours": 6.48,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 6.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.08,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-06-16",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:41"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة رسمية",
+    "presenceHours": 6.33,
+    "exitHours": 0.0,
+    "netHours": 6.33,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.33,
+    "status": "عطلة رسمية"
+   }
+  },
+  {
+   "date": "2026-06-17",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:26"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.6,
+    "exitHours": 0.0,
+    "netHours": 5.6,
+    "requiredHours": 6.5,
+    "approvedHours": 5.6,
+    "lateMinutes": 56.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.9,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-06-18",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:45"
+    },
+    {
+     "type": "خروج",
+     "time": "11:54"
+    },
+    {
+     "type": "عودة",
+     "time": "12:53"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:09"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.4,
+    "exitHours": 0.98,
+    "netHours": 5.42,
+    "requiredHours": 6.5,
+    "approvedHours": 5.42,
+    "lateMinutes": 15.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 1.08,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-06-19",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:19"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 5.72,
+    "exitHours": 0.0,
+    "netHours": 5.72,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.72,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-06-20",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-06-21",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:39"
+    },
+    {
+     "type": "انصراف",
+     "time": "16:13"
+    }
+   ],
+   "leaveType": "إجازة بدون راتب",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 7.57,
+    "exitHours": 0.0,
+    "netHours": 7.57,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 1.07,
+    "status": "إجازة بدون راتب"
+   }
+  },
+  {
+   "date": "2026-06-22",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:37"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.116667,
+    "lateMinutes": 7.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.38,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-06-23",
+   "movements": [],
+   "leaveType": "إجازة أمومة / أبوة",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "إجازة أمومة / أبوة"
+   }
+  },
+  {
+   "date": "2026-06-24",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "13:43"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.22,
+    "exitHours": 0.0,
+    "netHours": 5.22,
+    "requiredHours": 6.5,
+    "approvedHours": 5.22,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 77.0,
+    "deficitHours": 1.28,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-06-25",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:32"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:05"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.55,
+    "exitHours": 0.0,
+    "netHours": 6.55,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 2.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.08,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-06-26",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "13:18"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 4.82,
+    "exitHours": 0.0,
+    "netHours": 4.82,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 4.82,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-06-27",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:04"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.6,
+    "exitHours": 0.0,
+    "netHours": 6.6,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.6,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-06-28",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:32"
+    },
+    {
+     "type": "خروج",
+     "time": "10:49"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:57"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.42,
+    "exitHours": 0.0,
+    "netHours": 6.42,
+    "requiredHours": 6.5,
+    "approvedHours": 6.453333,
+    "lateMinutes": 2.0,
+    "earlyLeaveMinutes": 3.0,
+    "deficitHours": 0.05,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-06-29",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:32"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:05"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.55,
+    "exitHours": 0.0,
+    "netHours": 6.55,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 2.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.08,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-06-30",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:35"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:05"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.5,
+    "exitHours": 0.0,
+    "netHours": 6.5,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 5.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.08,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-07-01",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:40"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.32,
+    "exitHours": 0.0,
+    "netHours": 6.32,
+    "requiredHours": 6.5,
+    "approvedHours": 6.486667,
+    "lateMinutes": 10.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.01,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-07-02",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.07,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-07-03",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.55,
+    "exitHours": 0.0,
+    "netHours": 6.55,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.55,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-07-04",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:05"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:08"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.05,
+    "exitHours": 0.0,
+    "netHours": 6.05,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.05,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-07-05",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:19"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:15"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.93,
+    "exitHours": 0.0,
+    "netHours": 6.93,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.43,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-07-06",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:33"
+    },
+    {
+     "type": "انصراف",
+     "time": "17:49"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 9.27,
+    "exitHours": 0.0,
+    "netHours": 9.27,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 3.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 2.82,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-07-07",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-07-08",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-07-09",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.52,
+    "exitHours": 0.0,
+    "netHours": 5.52,
+    "requiredHours": 6.5,
+    "approvedHours": 5.52,
+    "lateMinutes": 60.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.98,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-07-10",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "12:32"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 4.07,
+    "exitHours": 0.0,
+    "netHours": 4.07,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 4.07,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-07-11",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.57,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-07-12",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:18"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:12"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.9,
+    "exitHours": 0.0,
+    "netHours": 6.9,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.4,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-07-13",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:05"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.97,
+    "exitHours": 0.0,
+    "netHours": 5.97,
+    "requiredHours": 6.5,
+    "approvedHours": 5.97,
+    "lateMinutes": 35.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.53,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-07-14",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.07,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-07-15",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:08"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:10"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.03,
+    "exitHours": 0.0,
+    "netHours": 6.03,
+    "requiredHours": 6.5,
+    "approvedHours": 6.03,
+    "lateMinutes": 38.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.47,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-07-16",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "07:45"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:14"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 7.48,
+    "exitHours": 0.0,
+    "netHours": 7.48,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.98,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-07-17",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.48,
+    "exitHours": 0.0,
+    "netHours": 6.48,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.48,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-07-18",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.57,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-07-19",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.58,
+    "exitHours": 0.0,
+    "netHours": 6.58,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.08,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-07-20",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-07-21",
+   "movements": [
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-07-22",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:38"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:04"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.43,
+    "exitHours": 0.0,
+    "netHours": 6.43,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 8.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.06,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-07-23",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:34"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.45,
+    "exitHours": 0.0,
+    "netHours": 6.45,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 4.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.02,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-07-24",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:07"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:56"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 5.82,
+    "exitHours": 0.0,
+    "netHours": 5.82,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.82,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-07-25",
+   "movements": [],
+   "leaveType": "عمل عن بعد",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-07-26",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:22"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.65,
+    "exitHours": 0.0,
+    "netHours": 5.65,
+    "requiredHours": 6.5,
+    "approvedHours": 5.65,
+    "lateMinutes": 52.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.85,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-07-27",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:36"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.42,
+    "exitHours": 0.0,
+    "netHours": 6.42,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 6.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.02,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-07-28",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:43"
+    },
+    {
+     "type": "انصراف",
+     "time": "12:56"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 4.22,
+    "exitHours": 0.0,
+    "netHours": 4.22,
+    "requiredHours": 6.5,
+    "approvedHours": 4.22,
+    "lateMinutes": 13.0,
+    "earlyLeaveMinutes": 124.0,
+    "deficitHours": 2.28,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-07-29",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-07-30",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.48,
+    "exitHours": 0.0,
+    "netHours": 6.48,
+    "requiredHours": 6.5,
+    "approvedHours": 6.496667,
+    "lateMinutes": 1.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-07-31",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:39"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.33,
+    "exitHours": 0.0,
+    "netHours": 6.33,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.33,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-08-01",
+   "movements": [
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-08-02",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:48"
+    }
+   ],
+   "leaveType": "إجازة مرضية",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 7.33,
+    "exitHours": 0.0,
+    "netHours": 7.33,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.83,
+    "status": "إجازة مرضية"
+   }
+  },
+  {
+   "date": "2026-08-03",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.47,
+    "exitHours": 0.0,
+    "netHours": 6.47,
+    "requiredHours": 6.5,
+    "approvedHours": 6.486667,
+    "lateMinutes": 1.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.01,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-08-04",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.55,
+    "exitHours": 0.0,
+    "netHours": 6.55,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.05,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-08-05",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:47"
+    },
+    {
+     "type": "انصراف",
+     "time": "13:05"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 4.3,
+    "exitHours": 0.0,
+    "netHours": 4.3,
+    "requiredHours": 6.5,
+    "approvedHours": 4.3,
+    "lateMinutes": 17.0,
+    "earlyLeaveMinutes": 115.0,
+    "deficitHours": 2.2,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-08-06",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:35"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:05"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.5,
+    "exitHours": 0.0,
+    "netHours": 6.5,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 5.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.08,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-08-07",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:25"
+    },
+    {
+     "type": "خروج",
+     "time": "11:57"
+    },
+    {
+     "type": "عودة",
+     "time": "13:09"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:08"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.72,
+    "exitHours": 1.2,
+    "netHours": 5.52,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.52,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-08-08",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:01"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:55"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 5.9,
+    "exitHours": 0.0,
+    "netHours": 5.9,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.9,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-08-09",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-08-10",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "16:35"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 8.1,
+    "exitHours": 0.0,
+    "netHours": 8.1,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 1.6,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-08-11",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.5,
+    "exitHours": 0.0,
+    "netHours": 6.5,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-08-12",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:11"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:05"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.9,
+    "exitHours": 0.0,
+    "netHours": 5.9,
+    "requiredHours": 6.5,
+    "approvedHours": 5.9,
+    "lateMinutes": 41.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.6,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-08-13",
+   "movements": [],
+   "leaveType": "إجازة رسمية / طارئة",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "إجازة رسمية / طارئة"
+   }
+  },
+  {
+   "date": "2026-08-14",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:39"
+    },
+    {
+     "type": "خروج",
+     "time": "10:29"
+    },
+    {
+     "type": "عودة",
+     "time": "11:23"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:58"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.32,
+    "exitHours": 0.9,
+    "netHours": 5.42,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.42,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-08-15",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:40"
+    },
+    {
+     "type": "خروج",
+     "time": "11:43"
+    },
+    {
+     "type": "عودة",
+     "time": "13:00"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:52"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.2,
+    "exitHours": 1.28,
+    "netHours": 4.92,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 4.92,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-08-16",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-08-17",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:40"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:05"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.42,
+    "exitHours": 0.0,
+    "netHours": 6.42,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 10.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.09,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-08-18",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:35"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:06"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.52,
+    "exitHours": 0.0,
+    "netHours": 6.52,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 5.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.1,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-08-19",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:34"
+    },
+    {
+     "type": "انصراف",
+     "time": "17:04"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 8.5,
+    "exitHours": 0.0,
+    "netHours": 8.5,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 4.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 2.07,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-08-20",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.07,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-08-21",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "خروج",
+     "time": "13:22"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.48,
+    "exitHours": 0.0,
+    "netHours": 6.48,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.48,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-08-22",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:41"
+    },
+    {
+     "type": "خروج",
+     "time": "10:20"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:58"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.28,
+    "exitHours": 0.0,
+    "netHours": 6.28,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.28,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-08-23",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:18"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:10"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.87,
+    "exitHours": 0.0,
+    "netHours": 6.87,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.37,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-08-24",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.55,
+    "exitHours": 0.0,
+    "netHours": 6.55,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.05,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-08-25",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "07:48"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:08"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة رسمية",
+    "presenceHours": 7.33,
+    "exitHours": 0.0,
+    "netHours": 7.33,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 7.33,
+    "status": "عطلة رسمية"
+   }
+  },
+  {
+   "date": "2026-08-26",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:36"
+    },
+    {
+     "type": "خروج",
+     "time": "11:37"
+    },
+    {
+     "type": "عودة",
+     "time": "12:07"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:08"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.53,
+    "exitHours": 0.5,
+    "netHours": 6.03,
+    "requiredHours": 6.5,
+    "approvedHours": 6.13,
+    "lateMinutes": 6.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.37,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-08-27",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:20"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:14"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.9,
+    "exitHours": 0.0,
+    "netHours": 6.9,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.4,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-08-28",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:53"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-08-29",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 5.52,
+    "exitHours": 0.0,
+    "netHours": 5.52,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.52,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-08-30",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-08-31",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.53,
+    "exitHours": 0.0,
+    "netHours": 6.53,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.03,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-09-01",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:04"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:56"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.87,
+    "exitHours": 0.0,
+    "netHours": 5.87,
+    "requiredHours": 6.5,
+    "approvedHours": 5.87,
+    "lateMinutes": 34.0,
+    "earlyLeaveMinutes": 4.0,
+    "deficitHours": 0.63,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-09-02",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "07:52"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:06"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 7.23,
+    "exitHours": 0.0,
+    "netHours": 7.23,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.73,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-09-03",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:38"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.133333,
+    "lateMinutes": 8.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.37,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-09-04",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:36"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:09"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 5.55,
+    "exitHours": 0.0,
+    "netHours": 5.55,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.55,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-09-05",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.53,
+    "exitHours": 0.0,
+    "netHours": 6.53,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.53,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-09-06",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.53,
+    "exitHours": 0.0,
+    "netHours": 6.53,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.03,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-09-07",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:10"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:09"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.98,
+    "exitHours": 0.0,
+    "netHours": 6.98,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.48,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-09-08",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.07,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-09-09",
+   "movements": [],
+   "leaveType": "إجازة سنوية",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "إجازة سنوية"
+   }
+  },
+  {
+   "date": "2026-09-10",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:57"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:10"
+    }
+   ],
+   "leaveType": "إجازة رسمية / طارئة",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.22,
+    "exitHours": 0.0,
+    "netHours": 5.22,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "إجازة رسمية / طارئة"
+   }
+  },
+  {
+   "date": "2026-09-11",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.5,
+    "exitHours": 0.0,
+    "netHours": 6.5,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.5,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-09-12",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "16:08"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 7.68,
+    "exitHours": 0.0,
+    "netHours": 7.68,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 7.68,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-09-13",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:35"
+    },
+    {
+     "type": "انصراف",
+     "time": "18:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 9.47,
+    "exitHours": 0.0,
+    "netHours": 9.47,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 5.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 3.05,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-09-14",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:32"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.45,
+    "exitHours": 0.0,
+    "netHours": 6.45,
+    "requiredHours": 6.5,
+    "approvedHours": 6.483333,
+    "lateMinutes": 2.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.02,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-09-15",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:35"
+    },
+    {
+     "type": "خروج",
+     "time": "12:14"
+    },
+    {
+     "type": "عودة",
+     "time": "13:33"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:08"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.55,
+    "exitHours": 1.32,
+    "netHours": 5.23,
+    "requiredHours": 6.5,
+    "approvedHours": 5.313333,
+    "lateMinutes": 5.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 1.19,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-09-16",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.48,
+    "exitHours": 0.0,
+    "netHours": 6.48,
+    "requiredHours": 6.5,
+    "approvedHours": 6.496667,
+    "lateMinutes": 1.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-09-17",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.47,
+    "exitHours": 0.0,
+    "netHours": 6.47,
+    "requiredHours": 6.5,
+    "approvedHours": 6.486667,
+    "lateMinutes": 1.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.01,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-09-18",
+   "movements": [],
+   "leaveType": "غياب بدون إذن",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-09-19",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:36"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:07"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 5.52,
+    "exitHours": 0.0,
+    "netHours": 5.52,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.52,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-09-20",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.07,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-09-21",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:35"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:58"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.38,
+    "exitHours": 0.0,
+    "netHours": 6.38,
+    "requiredHours": 6.5,
+    "approvedHours": 6.463333,
+    "lateMinutes": 5.0,
+    "earlyLeaveMinutes": 2.0,
+    "deficitHours": 0.04,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-09-22",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:39"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.33,
+    "exitHours": 0.0,
+    "netHours": 6.33,
+    "requiredHours": 6.5,
+    "approvedHours": 6.48,
+    "lateMinutes": 9.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.02,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-09-23",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.53,
+    "exitHours": 0.0,
+    "netHours": 6.53,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.03,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-09-24",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:50"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:04"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.23,
+    "exitHours": 0.0,
+    "netHours": 5.23,
+    "requiredHours": 6.5,
+    "approvedHours": 5.23,
+    "lateMinutes": 20.0,
+    "earlyLeaveMinutes": 56.0,
+    "deficitHours": 1.27,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-09-25",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:37"
+    },
+    {
+     "type": "خروج",
+     "time": "13:14"
+    },
+    {
+     "type": "عودة",
+     "time": "14:25"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.4,
+    "exitHours": 1.18,
+    "netHours": 5.22,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.22,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-09-26",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.58,
+    "exitHours": 0.0,
+    "netHours": 6.58,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.58,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-09-27",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:37"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:08"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.52,
+    "exitHours": 0.0,
+    "netHours": 5.52,
+    "requiredHours": 6.5,
+    "approvedHours": 5.636667,
+    "lateMinutes": 7.0,
+    "earlyLeaveMinutes": 52.0,
+    "deficitHours": 0.86,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-09-28",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-09-29",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-09-30",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-10-01",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.55,
+    "exitHours": 0.0,
+    "netHours": 6.55,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.05,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-10-02",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:05"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.93,
+    "exitHours": 0.0,
+    "netHours": 6.93,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.93,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-10-03",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:01"
+    },
+    {
+     "type": "انصراف",
+     "time": "13:28"
+    }
+   ],
+   "leaveType": "إجازة مرضية",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 4.45,
+    "exitHours": 0.0,
+    "netHours": 4.45,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 4.45,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-10-04",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.47,
+    "exitHours": 0.0,
+    "netHours": 6.47,
+    "requiredHours": 6.5,
+    "approvedHours": 6.486667,
+    "lateMinutes": 1.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.01,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-10-05",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:47"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 17.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-10-06",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:38"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.38,
+    "exitHours": 0.0,
+    "netHours": 6.38,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 8.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.01,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-10-07",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:26"
+    },
+    {
+     "type": "انصراف",
+     "time": "12:56"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 4.5,
+    "exitHours": 0.0,
+    "netHours": 4.5,
+    "requiredHours": 6.5,
+    "approvedHours": 4.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 124.0,
+    "deficitHours": 2.0,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-10-08",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:40"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.32,
+    "exitHours": 0.0,
+    "netHours": 6.32,
+    "requiredHours": 6.5,
+    "approvedHours": 6.486667,
+    "lateMinutes": 10.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.01,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-10-09",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:55"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:58"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.05,
+    "exitHours": 0.0,
+    "netHours": 6.05,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.05,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-10-10",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-10-11",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.48,
+    "exitHours": 0.0,
+    "netHours": 6.48,
+    "requiredHours": 6.5,
+    "approvedHours": 6.496667,
+    "lateMinutes": 1.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-10-12",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:20"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:33"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 7.22,
+    "exitHours": 0.0,
+    "netHours": 7.22,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.72,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-10-13",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:50"
+    },
+    {
+     "type": "خروج",
+     "time": "10:51"
+    },
+    {
+     "type": "عودة",
+     "time": "11:40"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:58"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.13,
+    "exitHours": 0.82,
+    "netHours": 5.31,
+    "requiredHours": 6.5,
+    "approvedHours": 5.31,
+    "lateMinutes": 20.0,
+    "earlyLeaveMinutes": 2.0,
+    "deficitHours": 1.19,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-10-14",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.52,
+    "exitHours": 0.0,
+    "netHours": 6.52,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.02,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-10-15",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:13"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:15"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 7.03,
+    "exitHours": 0.0,
+    "netHours": 7.03,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.53,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-10-16",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:38"
+    },
+    {
+     "type": "انصراف",
+     "time": "12:52"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 4.23,
+    "exitHours": 0.0,
+    "netHours": 4.23,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 4.23,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-10-17",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:04"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.57,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-10-18",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.52,
+    "exitHours": 0.0,
+    "netHours": 6.52,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.02,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-10-19",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:48"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:04"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.27,
+    "exitHours": 0.0,
+    "netHours": 6.27,
+    "requiredHours": 6.5,
+    "approvedHours": 6.27,
+    "lateMinutes": 18.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.23,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-10-20",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "07:52"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:04"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 7.2,
+    "exitHours": 0.0,
+    "netHours": 7.2,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.7,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-10-21",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:47"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:05"
+    }
+   ],
+   "leaveType": "عمل عن بعد",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.3,
+    "exitHours": 0.0,
+    "netHours": 6.3,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عمل عن بعد"
+   }
+  },
+  {
+   "date": "2026-10-22",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:47"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 17.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-10-23",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:47"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-10-24",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "17:10"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 8.72,
+    "exitHours": 0.0,
+    "netHours": 8.72,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 8.72,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-10-25",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:33"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.48,
+    "exitHours": 0.0,
+    "netHours": 6.48,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 3.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.03,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-10-26",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:35"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.083333,
+    "lateMinutes": 5.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.42,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-10-27",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:38"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.38,
+    "exitHours": 0.0,
+    "netHours": 6.38,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 8.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.01,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-10-28",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:06"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.58,
+    "exitHours": 0.0,
+    "netHours": 6.58,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 1.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.1,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-10-29",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:45"
+    },
+    {
+     "type": "خروج",
+     "time": "13:04"
+    },
+    {
+     "type": "عودة",
+     "time": "13:41"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.25,
+    "exitHours": 0.62,
+    "netHours": 5.63,
+    "requiredHours": 6.5,
+    "approvedHours": 5.63,
+    "lateMinutes": 15.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.87,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-10-30",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:37"
+    },
+    {
+     "type": "خروج",
+     "time": "10:05"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:53"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.27,
+    "exitHours": 0.0,
+    "netHours": 6.27,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.27,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-10-31",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:42"
+    },
+    {
+     "type": "خروج",
+     "time": "11:38"
+    },
+    {
+     "type": "عودة",
+     "time": "12:47"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:13"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.52,
+    "exitHours": 1.15,
+    "netHours": 5.37,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.37,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-11-01",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-11-02",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:39"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.38,
+    "exitHours": 0.0,
+    "netHours": 6.38,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 9.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.03,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-11-03",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.58,
+    "exitHours": 0.0,
+    "netHours": 6.58,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.08,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-11-04",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.55,
+    "exitHours": 0.0,
+    "netHours": 6.55,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.05,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-11-05",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:24"
+    },
+    {
+     "type": "انصراف",
+     "time": "16:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 7.6,
+    "exitHours": 0.0,
+    "netHours": 7.6,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 1.1,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-11-06",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:53"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:04"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.18,
+    "exitHours": 0.0,
+    "netHours": 6.18,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.18,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-11-07",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:14"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:06"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.87,
+    "exitHours": 0.0,
+    "netHours": 6.87,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.87,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-11-08",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-11-09",
+   "movements": [],
+   "leaveType": "إجازة بدون راتب",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "إجازة بدون راتب"
+   }
+  },
+  {
+   "date": "2026-11-10",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-11-11",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:41"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.3,
+    "exitHours": 0.0,
+    "netHours": 6.3,
+    "requiredHours": 6.5,
+    "approvedHours": 6.3,
+    "lateMinutes": 11.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.2,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-11-12",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:37"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.4,
+    "exitHours": 0.0,
+    "netHours": 6.4,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 7.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.02,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-11-13",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:47"
+    },
+    {
+     "type": "خروج",
+     "time": "11:09"
+    },
+    {
+     "type": "عودة",
+     "time": "11:59"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:15"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.47,
+    "exitHours": 0.83,
+    "netHours": 5.64,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.64,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-11-14",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:38"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:06"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.47,
+    "exitHours": 0.0,
+    "netHours": 6.47,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.47,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-11-15",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:25"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:09"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 5.73,
+    "exitHours": 0.0,
+    "netHours": 5.73,
+    "requiredHours": 6.5,
+    "approvedHours": 5.73,
+    "lateMinutes": 55.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.77,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-11-16",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.55,
+    "exitHours": 0.0,
+    "netHours": 6.55,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.05,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-11-17",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:52"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 22.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-11-18",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:08"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:08"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.0,
+    "exitHours": 0.0,
+    "netHours": 6.0,
+    "requiredHours": 6.5,
+    "approvedHours": 6.0,
+    "lateMinutes": 38.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.5,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-11-19",
+   "movements": [],
+   "leaveType": "إجازة سنوية",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "إجازة سنوية"
+   }
+  },
+  {
+   "date": "2026-11-20",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "09:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:57"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 5.5,
+    "exitHours": 0.0,
+    "netHours": 5.5,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.5,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-11-21",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.5,
+    "exitHours": 0.0,
+    "netHours": 6.5,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.5,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-11-22",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.55,
+    "exitHours": 0.0,
+    "netHours": 6.55,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.05,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-11-23",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:34"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.45,
+    "exitHours": 0.0,
+    "netHours": 6.45,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 4.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.02,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-11-24",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:14"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:08"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.9,
+    "exitHours": 0.0,
+    "netHours": 6.9,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.4,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-11-25",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:42"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 12.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-11-26",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:06"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.95,
+    "exitHours": 0.0,
+    "netHours": 6.95,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.45,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-11-27",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-11-28",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.52,
+    "exitHours": 0.0,
+    "netHours": 6.52,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.52,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-11-29",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:47"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 17.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-11-30",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.58,
+    "exitHours": 0.0,
+    "netHours": 6.58,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.08,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-12-01",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.07,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-12-02",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:35"
+    },
+    {
+     "type": "خروج",
+     "time": "12:41"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:02"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.45,
+    "exitHours": 0.0,
+    "netHours": 6.45,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 5.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.03,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-12-03",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:32"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.45,
+    "exitHours": 0.0,
+    "netHours": 6.45,
+    "requiredHours": 6.5,
+    "approvedHours": 6.483333,
+    "lateMinutes": 2.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.02,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-12-04",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-12-05",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:04"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.57,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-12-06",
+   "movements": [],
+   "leaveType": "إجازة بدون راتب",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "إجازة بدون راتب"
+   }
+  },
+  {
+   "date": "2026-12-07",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-12-08",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:41"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.3,
+    "exitHours": 0.0,
+    "netHours": 6.3,
+    "requiredHours": 6.5,
+    "approvedHours": 6.3,
+    "lateMinutes": 11.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.2,
+    "overtimeHours": 0.0,
+    "status": "متأخر"
+   }
+  },
+  {
+   "date": "2026-12-09",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.58,
+    "exitHours": 0.0,
+    "netHours": 6.58,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.08,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-12-10",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:27"
+    },
+    {
+     "type": "انصراف",
+     "time": "12:58"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 4.52,
+    "exitHours": 0.0,
+    "netHours": 4.52,
+    "requiredHours": 6.5,
+    "approvedHours": 4.52,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 122.0,
+    "deficitHours": 1.98,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-12-11",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:48"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:45"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 5.95,
+    "exitHours": 0.0,
+    "netHours": 5.95,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 5.95,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-12-12",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:28"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.55,
+    "exitHours": 0.0,
+    "netHours": 6.55,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.55,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-12-13",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-12-14",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.53,
+    "exitHours": 0.0,
+    "netHours": 6.53,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.03,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-12-15",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:30"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:04"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.07,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-12-16",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:37"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:05"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.47,
+    "exitHours": 0.0,
+    "netHours": 6.47,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 7.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.09,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-12-17",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:36"
+    },
+    {
+     "type": "خروج",
+     "time": "13:21"
+    },
+    {
+     "type": "عودة",
+     "time": "14:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:12"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.6,
+    "exitHours": 1.13,
+    "netHours": 5.47,
+    "requiredHours": 6.5,
+    "approvedHours": 5.57,
+    "lateMinutes": 6.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.93,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-12-18",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-12-19",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:40"
+    },
+    {
+     "type": "خروج",
+     "time": "12:40"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:01"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.35,
+    "exitHours": 0.0,
+    "netHours": 6.35,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.35,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-12-20",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:26"
+    },
+    {
+     "type": "انصراف",
+     "time": "12:33"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 4.12,
+    "exitHours": 0.0,
+    "netHours": 4.12,
+    "requiredHours": 6.5,
+    "approvedHours": 4.12,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 147.0,
+    "deficitHours": 2.38,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-12-21",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:32"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.47,
+    "exitHours": 0.0,
+    "netHours": 6.47,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 2.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-12-22",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.57,
+    "exitHours": 0.0,
+    "netHours": 6.57,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.07,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-12-23",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:40"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.32,
+    "exitHours": 0.0,
+    "netHours": 6.32,
+    "requiredHours": 6.5,
+    "approvedHours": 6.486667,
+    "lateMinutes": 10.0,
+    "earlyLeaveMinutes": 1.0,
+    "deficitHours": 0.01,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-12-24",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:31"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:36"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.08,
+    "exitHours": 0.0,
+    "netHours": 6.08,
+    "requiredHours": 6.5,
+    "approvedHours": 6.096667,
+    "lateMinutes": 1.0,
+    "earlyLeaveMinutes": 24.0,
+    "deficitHours": 0.4,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-12-25",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:48"
+    },
+    {
+     "type": "انصراف",
+     "time": "13:03"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 4.25,
+    "exitHours": 0.0,
+    "netHours": 4.25,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 4.25,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-12-26",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:40"
+    },
+    {
+     "type": "انصراف",
+     "time": "14:59"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عطلة أسبوعية",
+    "presenceHours": 6.32,
+    "exitHours": 0.0,
+    "netHours": 6.32,
+    "requiredHours": 0.0,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 6.32,
+    "status": "عطلة أسبوعية"
+   }
+  },
+  {
+   "date": "2026-12-27",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:29"
+    },
+    {
+     "type": "انصراف",
+     "time": "15:00"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 6.52,
+    "exitHours": 0.0,
+    "netHours": 6.52,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.02,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-12-28",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:34"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.066667,
+    "lateMinutes": 4.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.43,
+    "overtimeHours": 0.0,
+    "status": "حاضر"
+   }
+  },
+  {
+   "date": "2026-12-29",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:51"
+    },
+    {
+     "type": "انصراف",
+     "time": "13:35"
+    }
+   ],
+   "leaveType": "عمل عن بعد",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 4.73,
+    "exitHours": 0.0,
+    "netHours": 4.73,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 0.0,
+    "status": "عمل عن بعد"
+   }
+  },
+  {
+   "date": "2026-12-30",
+   "movements": [],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 0.0,
+    "exitHours": 0.0,
+    "netHours": 0.0,
+    "requiredHours": 6.5,
+    "approvedHours": 0.0,
+    "lateMinutes": 0.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 6.5,
+    "overtimeHours": 0.0,
+    "status": "غياب"
+   }
+  },
+  {
+   "date": "2026-12-31",
+   "movements": [
+    {
+     "type": "حضور",
+     "time": "08:35"
+    },
+    {
+     "type": "انصراف",
+     "time": "17:13"
+    }
+   ],
+   "leaveType": "",
+   "expected": {
+    "dayType": "عمل",
+    "presenceHours": 8.63,
+    "exitHours": 0.0,
+    "netHours": 8.63,
+    "requiredHours": 6.5,
+    "approvedHours": 6.5,
+    "lateMinutes": 5.0,
+    "earlyLeaveMinutes": 0.0,
+    "deficitHours": 0.0,
+    "overtimeHours": 2.21,
+    "status": "حاضر"
+   }
+  }
+ ]
+}
