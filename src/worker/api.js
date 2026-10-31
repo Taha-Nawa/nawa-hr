@@ -11,6 +11,7 @@ import { can, canReadEmployee, employeeScope, ROLES } from './authz.js';
 import { loadWorkSettings, validateWorkSettings } from './settings.js';
 import { ingestMoves, MAX_MOVES } from './gate.js';
 import { recomputeSlice } from './close.js';
+import { validateAllocations, replaceStatements } from './projects.js';
 
 const MAX_BODY = 64 * 1024;
 const MAX_RANGE_DAYS = 366;
@@ -113,8 +114,12 @@ add('GET', '/api/me', async ({ user }) => json({ ok: true, user }));
 // ---------------------------------------------------------------- الموظفون
 const EMP_COLS = `e.id, e.code, e.name, e.email, e.center_id AS centerId, c.name AS center, e.manager_id AS managerId,
   e.status, e.photo_url AS photo, e.start_date AS startDate, e.end_date AS endDate,
-  e.job_title AS jobTitle, e.department, e.contract_type AS contractType, e.project, e.manager_label AS managerLabel`;
-const TEXT_FIELDS = { jobTitle: 'job_title', department: 'department', contractType: 'contract_type', project: 'project', managerLabel: 'manager_label' };
+  e.job_title AS jobTitle, e.department, e.contract_type AS contractType, e.project, e.manager_label AS managerLabel,
+  e.name_en AS nameEn, e.job_title_en AS jobTitleEn, e.department_en AS departmentEn, e.manager_label_en AS managerLabelEn, c.name_en AS centerEn`;
+const TEXT_FIELDS = {
+  jobTitle: 'job_title', department: 'department', contractType: 'contract_type', project: 'project', managerLabel: 'manager_label',
+  nameEn: 'name_en', jobTitleEn: 'job_title_en', departmentEn: 'department_en', managerLabelEn: 'manager_label_en',
+};
 
 add('GET', '/api/employees', async ({ db, user }) => {
   const scope = employeeScope(user);
@@ -140,10 +145,12 @@ add('POST', '/api/employees', async ({ request, db, user }) => {
   const managerId = body.managerId ?? null;
   const stmts = [
     db.prepare(
-      `INSERT INTO employees (code, name, email, center_id, manager_id, start_date, job_title, department, contract_type, project, manager_label)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO employees (code, name, email, center_id, manager_id, start_date, job_title, department, contract_type, project, manager_label,
+                              name_en, job_title_en, department_en, manager_label_en)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(code, name, email, centerId, managerId, isDate(body.startDate) ? body.startDate : null,
-      clip(body.jobTitle, 120), clip(body.department, 120), clip(body.contractType, 60), clip(body.project, 300), clip(body.managerLabel, 120)),
+      clip(body.jobTitle, 120), clip(body.department, 120), clip(body.contractType, 60), clip(body.project, 300), clip(body.managerLabel, 200),
+      clip(body.nameEn, 120), clip(body.jobTitleEn, 120), clip(body.departmentEn, 120), clip(body.managerLabelEn, 200)),
   ];
   if (card) stmts.push(db.prepare('INSERT INTO badges (card, employee_id) VALUES (?, (SELECT id FROM employees WHERE code = ?))').bind(card, code));
   stmts.push(auditStmt(db, user, 'employee.create', 'employee', code, { name, email, card: !!card }));
@@ -170,7 +177,11 @@ const PATCHABLE = {
   department: (v) => (v === null ? null : clip(v, 120)),
   contractType: (v) => (v === null ? null : clip(v, 60)),
   project: (v) => (v === null ? null : clip(v, 300)),
-  managerLabel: (v) => (v === null ? null : clip(v, 120)),
+  managerLabel: (v) => (v === null ? null : clip(v, 200)),
+  nameEn: (v) => (v === null ? null : clip(v, 120)),
+  jobTitleEn: (v) => (v === null ? null : clip(v, 120)),
+  departmentEn: (v) => (v === null ? null : clip(v, 120)),
+  managerLabelEn: (v) => (v === null ? null : clip(v, 200)),
 };
 const COLUMN = { name: 'name', email: 'email', centerId: 'center_id', managerId: 'manager_id', status: 'status', photo: 'photo_url', startDate: 'start_date', endDate: 'end_date', ...TEXT_FIELDS };
 
@@ -216,6 +227,30 @@ add('PATCH', '/api/employees/:id', async ({ request, db, user, params }) => {
   return json({ ok: true, employee: row });
 });
 
+add('GET', '/api/employees/:id/projects', async ({ db, user, params }) => {
+  const id = Number(params.id);
+  const target = await db.prepare('SELECT id, manager_id FROM employees WHERE id = ?').bind(id).first();
+  if (!target) return notFound('الموظف');
+  if (!canReadEmployee(user, target)) return forbidden();
+  const r = await db
+    .prepare('SELECT funder, share, from_date AS "from", to_date AS "to" FROM employee_projects WHERE employee_id = ? ORDER BY from_date, funder')
+    .bind(id)
+    .all();
+  return json({ ok: true, allocations: r.results });
+});
+
+add('PUT', '/api/employees/:id/projects', async ({ request, db, user, params }) => {
+  if (!can(user, 'employee.update')) return forbidden();
+  const id = Number(params.id);
+  const { body, error } = await readJson(request);
+  if (error) return error;
+  if (!(await db.prepare('SELECT 1 AS x FROM employees WHERE id = ?').bind(id).first())) return notFound('الموظف');
+  const v = validateAllocations(body.allocations);
+  if (v.error) return bad(v.error);
+  await db.batch([...replaceStatements(db, id, v.rows), auditStmt(db, user, 'employee.projects', 'employee', id, { rows: v.rows.length })]);
+  return json({ ok: true, allocations: v.rows });
+});
+
 add('GET', '/api/employees/:id/days', async ({ db, user, params, url }) => {
   const id = Number(params.id);
   const target = await db.prepare('SELECT id, manager_id FROM employees WHERE id = ?').bind(id).first();
@@ -240,7 +275,7 @@ add('GET', '/api/employees/:id/days', async ({ db, user, params, url }) => {
 
 // ---------------------------------------------------------------- المراكز
 add('GET', '/api/centers', async ({ db }) => {
-  const r = await db.prepare('SELECT id, name, active FROM centers ORDER BY name').all();
+  const r = await db.prepare('SELECT id, name, name_en AS nameEn, active FROM centers ORDER BY name').all();
   return json({ ok: true, centers: r.results });
 });
 
@@ -258,6 +293,34 @@ add('POST', '/api/centers', async ({ request, db, user }) => {
     return isUnique(e) ? bad('المركز موجود من قبل', 409) : Promise.reject(e);
   }
   return json({ ok: true, center: { id, name, active: 1 } }, 201);
+});
+
+add('PATCH', '/api/centers/:id', async ({ request, db, user, params }) => {
+  if (!can(user, 'center.manage')) return forbidden();
+  const id = Number(params.id);
+  const { body, error } = await readJson(request);
+  if (error) return error;
+  const keys = Object.keys(body);
+  if (!keys.length || keys.some((k) => k !== 'name' && k !== 'nameEn')) return bad('الحقول المسموحة: name و nameEn');
+  const sets = [];
+  const vals = [];
+  if ('name' in body) {
+    const name = clip(body.name, 120);
+    if (!name || name.length < 2) return bad('اسم المركز مطلوب');
+    sets.push('name = ?');
+    vals.push(name);
+  }
+  if ('nameEn' in body) {
+    sets.push('name_en = ?');
+    vals.push(body.nameEn === null ? null : clip(body.nameEn, 120));
+  }
+  if (!(await db.prepare('SELECT 1 AS x FROM centers WHERE id = ?').bind(id).first())) return notFound('المركز');
+  try {
+    await db.batch([db.prepare(`UPDATE centers SET ${sets.join(', ')} WHERE id = ?`).bind(...vals, id), auditStmt(db, user, 'center.update', 'center', id, { changed: keys })]);
+  } catch (e) {
+    return isUnique(e) ? bad('الاسم مستخدم لمركز آخر', 409) : Promise.reject(e);
+  }
+  return json({ ok: true, center: await db.prepare('SELECT id, name, name_en AS nameEn, active FROM centers WHERE id = ?').bind(id).first() });
 });
 
 // ---------------------------------------------------------------- البطاقات
@@ -507,11 +570,12 @@ add('POST', '/api/import/employees', async ({ request, db, user }) => {
   for (const [i, r] of body.rows.entries()) {
     const code = clip(r?.code, 20);
     const name = clip(r?.name, 120);
+    const nameEn = clip(r?.nameEn, 120);
     const email = clip(r?.email, 200);
     let why = null;
     if (!code || !CODE_RE.test(code)) why = 'كود غير صالح';
     else if (seenCodes.has(code.toLowerCase())) why = 'كود مكرر في الملف';
-    else if (!name || name.length < 2) why = 'اسم مفقود';
+    else if ((name || nameEn || '').length < 2) why = 'اسم مفقود';
     else if (email && !EMAIL_RE.test(email)) why = 'بريد غير صالح';
     if (why) {
       rejected.push({ row: i + 1, code: code || null, reason: why });
@@ -520,31 +584,56 @@ add('POST', '/api/import/employees', async ({ request, db, user }) => {
     seenCodes.add(code.toLowerCase());
     good.push({
       code, name, email,
-      center: clip(r.center, 120),
+      center: clip(r.center, 120) ?? clip(r.centerEn, 120), centerEn: clip(r.centerEn, 120),
       jobTitle: clip(r.jobTitle, 120), department: clip(r.department, 120), contractType: clip(r.contractType, 60),
-      project: clip(r.project, 300), managerLabel: clip(r.managerLabel, 120),
+      project: clip(r.project, 300), managerLabel: clip(r.managerLabel, 200),
+      nameEn, jobTitleEn: clip(r.jobTitleEn, 120), departmentEn: clip(r.departmentEn, 120), managerLabelEn: clip(r.managerLabelEn, 200),
       startDate: isDate(r.startDate) ? r.startDate : null,
       card: clip(r.card, 120),
     });
   }
   if (good.length) {
     const json1 = JSON.stringify(good);
-    const centers = JSON.stringify([...new Set(good.map((g) => g.center).filter(Boolean))]);
+    const centerMap = new Map();
+    for (const g of good) if (g.center) centerMap.set(g.center, g.centerEn || centerMap.get(g.center) || null);
+    const centers = JSON.stringify([...centerMap].map(([name, nameEn]) => ({ name, nameEn })));
+    // المركز يُطابَق بالاسم الأساسي أو الإنجليزي؛ لا يُنشأ مركز جديد إلا إن لم يطابق أيٌّ منهما.
+    const centerId = (n, ne) =>
+      `(SELECT c.id FROM centers c WHERE c.name = ${n} OR c.name_en = ${n} OR (${ne} IS NOT NULL AND c.name_en = ${ne}) ORDER BY (c.name = ${n}) DESC LIMIT 1)`;
+    // الصفوف التي فيها اسم عربي تحدّث الاسم؛ التي بلا اسم عربي (ملف إنجليزي فقط) لا تمسّ الاسم الموجود.
+    const upsert = (withName) =>
+      db.prepare(
+        `INSERT INTO employees (code, name, email, center_id, start_date, job_title, department, contract_type, project, manager_label,
+                                name_en, job_title_en, department_en, manager_label_en)
+         SELECT json_extract(j.value,'$.code'), COALESCE(json_extract(j.value,'$.name'), json_extract(j.value,'$.nameEn')), json_extract(j.value,'$.email'),
+                ${centerId("json_extract(j.value,'$.center')", "json_extract(j.value,'$.centerEn')")}, json_extract(j.value,'$.startDate'),
+                json_extract(j.value,'$.jobTitle'), json_extract(j.value,'$.department'), json_extract(j.value,'$.contractType'),
+                json_extract(j.value,'$.project'), json_extract(j.value,'$.managerLabel'),
+                json_extract(j.value,'$.nameEn'), json_extract(j.value,'$.jobTitleEn'), json_extract(j.value,'$.departmentEn'),
+                json_extract(j.value,'$.managerLabelEn')
+         FROM json_each(?) j WHERE json_extract(j.value,'$.name') IS ${withName ? 'NOT ' : ''}NULL
+         ON CONFLICT(code) DO UPDATE SET ${withName ? 'name = excluded.name, ' : ''}center_id = COALESCE(excluded.center_id, employees.center_id),
+           job_title = COALESCE(excluded.job_title, employees.job_title), department = COALESCE(excluded.department, employees.department),
+           contract_type = COALESCE(excluded.contract_type, employees.contract_type),
+           project = COALESCE(excluded.project, employees.project), manager_label = COALESCE(excluded.manager_label, employees.manager_label),
+           start_date = COALESCE(excluded.start_date, employees.start_date), email = COALESCE(excluded.email, employees.email),
+           name_en = COALESCE(excluded.name_en, employees.name_en), job_title_en = COALESCE(excluded.job_title_en, employees.job_title_en),
+           department_en = COALESCE(excluded.department_en, employees.department_en),
+           manager_label_en = COALESCE(excluded.manager_label_en, employees.manager_label_en)`,
+      );
     try {
       await db.batch([
-        db.prepare('INSERT OR IGNORE INTO centers (name) SELECT value FROM json_each(?) WHERE true').bind(centers),
         db.prepare(
-          `INSERT INTO employees (code, name, email, center_id, start_date, job_title, department, contract_type, project, manager_label)
-           SELECT json_extract(j.value,'$.code'), json_extract(j.value,'$.name'), json_extract(j.value,'$.email'),
-                  (SELECT id FROM centers WHERE name = json_extract(j.value,'$.center')), json_extract(j.value,'$.startDate'),
-                  json_extract(j.value,'$.jobTitle'), json_extract(j.value,'$.department'), json_extract(j.value,'$.contractType'),
-                  json_extract(j.value,'$.project'), json_extract(j.value,'$.managerLabel')
-           FROM json_each(?) j WHERE true
-           ON CONFLICT(code) DO UPDATE SET name = excluded.name, center_id = excluded.center_id, job_title = excluded.job_title,
-             department = excluded.department, contract_type = excluded.contract_type, project = excluded.project,
-             manager_label = excluded.manager_label, start_date = COALESCE(excluded.start_date, employees.start_date),
-             email = COALESCE(excluded.email, employees.email)`,
-        ).bind(json1),
+          `INSERT INTO centers (name, name_en)
+           SELECT json_extract(j.value,'$.name'), json_extract(j.value,'$.nameEn') FROM json_each(?) j
+           WHERE ${centerId("json_extract(j.value,'$.name')", "json_extract(j.value,'$.nameEn')")} IS NULL`,
+        ).bind(centers),
+        db.prepare(
+          `UPDATE centers SET name_en = (SELECT json_extract(j.value,'$.nameEn') FROM json_each(?1) j WHERE json_extract(j.value,'$.name') = centers.name)
+           WHERE name_en IS NULL AND name IN (SELECT json_extract(value,'$.name') FROM json_each(?1) WHERE json_extract(value,'$.nameEn') IS NOT NULL)`,
+        ).bind(centers),
+        upsert(true).bind(json1),
+        upsert(false).bind(json1),
         db.prepare(
           `INSERT OR IGNORE INTO badges (card, employee_id)
            SELECT json_extract(j.value,'$.card'), e.id FROM json_each(?) j JOIN employees e ON e.code = json_extract(j.value,'$.code')
@@ -557,6 +646,121 @@ add('POST', '/api/import/employees', async ({ request, db, user }) => {
     }
   }
   return json({ ok: true, imported: good.length, rejected });
+});
+
+// الاسم للمطابقة: أحرف وأرقام فقط بحروف صغيرة (يتجاوز الشرطات والفراغات والنقاط واختلاف حالة الأحرف)
+const nameKey = (v) => String(v || '').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+// «اسم المدير – المسمى» كما في إكسل: الاسم هو ما قبل الشرطة الطويلة أو " - "
+// (الشرطة العادية قد تكون داخل الاسم نفسه مثل «Al - Faleet»، فلا نقسم عليها إلا إن لم توجد الشرطة الطويلة)
+const managerNameOf = (label) => {
+  const t = String(label || '');
+  return /[–—]/.test(t) ? t.split(/[–—]/)[0] : t.split(/\s-\s/)[0];
+};
+
+add('POST', '/api/import/managers', async ({ request, db, user }) => {
+  if (!can(user, 'import.run')) return forbidden();
+  const { body, error } = await readJson(request);
+  if (error) return error;
+  const replace = body.replace === true;
+  const all = (await db.prepare('SELECT id, code, name, name_en, manager_id, manager_label, manager_label_en FROM employees').all()).results;
+  const byKey = new Map();
+  for (const e of all) {
+    for (const k of new Set([nameKey(e.name), nameKey(e.name_en)])) {
+      if (!k) continue;
+      if (!byKey.has(k)) byKey.set(k, new Set());
+      byKey.get(k).add(e.id);
+    }
+  }
+  const managerOf = new Map(all.map((e) => [e.id, e.manager_id]));
+  const unmatched = [];
+  const changes = [];
+  for (const e of all.sort((a, b) => a.code.localeCompare(b.code))) {
+    const label = e.manager_label_en || e.manager_label;
+    if (!label) continue;
+    if (e.manager_id != null && !replace) continue;
+    const ids = byKey.get(nameKey(managerNameOf(label)));
+    if (!ids || ids.size !== 1) {
+      unmatched.push({ code: e.code, label, reason: ids ? 'اسم المدير يطابق أكثر من موظف' : 'المدير ليس موظفاً في النظام' });
+      continue;
+    }
+    const mgr = [...ids][0];
+    if (mgr === e.id) {
+      unmatched.push({ code: e.code, label, reason: 'الموظف مدير نفسه' });
+      continue;
+    }
+    if (managerOf.get(e.id) === mgr) continue;
+    // لا حلقات: إن كان e فوق المدير الجديد في السلسلة فلا نربط
+    let up = mgr;
+    let loop = false;
+    for (let i = 0; up != null && i < 100; i++) {
+      if (up === e.id) { loop = true; break; }
+      up = managerOf.get(up);
+    }
+    if (loop) {
+      unmatched.push({ code: e.code, label, reason: 'يُنشئ حلقة في سلسلة المديرين' });
+      continue;
+    }
+    managerOf.set(e.id, mgr);
+    changes.push({ e: e.id, m: mgr });
+  }
+  if (changes.length) {
+    const j = JSON.stringify(changes);
+    await db.batch([
+      db.prepare(
+        `UPDATE employees SET manager_id = (SELECT json_extract(j.value,'$.m') FROM json_each(?1) j WHERE json_extract(j.value,'$.e') = employees.id)
+         WHERE id IN (SELECT json_extract(value,'$.e') FROM json_each(?1))`,
+      ).bind(j),
+      auditStmt(db, user, 'import.managers', 'employees', null, { changed: changes.length, unmatched: unmatched.length, replace }),
+    ]);
+  }
+  return json({ ok: true, linked: changes.length, unmatched });
+});
+
+add('POST', '/api/import/projects', async ({ request, db, user }) => {
+  if (!can(user, 'import.run')) return forbidden();
+  const { body, error } = await readJson(request);
+  if (error) return error;
+  if (!Array.isArray(body.rows) || body.rows.length === 0 || body.rows.length > IMPORT_MAX_ROWS) return bad(`الصفوف مطلوبة (1–${IMPORT_MAX_ROWS})`);
+  // صفوف كل موظف يجب أن تصل في نفس الدفعة: توزيعه القديم يُستبدل كاملاً بما في الدفعة.
+  const groups = new Map();
+  const rejected = [];
+  for (const r of body.rows) {
+    const code = clip(r?.code, 20);
+    if (!code) {
+      rejected.push({ code: null, reason: 'كود الموظف مفقود' });
+      continue;
+    }
+    if (!groups.has(code)) groups.set(code, []);
+    groups.get(code).push({ funder: r.funder, share: r.share, from: r.from, to: r.to });
+  }
+  const known = new Set(
+    (await db.prepare('SELECT code FROM employees WHERE code IN (SELECT value FROM json_each(?))').bind(JSON.stringify([...groups.keys()])).all()).results.map((x) => x.code),
+  );
+  const good = [];
+  for (const [code, rows] of groups) {
+    if (!known.has(code)) {
+      rejected.push({ code, reason: 'الموظف غير موجود' });
+      continue;
+    }
+    const v = validateAllocations(rows);
+    if (v.error) rejected.push({ code, reason: v.error });
+    else for (const x of v.rows) good.push({ code, ...x });
+  }
+  const codes = [...new Set(good.map((g) => g.code))];
+  if (codes.length) {
+    await db.batch([
+      db.prepare('DELETE FROM employee_projects WHERE employee_id IN (SELECT id FROM employees WHERE code IN (SELECT value FROM json_each(?)))').bind(JSON.stringify(codes)),
+      db
+        .prepare(
+          `INSERT INTO employee_projects (employee_id, funder, share, from_date, to_date)
+           SELECT e.id, json_extract(j.value,'$.funder'), json_extract(j.value,'$.share'), json_extract(j.value,'$.from'), json_extract(j.value,'$.to')
+           FROM json_each(?) j JOIN employees e ON e.code = json_extract(j.value,'$.code') WHERE true`,
+        )
+        .bind(JSON.stringify(good)),
+      auditStmt(db, user, 'import.projects', 'employee_projects', null, { employees: codes.length, rows: good.length, rejected: rejected.length }),
+    ]);
+  }
+  return json({ ok: true, employees: codes.length, rows: good.length, rejected });
 });
 
 add('POST', '/api/import/badges', async ({ request, db, user }) => {

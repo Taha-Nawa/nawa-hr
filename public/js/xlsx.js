@@ -101,7 +101,8 @@ function readSheet(doc, strings, isDate) {
       else if (t === 'e') val = null;
       else if (v !== undefined && v !== '') {
         const n = Number(v);
-        val = isDate[Number(c.getAttribute('s') || 0)] ? serialToDate(n) : n;
+        // خلية وقت فقط (كسر من يوم) تبقى رقماً ليحوّلها المستورد إلى HH:MM؛ غير ذلك من التواريخ يصير YYYY-MM-DD
+        val = isDate[Number(c.getAttribute('s') || 0)] && !(n >= 0 && n < 1) ? serialToDate(n) : n;
       }
       out[ref ? colIndex(ref) : out.length] = val;
     }
