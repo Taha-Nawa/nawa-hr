@@ -270,8 +270,15 @@ var CROSS_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/
 var resTimer=0, lastRec=null;
 function setIdle(){
   clearTimeout(resTimer); lastRec=null;
-  var r=$("#res"); r.className="res"; r.innerHTML='<span class="idle">'+ico("i-qr")+'وجّه رمز البطاقة نحو الكاميرا</span>';
+  var r=$("#res"); r.className="res"; r.innerHTML="";
 }
+/* يُخفى بحركة خروج قصيرة ثم يُفرَّغ */
+function hideRes(){
+  var r=$("#res"); if(!r.classList.contains("ok")&&!r.classList.contains("bad"))return;
+  r.classList.add("out"); clearTimeout(resTimer);
+  resTimer=setTimeout(setIdle,260);
+}
+$("#res").onclick=hideRes;
 function flashHit(ok){
   var s=$("#scanBox"); $("#flashBadge").innerHTML=ok?CHECK_SVG:CROSS_SVG;
   s.classList.remove("hit-ok","hit-bad"); void s.offsetWidth;
@@ -294,11 +301,10 @@ function showRes(ok,title,code,b,rec){
   w.appendChild(m);
   if(ok){
     var h=el("div","hint"); h.innerHTML=ico("i-eye"); h.appendChild(document.createTextNode("طابق الوجه قبل السماح بالدخول")); w.appendChild(h);
-    var s=el("div","sent"); s.id="resSent"; w.appendChild(s);
   }
   r.appendChild(w);
   r.classList.remove("pop"); void r.offsetWidth; r.classList.add("pop");
-  resTimer=setTimeout(setIdle, ok?14000:9000);
+  resTimer=setTimeout(hideRes, ok?3200:4500);
 }
 /* حالة وصول آخر حركة إلى كل وجهة: تظهر في بطاقة النتيجة نفسها فيطمئن الحارس أنها حُفظت */
 function updSent(){
@@ -341,13 +347,26 @@ function addFeed(x,fresh){
   row.appendChild(el("span","what",x.ok?(x.type?lbl(x.type):""):"مرفوضة"));
   row.appendChild(el("span","t",x.time));
   f.insertBefore(row,f.firstChild);
-  while(f.children.length>8)f.removeChild(f.lastChild);
+  while(f.children.length>400)f.removeChild(f.lastChild);
+  f.scrollTop=0;
+}
+/* السجل يعرض كل حركات اليوم المخزّنة على الجهاز (الأحدث أولاً) ويُعاد بناؤه عند تغيّر اليوم */
+var feedDay="";
+function rebuildFeed(){
+  var today=dstr(new Date()); feedDay=today;
+  var f=$("#feed"); f.innerHTML="";
+  var rows=log.filter(function(r){return r.date===today});
+  if(!rows.length){
+    var em=el("div","em"); em.innerHTML=ico("i-qr")+"ستظهر هنا حركات اليوم فور تسجيلها"; f.appendChild(em); return;
+  }
+  rows.slice().reverse().forEach(function(r){addFeed({name:r.name,time:r.time,type:r.type,ok:true})});
+  f.scrollTop=0;
 }
 function esc(s){var d=document.createElement("div");d.textContent=s==null?"":s;return d.innerHTML}
 /* ---------- العرض ---------- */
 var DAYS=["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
 var MONTHS=["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
-function clockTick(){var d=new Date(); $("#clk").textContent=tstr(d); $("#dt").textContent=DAYS[d.getDay()]+" "+d.getDate()+" "+MONTHS[d.getMonth()]+" "+d.getFullYear()}
+function clockTick(){var d=new Date(); if(feedDay&&feedDay!==dstr(d))rebuildFeed(); $("#clk").textContent=tstr(d); $("#dt").textContent=DAYS[d.getDay()]+" "+d.getDate()+" "+MONTHS[d.getMonth()]+" "+d.getFullYear()}
 function render(){
   var today=dstr(new Date()), n=0;
   for(var i=0;i<log.length;i++)if(log[i].date===today)n++;
@@ -487,8 +506,7 @@ if(cfg&&cfg.url2){
   var _u2=cleanUrl2(cfg.url2);
   if(_u2!==cfg.url2&&validUrl2(_u2)){cfg.url2=_u2; save(K.cfg,cfg);}
 }
-log.slice(0,5).reverse().forEach(function(r){
-  addFeed({name:r.name,time:r.time,type:r.type,ok:true})});
+rebuildFeed();
 if(cfg&&cfg.url)openMain(); else openSetup(true);
 setInterval(function(){render();sync();sync2()},20000);
 setInterval(updateWarn,60000);

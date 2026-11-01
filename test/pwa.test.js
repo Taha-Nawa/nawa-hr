@@ -85,3 +85,19 @@ test('بوابة الحضور: التاريخ ميلادي بأسماء الأش
   assert.match(months, /"ديسمبر"/);
   assert.doesNotMatch(months, /كانون|تشرين|شباط|آذار/);
 });
+
+test('بوابة الحضور: نتيجة التسجيل إشعار علوي يختفي وحده، وسجل اليوم قابل للتمرير بكل حركات اليوم', () => {
+  const css = read('gate/gate.css');
+  const js = read('gate/gate.js');
+  const html = read('gate/index.html');
+  // الإشعار: ثابت أعلى الصفحة فوق المحتوى، ولا يشغل مساحة وهو فارغ
+  assert.match(css, /\.res\{[^}]*position:fixed/);
+  assert.match(css, /\.res:not\(\.ok\):not\(\.bad\)\{display:none/);
+  assert.match(js, /resTimer=setTimeout\(hideRes/);
+  // السجل: يُعاد بناؤه من حركات اليوم كاملة، ولا يُقصّ إلى آخر 5 حركات
+  assert.match(js, /function rebuildFeed\(/);
+  assert.doesNotMatch(js, /log\.slice\(0,\s*5\)/);
+  assert.match(css, /#feed\{[^}]*overflow-y:auto/);
+  assert.match(html, /id="feed"/);
+  assert.match(html, /id="cnt"/);
+});
