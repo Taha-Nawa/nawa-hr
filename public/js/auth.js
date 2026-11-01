@@ -11,7 +11,10 @@ export async function startLogin() {
   const verifier = rand(48);
   const state = rand(24);
   const challenge = b64url(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))));
-  sessionStorage.setItem(KEY, JSON.stringify({ verifier, state, tenant: cfg.tenant, clientId: cfg.clientId }));
+  const saved = JSON.stringify({ verifier, state, tenant: cfg.tenant, clientId: cfg.clientId, at: Date.now() });
+  sessionStorage.setItem(KEY, saved);
+  // نسخة احتياطية قصيرة العمر: على الآيفون قد تُفتح صفحة Microsoft في نافذة منفصلة داخل التطبيق المثبّت فلا تصل إليها sessionStorage.
+  try { localStorage.setItem(KEY, saved); } catch { /* التخزين غير متاح */ }
   const q = new URLSearchParams({
     client_id: cfg.clientId,
     response_type: 'code',
@@ -36,13 +39,15 @@ export function hasCallback() {
 export async function finishLogin() {
   const p = new URLSearchParams(location.hash.slice(1));
   history.replaceState(null, '', location.pathname); // لا نُبقي الرمز في العنوان
-  let saved;
-  try {
-    saved = JSON.parse(sessionStorage.getItem(KEY) || 'null');
-  } catch {
-    saved = null;
+  let saved = null;
+  for (const store of [sessionStorage, localStorage]) {
+    try {
+      saved ||= JSON.parse(store.getItem(KEY) || 'null');
+    } catch { /* تالف: نتجاهله */ }
   }
   sessionStorage.removeItem(KEY);
+  try { localStorage.removeItem(KEY); } catch { /* غير متاح */ }
+  if (saved && Date.now() - (saved.at || 0) > 15 * 60 * 1000) saved = null; // محاولة قديمة
 
   if (p.get('error')) return { error: p.get('error') === 'access_denied' ? 'أُلغي تسجيل الدخول.' : 'رفضت Microsoft طلب الدخول، حاول مرة أخرى.' };
   if (!saved || !p.get('code') || p.get('state') !== saved.state) return { error: 'انتهت صلاحية محاولة الدخول، ابدأ من جديد.' };

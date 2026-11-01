@@ -1,5 +1,7 @@
-import { h, clear, dialog, field, select, toast, confirmBox, copyText } from '../dom.js';
+import { h, clear, dialog, field, select, toast, confirmBox, copyText, icon } from '../dom.js';
 import { get, put } from '../api.js';
+import { qrSvg } from '../qr.js';
+import { canInstall, promptInstall, isStandalone, isIOS } from '../pwa.js';
 
 const AUDIENCE = {
   all: { label: 'كل المستخدمين', chip: 'chip-present' },
@@ -42,6 +44,53 @@ function gateCard(user) {
     h('div', { class: 'link-actions' },
       h('button', { type: 'button', class: 'btn btn-sm btn-primary', onclick: () => copyText(url) }, 'نسخ الرابط'),
       user.role === 'admin' ? h('a', { class: 'btn btn-sm', href: '#/devices' }, 'أجهزة البوابة') : null));
+}
+
+
+/** قسم «التطبيق على الجوال والتابلت»: خطوات التثبيت لكل جهاز + رموز QR تُفتح بكاميرا الجوال */
+function installSection(user) {
+  const appUrl = `${location.origin}/`;
+  const gateUrl = `${location.origin}/gate/`;
+  const showGate = STAFF_ROLES.includes(user.role);
+  const targets = [{ title: 'نظام الحضور والطلبات', url: appUrl }, ...(showGate ? [{ title: 'بوابة الحضور (جهاز المدخل)', url: gateUrl }] : [])];
+
+  const qrRow = h('div', { class: 'qr-row' });
+  for (const t of targets) {
+    const box = h('div', { class: 'qr-card' }, h('b', null, t.title), h('span', { dir: 'ltr' }, t.url));
+    qrSvg(t.url).then((svg) => box.prepend(svg), () => box.prepend(h('p', { class: 'small muted' }, 'تعذّر رسم الرمز')));
+    qrRow.append(box);
+  }
+
+  const installBtn = h('button', { type: 'button', class: 'btn btn-primary', hidden: true, onclick: async () => {
+    if (await promptInstall()) toast('تم تثبيت التطبيق');
+    refreshBtn();
+  } }, icon('download'), 'تثبيت التطبيق على هذا الجهاز');
+  const refreshBtn = () => { installBtn.hidden = !canInstall() || isStandalone(); };
+  window.addEventListener('nawa:installable', refreshBtn);
+  window.addEventListener('nawa:installed', refreshBtn);
+  refreshBtn();
+
+  return h('section', { class: 'install' },
+    h('div', { class: 'install-head' }, icon('phone'),
+      h('div', null, h('h2', null, 'التطبيق على الجوال والتابلت'),
+        h('p', { class: 'sub' }, isStandalone() ? 'أنت تستعمل التطبيق المثبّت الآن.' : 'يعمل على أندرويد وآيفون وآيباد بلا متجر تطبيقات، ويظهر على الشاشة الرئيسية كأي تطبيق.'))),
+    installBtn,
+    h('div', { class: 'install-grid' },
+      h('article', { class: 'install-card' },
+        h('h3', null, icon('phone'), 'أندرويد (Chrome)'),
+        h('ol', null,
+          h('li', null, 'افتح رابط النظام في متصفح Chrome.'),
+          h('li', null, 'اضغط زر «تثبيت التطبيق على هذا الجهاز» أعلاه، أو القائمة ⋮ ثم «تثبيت التطبيق».'),
+          h('li', null, 'ستجد الأيقونة على الشاشة الرئيسية.'))),
+      h('article', { class: `install-card${isIOS() ? ' link-pinned' : ''}` },
+        h('h3', null, icon('phone'), 'آيفون وآيباد (Safari)'),
+        h('ol', null,
+          h('li', null, 'افتح الرابط في متصفح Safari (لا في تطبيقات أخرى).'),
+          h('li', null, 'اضغط زر المشاركة ', icon('share'), ' ثم «إضافة إلى الشاشة الرئيسية».'),
+          h('li', null, 'اضغط «إضافة»، ثم افتحه من الأيقونة الجديدة.')))),
+    h('div', null, h('h3', null, 'افتحه على جوالك بمسح الرمز'), h('p', { class: 'sub' }, 'وجّه كاميرا الجوال نحو الرمز لفتح الرابط مباشرة.')),
+    qrRow,
+    showGate ? h('p', { class: 'notice notice-warn' }, 'بوابة الحضور على جهاز جديد: افتح رابطها وثبّتها، ثم أدخل إعدادات الجهاز مرة واحدة (اسم البوابة ومعرّف الجهاز ورابط Google ورمزه، ورمز جهاز النظام الجديد). رابط النظام الجديد يُملأ تلقائياً.') : null);
 }
 
 export default async function render({ user }) {
@@ -129,7 +178,8 @@ export default async function render({ user }) {
     h('header', { class: 'page-head' },
       h('div', null, h('h1', null, 'الروابط'), h('p', { class: 'sub' }, 'كل روابط التشغيل في مكان واحد: البوابة، الملفات، المجلدات، والمستودعات.')),
       addBtn),
-    out);
+    out,
+    installSection(user));
 
   state = await get('/api/links');
   addBtn.hidden = !state.canManage;

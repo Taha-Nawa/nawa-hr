@@ -32,8 +32,21 @@ export function clear(el) {
 }
 
 // ---- تنسيق ----
+const SVG_NS = 'http://www.w3.org/2000/svg';
+/** أيقونة من ملف /img/icons.svg (عنصر SVG بالفضاء الصحيح؛ لا تحتاج style مضمّناً). */
+export function icon(name, cls = '') {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('class', `ic ${cls}`.trim());
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  const use = document.createElementNS(SVG_NS, 'use');
+  use.setAttribute('href', `/img/icons.svg#i-${name}`);
+  svg.append(use);
+  return svg;
+}
+
 export const AR_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-export const AR_MONTHS = ['كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران', 'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'];
+export const AR_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
 export function todayLocal(tz = 'Asia/Hebron') {
   return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
@@ -73,8 +86,9 @@ export function toast(message, kind = 'ok') {
  * يفتح نافذة حوار. content: عقدة DOM. يُرجع { close, el }.
  * onClose يُستدعى عند الإغلاق بأي طريقة.
  */
-export function dialog({ title, content, wide = false, onClose }) {
-  const dlg = h('dialog', { class: `dlg${wide ? ' dlg-wide' : ''}`, 'aria-label': title });
+export function dialog({ title, content, wide = false, sheet = false, onClose }) {
+  const dlg = h('dialog', { class: `dlg${wide ? ' dlg-wide' : ''}${sheet ? ' dlg-sheet' : ''}`, 'aria-label': title });
+  if (sheet) dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); }); // ورقة التنقل فقط: النقر على الخلفية يُغلقها (النماذج لا تُغلق بالخطأ فتضيع بياناتها)
   const closeBtn = h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'إغلاق', onclick: () => dlg.close() }, '✕');
   dlg.append(h('header', { class: 'dlg-head' }, h('h2', null, title), closeBtn), h('div', { class: 'dlg-body' }, content));
   dlg.addEventListener('close', () => {

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>بوابة الحضور — نوى</title>
+<meta name="description" content="بوابة تسجيل الحضور والانصراف — جمعية نوى للثقافة والفنون">
+<meta name="theme-color" content="#A21008">
+<meta name="color-scheme" content="light">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="بوابة نوى">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="gate.css">
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false"><defs>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></symbol>
+  <symbol id="i-flip" viewBox="0 0 24 24"><path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/><path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/><path d="m16 8-3-3 3-3"/><path d="m8 16 3 3-3 3"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-qr" viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+</defs></svg>
+<div class="wrap">
+  <!-- ============ الإعدادات ============ -->
+  <div id="setup" class="setup hide">
+    <div class="head">
+      <span class="brand" role="img" aria-label="جمعية نوى للثقافة والفنون"></span>
+      <div>
+        <h2>إعداد جهاز البوابة</h2>
+        <p class="sub">تُضبط هذه القيم مرة واحدة على كل جهاز، وتبقى محفوظة بعد إغلاق التطبيق.</p>
+      </div>
+    </div>
+    <div class="strip" aria-hidden="true"></div>
+    <div class="fields">
+      <fieldset class="grp">
+        <legend>هذا الجهاز</legend>
+        <label class="f"><span>اسم البوابة</span>
+          <select id="cfgCenter">
+            <option>مركز الإدارة والتدريب</option>
+            <option>مركز الخضر للأطفال</option>
+            <option>مركز الزيتونة</option>
+            <option>روضة الحكايات</option>
+            <option>نقطة تعليمية خارجي</option>
+            <option>حاضنة النوى</option>
+            <option>منتزهات النوى - البيارة</option>
+          </select></label>
+        <label class="f"><span>معرّف الجهاز</span><input id="cfgDevice" dir="ltr" placeholder="DEV-01"></label>
+      </fieldset>
+      <fieldset class="grp">
+        <legend>Google (المسار الحالي)</legend>
+        <label class="f"><span>رابط الخدمة (Web app URL)</span><input id="cfgUrl" dir="ltr" placeholder="https://script.google.com/macros/s/.../exec"></label>
+        <label class="f"><span>رمز الحماية (Token)</span><input id="cfgToken" dir="ltr" placeholder="الرمز نفسه الموجود في السكربت"></label>
+      </fieldset>
+      <fieldset class="grp">
+        <legend>النظام الجديد <em>اختياري</em></legend>
+        <label class="f"><span>رابط الخدمة</span><input id="cfgUrl2" dir="ltr" placeholder="https://.../api/gate"></label>
+        <label class="f"><span>رمز الجهاز (Token)</span><input id="cfgToken2" dir="ltr" placeholder="رمز الجهاز من النظام الجديد"></label>
+        <p class="help">عند تعبئته تُرسل كل حركة إلى Google وإلى النظام الجديد معاً، وتبقى Google تعمل حتى لو تعطل النظام الجديد.</p>
+      </fieldset>
+    </div>
+    <div class="acts">
+      <button class="btn" id="btnSave"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>حفظ وبدء التشغيل</button>
+      <button class="btn ghost" id="btnTest"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg>اختبار الاتصال وتنزيل البطاقات</button>
+      <button class="btn ghost" id="btnTest2"><svg class="ic" aria-hidden="true"><use href="#i-zap"/></svg>اختبار النظام الجديد</button>
+      <button class="btn ghost" id="btnExport"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg>تنزيل نسخة احتياطية من الحركات (CSV)</button>
+      <button class="btn ghost hide" id="btnBack"><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg>رجوع لشاشة المسح</button>
+      <button class="btn ghost hide" id="btnInstall" type="button"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg>تثبيت التطبيق على هذا الجهاز</button>
+      <div class="note hide ios-hint" id="iosHint">للتثبيت على الآيفون أو الآيباد: افتح هذه الصفحة في Safari، ثم اضغط زر المشاركة <svg class="ic" aria-hidden="true"><use href="#i-share"/></svg> واختر «إضافة إلى الشاشة الرئيسية». سيعمل بعدها كتطبيق بملء الشاشة.</div>
+      <div class="note">
+        رمز الحماية يمنع أي شخص خارجي من إرسال حركات وهمية إلى الجدول. اجعله طويلاً وعشوائياً،
+        ولا تكتبه في أي مكان يصل إليه الموظفون.
+      </div>
+      <div class="note" id="cacheInfo"></div>
+    </div>
+  </div>
+  <!-- ============ شاشة المسح ============ -->
+  <div id="main" class="wrap hide">
+    <header class="gate">
+      <span class="brand" role="img" aria-label="جمعية نوى للثقافة والفنون"></span>
+      <div class="gname"><small>بوابة</small><strong id="gateName">—</strong></div>
+      <span class="conn" id="conn"><span class="cdot"></span><span id="connLbl">متصل</span></span>
+      <div class="clockbox"><div class="clock" id="clk">--:--</div><div class="date" id="dt"></div></div>
+      <button class="cog" id="btnCfg" aria-label="الإعدادات"><svg class="ic" aria-hidden="true"><use href="#i-sliders"/></svg></button>
+    </header>
+    <div class="strip" aria-hidden="true"></div>
+    <div class="warn hide" id="warn" role="status"></div>
+    <div class="grid" id="grid" role="group" aria-label="نوع الحركة">
+      <button class="mv t-in"   data-t="حضور"   aria-pressed="true"><span class="md"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg></span>حضور</button>
+      <button class="mv t-out"  data-t="خروج"   aria-pressed="false"><span class="md"><svg class="ic" aria-hidden="true"><use href="#i-out"/></svg></span>مغادرة</button>
+      <button class="mv t-back" data-t="عودة"   aria-pressed="false"><span class="md"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg></span>عودة</button>
+      <button class="mv t-end"  data-t="انصراف" aria-pressed="false"><span class="md"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg></span>انصراف</button>
+    </div>
+    <div class="scan" id="scanBox">
+      <div class="ph" id="ph"><svg class="ic" aria-hidden="true"><use href="#i-qr"/></svg><span>جارٍ تشغيل الكاميرا…</span></div>
+      <video id="vid" playsinline muted class="hide"></video>
+      <button class="flip hide" id="btnFlip" type="button" aria-label="تبديل الكاميرا (أمامية/خلفية)"><svg class="ic" aria-hidden="true"><use href="#i-flip"/></svg></button>
+      <span class="cor tl"></span><span class="cor tr"></span>
+      <span class="cor bl"></span><span class="cor br"></span>
+      <div class="flash" aria-hidden="true"><div class="badge" id="flashBadge"></div></div>
+      <div class="mode t-in" id="mode"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg><span id="modeLbl">حضور</span></div>
+    </div>
+    <div class="res" id="res" role="status" aria-live="polite"></div>
+    <section class="feed">
+      <h4>آخر الحركات</h4>
+      <div id="feed"><div class="em"><svg class="ic" aria-hidden="true"><use href="#i-qr"/></svg>ستظهر هنا حركات اليوم فور تسجيلها</div></div>
+    </section>
+    <footer class="foot">
+      <span class="today">حركات اليوم<b id="cnt">0</b></span>
+      <span class="sync" id="syncG"><i class="sdot"></i><b class="dst">Google</b><span class="pend zero" id="pend">لا شيء بانتظار الإرسال</span></span>
+      <span class="sync hide" id="syncN"><i class="sdot"></i><b class="dst">النظام الجديد</b><span class="pend zero" id="pend2">لا شيء بانتظار الإرسال</span></span>
+    </footer>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="jsqr.js"></script>
+<script src="gate.js"></script>
+</body>
+</html>

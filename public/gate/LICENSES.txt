@@ -1,0 +1,3 @@
+مكتبات خارجية مضمّنة في هذه البوابة:
+- jsQR 1.4.0 — Apache-2.0 — https://github.com/cozmo/jsQR (jsqr.js)
+- Alexandria (خط) — SIL Open Font License 1.1 — fonts/OFL.txt

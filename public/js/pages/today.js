@@ -93,9 +93,9 @@ export default async function render({ user }) {
     const centers = [...new Set(rows.map((r) => r.center).filter(Boolean))].sort();
     clear(tools).append(
       h('input', { type: 'search', class: 'search', placeholder: 'بحث بالاسم أو الكود', value: q, 'aria-label': 'بحث', oninput: (e) => { q = e.target.value.trim(); drawTable(); } }),
-      centers.length > 1
-        ? h('select', { 'aria-label': 'المركز', onchange: (e) => { center = e.target.value; drawTable(); } }, h('option', { value: '' }, 'كل المراكز'), centers.map((c) => h('option', { value: c, selected: c === center }, c)))
-        : null,
+      ...(centers.length > 1
+        ? [h('select', { 'aria-label': 'المركز', onchange: (e) => { center = e.target.value; drawTable(); } }, h('option', { value: '' }, 'كل المراكز'), centers.map((c) => h('option', { value: c, selected: c === center }, c)))]
+        : []), // لا نمرّر null إلى append الأصلية: تكتبه نصاً «null»
     );
     drawTable();
   }

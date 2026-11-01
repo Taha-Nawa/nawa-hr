@@ -1,21 +1,23 @@
-import { h, $, clear, toast } from './dom.js';
+import { h, $, clear, toast, icon, dialog } from './dom.js';
 import { get, setUnauthorizedHandler } from './api.js';
 import { startLogin, hasCallback, finishLogin, logout } from './auth.js';
+import './pwa.js';
 
 const ROLE_LABEL = { employee: 'موظف', manager: 'مدير مباشر', hr: 'موارد بشرية', director: 'مدير عام', admin: 'مسؤول النظام' };
 const ALL = ['employee', 'manager', 'hr', 'director', 'admin'];
 
+// tab: تظهر في شريط الأزرار السفلي على الجوال؛ الباقي في ورقة «المزيد».
 const PAGES = [
-  { path: 'today', title: 'لوحة اليوم', roles: ALL, load: () => import('./pages/today.js') },
-  { path: 'employees', title: 'الموظفون', roles: ALL, load: () => import('./pages/employees.js') },
+  { path: 'today', title: 'لوحة اليوم', short: 'اليوم', icon: 'today', tab: true, roles: ALL, load: () => import('./pages/today.js') },
+  { path: 'employees', title: 'الموظفون', short: 'الموظفون', icon: 'users', tab: true, roles: ALL, load: () => import('./pages/employees.js') },
   { path: 'employees/:id', title: 'الموظف', roles: ALL, nav: 'employees', load: () => import('./pages/employee.js') },
-  { path: 'reports', title: 'التقارير', roles: ALL, load: () => import('./pages/reports.js') },
-  { path: 'links', title: 'الروابط', roles: ALL, load: () => import('./pages/links.js') },
-  { path: 'settings', title: 'الإعدادات والعطل', roles: ['hr', 'director', 'admin'], load: () => import('./pages/settings.js') },
-  { path: 'import', title: 'الاستيراد من إكسل', roles: ['hr', 'admin'], load: () => import('./pages/import.js') },
-  { path: 'devices', title: 'أجهزة البوابة', roles: ['admin'], load: () => import('./pages/devices.js') },
-  { path: 'users', title: 'المستخدمون', roles: ['admin'], load: () => import('./pages/users.js') },
-  { path: 'audit', title: 'سجل التدقيق', roles: ['hr', 'director', 'admin'], load: () => import('./pages/audit.js') },
+  { path: 'reports', title: 'التقارير', short: 'التقارير', icon: 'report', tab: true, roles: ALL, load: () => import('./pages/reports.js') },
+  { path: 'links', title: 'الروابط', short: 'الروابط', icon: 'link', tab: true, roles: ALL, load: () => import('./pages/links.js') },
+  { path: 'settings', title: 'الإعدادات والعطل', icon: 'sliders', roles: ['hr', 'director', 'admin'], load: () => import('./pages/settings.js') },
+  { path: 'import', title: 'الاستيراد من إكسل', icon: 'upload', roles: ['hr', 'admin'], load: () => import('./pages/import.js') },
+  { path: 'devices', title: 'أجهزة البوابة', icon: 'tablet', roles: ['admin'], load: () => import('./pages/devices.js') },
+  { path: 'users', title: 'المستخدمون', icon: 'shield', roles: ['admin'], load: () => import('./pages/users.js') },
+  { path: 'audit', title: 'سجل التدقيق', icon: 'audit', roles: ['hr', 'director', 'admin'], load: () => import('./pages/audit.js') },
 ];
 
 const root = document.getElementById('app');
@@ -57,22 +59,74 @@ function showLogin(message) {
 }
 
 // ---------------------------------------------------------------- الإطار
-function navLinks() {
-  return PAGES.filter((p) => !p.path.includes(':') && p.roles.includes(me.role)).map((p) => h('a', { href: `#/${p.path}`, class: 'nav-link', dataset: { path: p.path } }, p.title));
+const listed = () => PAGES.filter((p) => !p.path.includes(':') && p.roles.includes(me.role));
+const initial = () => ((me.employeeName || me.email || '؟').trim()[0] || '؟').toUpperCase();
+
+async function signOut() {
+  await logout();
+  showLogin();
+}
+
+function openMore() {
+  const rest = listed().filter((p) => !p.tab);
+  const sheet = dialog({
+    title: 'القائمة',
+    sheet: true,
+    content: h('div', null,
+      h('div', { class: 'sheet-user' },
+        h('span', { class: 'avatar', 'aria-hidden': 'true' }, initial()),
+        h('div', null, h('div', { class: 'who-name' }, me.employeeName || me.email), h('div', { class: 'who-role' }, ROLE_LABEL[me.role] || me.role))),
+      h('div', { class: 'sheet-list' },
+        rest.map((p) => h('a', { href: `#/${p.path}`, class: 'sheet-link', onclick: () => sheet.close() }, icon(p.icon), p.title)),
+        h('button', { type: 'button', class: 'sheet-link', onclick: () => { sheet.close(); signOut(); } }, icon('out'), 'تسجيل الخروج'))),
+  });
 }
 
 function showShell() {
+  const pages = listed();
   clear(root).append(
     h('div', { class: 'shell' },
+      h('header', { class: 'topbar' },
+        h('img', { src: '/logo.png', alt: 'جمعية نوى' }),
+        h('div', { class: 'topbar-title' }, 'الحضور والطلبات', h('small', null, 'جمعية نوى للثقافة والفنون')),
+        h('span', { class: 'avatar', 'aria-hidden': 'true' }, initial())),
       h('aside', { class: 'side' },
-        h('a', { href: '#/today', class: 'brand' }, h('img', { src: '/logo.png', alt: '' }), h('span', null, 'الحضور والطلبات')),
-        h('nav', { class: 'nav', 'aria-label': 'التنقل الرئيسي' }, navLinks()),
+        h('a', { href: '#/today', class: 'brand' }, h('img', { src: '/logo.png', alt: '' }), h('span', null, 'الحضور والطلبات', h('small', null, 'جمعية نوى للثقافة والفنون'))),
+        h('nav', { class: 'nav', 'aria-label': 'التنقل الرئيسي' }, pages.map((p) => h('a', { href: `#/${p.path}`, class: 'nav-link', dataset: { path: p.path } }, icon(p.icon), h('span', null, p.title)))),
         h('div', { class: 'who' },
           h('div', { class: 'who-name' }, me.employeeName || me.email),
           h('div', { class: 'who-role' }, ROLE_LABEL[me.role] || me.role),
-          h('button', { type: 'button', class: 'link-btn', onclick: async () => { await logout(); showLogin(); } }, 'تسجيل الخروج'))),
-      h('main', { class: 'main', id: 'view', tabindex: '-1' })),
+          h('button', { type: 'button', class: 'link-btn', onclick: signOut }, 'تسجيل الخروج'))),
+      h('main', { class: 'main', id: 'view', tabindex: '-1' }),
+      h('nav', { class: 'tabbar', 'aria-label': 'التنقل السريع' },
+        pages.filter((p) => p.tab).map((p) => h('a', { href: `#/${p.path}`, class: 'tab', dataset: { path: p.path } }, h('span', { class: 'pill' }, icon(p.icon)), h('span', null, p.short))),
+        h('button', { type: 'button', class: 'tab', id: 'tabMore', onclick: openMore }, h('span', { class: 'pill' }, icon('more')), h('span', null, 'المزيد')))),
   );
+  watchTables($('#view'));
+}
+
+// على الجوال تتحول الجداول إلى بطاقات: نكتب عنوان العمود على كل خلية (data-label) كلما رُسم جدول جديد.
+// الجداول العريضة (معاينة التايم شيت) تبقى جداول قابلة للتمرير الأفقي.
+function stackTables(view) {
+  for (const t of view.querySelectorAll('table.tbl')) {
+    if (t.closest('.table-wrap[dir="ltr"]') || t.classList.contains('stack')) continue;
+    const heads = [...t.querySelectorAll('thead th')].map((th) => th.textContent.trim());
+    for (const tr of t.querySelectorAll('tbody tr')) {
+      [...tr.children].forEach((td, i) => {
+        td.dataset.label = heads[i] ?? '';
+        if (td.textContent.trim() === '—') td.classList.add('blank'); // خانة فارغة: تُخفى في عرض البطاقات فتبقى البطاقة قصيرة
+      });
+    }
+    t.classList.add('stack');
+  }
+}
+function watchTables(view) {
+  let queued = false;
+  new MutationObserver(() => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => { queued = false; stackTables(view); });
+  }).observe(view, { childList: true, subtree: true });
 }
 
 async function route() {
@@ -85,7 +139,8 @@ async function route() {
     return;
   }
   const active = found.page.nav || found.page.path;
-  document.querySelectorAll('.nav-link').forEach((a) => a.classList.toggle('on', a.dataset.path === active));
+  document.querySelectorAll('.nav-link, .tab[data-path]').forEach((a) => a.classList.toggle('on', a.dataset.path === active));
+  $('#tabMore')?.classList.toggle('on', !PAGES.some((p) => p.tab && p.path === active));
   document.title = `${found.page.title} — الحضور والطلبات`;
   clear(view).append(h('p', { class: 'loading' }, 'جارٍ التحميل…'));
   try {
