@@ -3,6 +3,7 @@
 نظام إدارة الحضور والانصراف والطلبات — جمعية نوى للثقافة والفنون.
 
 - القرارات والمراحل: [`docs/DECISIONS.md`](docs/DECISIONS.md)
+- التقرير الشهري للموظف وتصديره PDF: [`docs/DECISIONS.md` §2.6](docs/DECISIONS.md)
 - محرك الحساب اليومي: [`src/engine/attendance.js`](src/engine/attendance.js)
 - الاختبارات: `npm test` (لا تحتاج تثبيت أي حزمة)
 - التطبيقات القابلة للتثبيت: النظام على `/` وبوابة الحضور على `/gate/` ([القرار 2.5](docs/DECISIONS.md))

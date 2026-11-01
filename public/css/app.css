@@ -43,6 +43,7 @@ h2 { font-size: 1.05rem; font-weight: 700; }
 a { color: var(--red); text-underline-offset: 3px; }
 :focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
 [hidden] { display: none !important; }
+#print-root { display: none; } /* تخطيط طباعة التقرير الشهري: يظهر في الطباعة فقط (css/print.css) */
 .muted { color: var(--muted); }
 .small { font-size: 0.85rem; }
 .sub { color: var(--muted); margin-top: 2px; }
@@ -353,4 +354,42 @@ textarea { width: 100%; resize: vertical; }
     .dlg[open] { animation: sheet-up 0.24s var(--ease); }
   }
   @keyframes sheet-up { from { transform: translateY(40px); opacity: 0.4; } to { transform: none; opacity: 1; } }
+}
+
+/* ------------------------------------------------------------ التقرير الشهري */
+.save-state { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; background: var(--canvas); color: var(--ink-2); }
+.save-state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.save-ok { background: var(--olive-soft); color: var(--olive); }
+.save-dirty, .save-busy { background: var(--gold-soft); color: var(--gold-d); }
+.save-err { background: var(--red-soft); color: var(--red-d); }
+.head-tools { display: flex; gap: 10px; align-items: center; }
+.sec-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.sec-head .chip { flex: none; }
+.hist { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.hist a.chip { text-decoration: none; }
+.fresh { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.ok-note { background: var(--olive-soft); border-color: #c5d7ae; color: var(--olive); }
+.panel .tools:empty { display: none; }
+.ed-tools { margin-top: 10px; }
+.paste-box, .notes-box { width: 100%; min-height: 96px; resize: vertical; line-height: 1.7; }
+.tbl.ed td { padding: 4px 6px; vertical-align: top; }
+.tbl.ed td.num { text-align: center; color: var(--muted); font-weight: 700; padding-top: 12px; width: 52px; }
+.tbl.ed textarea, .tbl.ed input, .tbl.ed select { width: 100%; border-color: transparent; background: transparent; resize: none; overflow: hidden; line-height: 1.7; min-height: 40px; }
+.tbl.ed textarea:hover, .tbl.ed input:hover, .tbl.ed select:hover { border-color: var(--line); background: #fff; }
+.tbl.ed textarea:focus, .tbl.ed input:focus, .tbl.ed select:focus { border-color: var(--gold); background: #fff; outline: 2px solid var(--gold-soft); }
+.tbl.ed { table-layout: fixed; }
+.tbl.ed th:first-child { width: 56px; }
+.tbl.ed th.c-mid { width: 150px; }
+.tbl.ed th:last-child:not(.c-mid):not(.c-wide) { width: 118px; }
+.tbl.ed td.row-actions { white-space: nowrap; text-align: end; padding-top: 4px; }
+.tbl.ed .icon-btn { width: 32px; height: 32px; font-size: 1rem; }
+.tbl.ed .icon-btn:disabled { opacity: 0.25; cursor: default; }
+.export .tools { margin-bottom: 4px; }
+@media (max-width: 720px) {
+  .tbl.ed.stack tr { grid-template-columns: 1fr; }
+  .tbl.ed.stack td.num { width: auto; padding: 0; text-align: start; }
+  .tbl.ed.stack td.row-actions { width: auto; justify-content: flex-end; }
+  .tbl.ed.stack .icon-btn { flex: none; width: 44px; height: 44px; }
+  .tbl.ed.stack textarea, .tbl.ed.stack input, .tbl.ed.stack select { border-color: var(--line); background: #fff; }
+  .export .tools > .btn { flex: 1 1 100%; }
 }

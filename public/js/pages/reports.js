@@ -1,9 +1,7 @@
 import { h, clear, field, select, toast, todayLocal } from '../dom.js';
 import { get } from '../api.js';
-import { buildXlsx } from '../xlsx-write.js';
-import { timesheetSheet } from '../timesheet-sheet.js';
+import { fetchSheets, downloadTimesheet } from '../timesheet-export.js';
 
-const CHUNK = 25; // الحد الأقصى للموظفين في طلب واحد (يطابق الخادم)
 const NOTE = {
   no_allocation: 'لا يوجد توزيع على ممول في هذا الشهر — صفوف الممولين فارغة (أضف التوزيع من صفحة الموظف).',
   more_than_three: 'أكثر من 3 ممولين في هذا الشهر — يُعرض أول 3 فقط كما في الشيت.',
@@ -43,7 +41,8 @@ export default async function render({ user }) {
   }
   for (const e of active) options.push([`e${e.id}`, `${e.name} (${e.code})`]);
 
-  const month = h('input', { type: 'month', value: monthNow(), required: true, max: monthNow() });
+  const wantedMonth = new URLSearchParams(location.hash.split('?')[1] || '').get('month');
+  const month = h('input', { type: 'month', value: /^\d{4}-\d{2}$/.test(wantedMonth || '') ? wantedMonth : monthNow(), required: true, max: monthNow() });
   const who = select(options, wanted && active.some((e) => e.id === wanted) ? `e${wanted}` : options[0]?.[0]);
   const out = h('div');
   const btnPrev = h('button', { type: 'button', class: 'btn' }, 'معاينة');
@@ -56,18 +55,6 @@ export default async function render({ user }) {
     return active.filter((e) => e.id === Number(v.slice(1)));
   };
 
-  async function fetchSheets(list) {
-    const sheets = [];
-    let approver = '';
-    for (let i = 0; i < list.length; i += CHUNK) {
-      const ids = list.slice(i, i + CHUNK).map((e) => e.id).join(',');
-      const r = await get(`/api/reports/timesheet?month=${encodeURIComponent(month.value)}&employees=${ids}`);
-      sheets.push(...r.sheets);
-      approver = r.approver || approver;
-    }
-    return { sheets, approver };
-  }
-
   const busy = (on) => {
     btnPrev.disabled = on;
     btnDown.disabled = on;
@@ -78,7 +65,7 @@ export default async function render({ user }) {
     if (!month.value || !list.length) return;
     busy(true);
     try {
-      const { sheets } = await fetchSheets(list.slice(0, 1));
+      const { sheets } = await fetchSheets(list.slice(0, 1), month.value);
       const s = sheets[0];
       clear(out).append(h('div', null,
         h('h3', { class: 'section-title' }, `${s.employee.name} — ${s.timesheet.monthName} ${s.timesheet.year}`),
@@ -97,22 +84,8 @@ export default async function render({ user }) {
     if (!month.value || !list.length) return toast('اختر الشهر والموظفين', 'err');
     busy(true);
     try {
-      const [{ sheets, approver }, logo] = await Promise.all([
-        fetchSheets(list),
-        fetch('/logo.png').then((r) => (r.ok ? r.arrayBuffer() : null)).then((b) => (b ? new Uint8Array(b) : undefined)).catch(() => undefined),
-      ]);
-      const bytes = buildXlsx({ sheets: sheets.map((s) => timesheetSheet(s.timesheet, { ...s.employee, approver }, logo)) });
       const label = list.length === 1 ? list[0].code : who.value === 'all' ? 'All' : (centers.find((c) => `c${c.id}` === who.value)?.nameEn || 'Center').replace(/\W+/g, '-');
-      const a = h('a', {
-        href: URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })),
-        download: `Timesheet_${month.value}_${label}.xlsx`,
-      });
-      document.body.append(a);
-      a.click();
-      setTimeout(() => {
-        URL.revokeObjectURL(a.href);
-        a.remove();
-      }, 2000);
+      const { sheets } = await downloadTimesheet(list, month.value, label);
       const withNotes = sheets.filter((s) => s.timesheet.notes.length);
       toast(`نُزّل ملف بـ ${sheets.length} ورقة`);
       if (withNotes.length) {

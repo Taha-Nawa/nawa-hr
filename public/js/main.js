@@ -11,6 +11,7 @@ const PAGES = [
   { path: 'today', title: 'لوحة اليوم', short: 'اليوم', icon: 'today', tab: true, roles: ALL, load: () => import('./pages/today.js') },
   { path: 'employees', title: 'الموظفون', short: 'الموظفون', icon: 'users', tab: true, roles: ALL, load: () => import('./pages/employees.js') },
   { path: 'employees/:id', title: 'الموظف', roles: ALL, nav: 'employees', load: () => import('./pages/employee.js') },
+  { path: 'monthly', title: 'التقرير الشهري', short: 'تقريري', icon: 'doc', tab: true, roles: ALL, load: () => import('./pages/monthly.js') },
   { path: 'reports', title: 'التقارير', short: 'التقارير', icon: 'report', tab: true, roles: ALL, load: () => import('./pages/reports.js') },
   { path: 'links', title: 'الروابط', short: 'الروابط', icon: 'link', tab: true, roles: ALL, load: () => import('./pages/links.js') },
   { path: 'settings', title: 'الإعدادات والعطل', icon: 'sliders', roles: ['hr', 'director', 'admin'], load: () => import('./pages/settings.js') },

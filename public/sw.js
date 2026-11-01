@@ -3,7 +3,7 @@
    - الشبكة أولاً ثم النسخة المخزّنة، فلا تبقى واجهة قديمة بعد أي نشر جديد. */
 const VERSION = 'app-v1';
 const SHELL = [
-  '/', '/css/app.css', '/js/main.js', '/js/dom.js', '/js/api.js', '/js/auth.js', '/js/pwa.js',
+  '/', '/css/app.css', '/css/print.css', '/js/main.js', '/js/dom.js', '/js/api.js', '/js/auth.js', '/js/pwa.js',
   '/img/icons.svg', '/img/band.svg', '/logo.png', '/manifest.webmanifest',
   '/fonts/alexandria-arabic.woff2', '/fonts/alexandria-latin.woff2', '/icons/icon-192.png',
 ];

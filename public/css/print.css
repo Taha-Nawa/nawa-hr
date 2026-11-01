@@ -1,0 +1,30 @@
+/* طباعة التقرير الشهري (PDF) بنفس نموذج الجمعية. يُحمَّل بـ media="print" فقط: لا يؤثر على الشاشة. */
+@page { size: A4 portrait; margin: 8mm 7mm 11mm; }
+@page { @bottom-center { content: counter(page) " / " counter(pages); font: 8pt Alexandria, Arial, sans-serif; color: #555; direction: ltr; unicode-bidi: isolate; } }
+
+html, body { background: #fff !important; }
+body.printing #app, body.printing .toasts, body.printing dialog { display: none !important; }
+body.printing #print-root { display: block; }
+
+.rp { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000; font-family: "Sakkal Majalla", Alexandria, "Segoe UI", Tahoma, sans-serif; font-size: 7.6pt; line-height: 1.5; }
+.rp.rp-sk { font-size: 10.5pt; line-height: 1.25; }
+.rp-t { width: 100%; border-collapse: collapse; table-layout: fixed; }
+/* نسب أعمدة النموذج الأصلي: 10.6 / 68.4 / 42.3 / 30 / 23.9، مع توسيع عمود التسميات قليلاً كي لا تنكسر «الوظيفة» و«المرفقات» بالخط الاحتياطي الأعرض */
+.rp-c1 { width: 8.2%; } .rp-c2 { width: 37.6%; } .rp-c3 { width: 23.6%; } .rp-c4 { width: 17%; } .rp-c5 { width: 13.6%; }
+.rp-t tr { break-inside: avoid; }
+.rp-t td { border: 0.75pt solid #000; padding: 1.3mm 1.6mm; text-align: center; vertical-align: middle; overflow-wrap: anywhere; font-weight: 400; }
+.rp-org { font-weight: 700; font-size: 130%; padding-block: 3mm !important; }
+.rp-title { background: #b4c7e7; font-weight: 700; font-size: 125%; border: 1.6pt solid #000 !important; padding-block: 2.2mm !important; }
+.rp-h { font-weight: 700; }
+.rp-lab { text-align: start; }
+.rp-lab, .rp-attl { overflow-wrap: normal !important; white-space: nowrap; }
+.rp-blank { border-top: 0 !important; }
+.rp-sec { background: #d9e2f3; font-weight: 700; font-size: 120%; border: 1.6pt solid #000 !important; padding-block: 2.2mm !important; }
+.rp-sec3 { background: #f2f2f2; border: 0.75pt solid #000 !important; }
+.rp-n { font-weight: 700; }
+.rp-start { text-align: start; }
+.rp-sm { font-size: 92%; }
+.rp-gap { height: 5mm; }
+.rp-attl { border: 0 !important; font-weight: 700; }
+.rp-none { border: 0 !important; }
+.rp-sign { height: 11mm; }

@@ -14,6 +14,8 @@ import { recomputeSlice } from './close.js';
 import { validateAllocations, replaceStatements } from './projects.js';
 import { timesheetReport } from './reports.js';
 import { loadLinks, validateLinks, visibleTo } from './links.js';
+import { auditStmt } from './audit.js';
+import { getMonthlyReport, putMonthlyReport, listMonthlyReports } from './monthly.js';
 
 const MAX_BODY = 64 * 1024;
 const MAX_RANGE_DAYS = 366;
@@ -21,12 +23,6 @@ const MAX_RANGE_DAYS = 366;
 const forbidden = () => json({ ok: false, error: 'لا تملك صلاحية هذا الإجراء' }, 403);
 const notFound = (what = 'العنصر') => json({ ok: false, error: `${what} غير موجود` }, 404);
 const bad = (msg, status = 400) => json({ ok: false, error: msg }, status);
-
-function auditStmt(db, user, action, entity, entityId, detail) {
-  return db
-    .prepare('INSERT INTO audit_log (actor, action, entity, entity_id, detail) VALUES (?, ?, ?, ?, ?)')
-    .bind(user?.email || 'system', action, entity ?? null, entityId == null ? null : String(entityId), detail == null ? null : JSON.stringify(detail).slice(0, 2000));
-}
 
 async function readJson(request) {
   const ct = request.headers.get('content-type') || '';
@@ -277,6 +273,9 @@ add('GET', '/api/employees/:id/days', async ({ db, user, params, url }) => {
 
 // ---------------------------------------------------------------- التقارير
 add('GET', '/api/reports/timesheet', timesheetReport);
+add('GET', '/api/reports/monthly', getMonthlyReport);
+add('PUT', '/api/reports/monthly', putMonthlyReport);
+add('GET', '/api/reports/monthly/list', listMonthlyReports);
 
 // ---------------------------------------------------------------- المراكز
 add('GET', '/api/centers', async ({ db }) => {

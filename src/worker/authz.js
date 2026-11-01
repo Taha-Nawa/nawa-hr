@@ -51,3 +51,13 @@ export function employeeScope(user, alias = 'e') {
   if (user.role === 'manager') return { sql: `(${alias}.id = ? OR ${alias}.manager_id = ?)`, params: [user.employeeId, user.employeeId] };
   return { sql: `${alias}.id = ?`, params: [user.employeeId] };
 }
+
+/**
+ * التقرير الشهري: القراءة بنطاق الموظفين نفسه (canReadEmployee). الكتابة: صاحب التقرير، أو الموارد البشرية/المسؤول نيابةً عنه.
+ * المدير المباشر والمدير العام يقرؤون فقط.
+ */
+export function canWriteReport(user, target) {
+  if (!user || !target) return false;
+  if (user.employeeId != null && user.employeeId === target.id) return true;
+  return user.role === 'hr' || user.role === 'admin';
+}
