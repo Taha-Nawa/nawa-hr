@@ -82,6 +82,7 @@ a { color: var(--red); text-underline-offset: 3px; }
   border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap;
 }
 .btn:hover:not(:disabled) { border-color: var(--ink-2); }
+a.btn { text-decoration: none; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn-primary { background: var(--red); border-color: var(--red); color: #fff; }
 .btn-primary:hover:not(:disabled) { background: var(--red-d); border-color: var(--red-d); }
@@ -188,6 +189,22 @@ input[type="search"] { min-width: min(300px, 100%); }
 .result-line { font-weight: 700; }
 .sample { background: var(--canvas); padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 0.78rem; margin: 8px 0 0; }
 details summary { cursor: pointer; color: var(--ink-2); }
+
+/* ------------------------------------------------------------ الروابط */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.link-groups { display: flex; flex-direction: column; gap: 26px; }
+.link-group { display: flex; flex-direction: column; gap: 10px; }
+.link-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 12px; }
+.link-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; min-width: 0; }
+.link-pinned { background: var(--gold-soft); border-color: #ecd68a; }
+.link-main { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; min-width: 0; }
+.link-title { font-weight: 700; font-size: 1.02rem; color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
+a.link-title { color: var(--red-d); text-decoration: underline; }
+a.link-title:hover { color: var(--red); }
+.link-host { color: var(--muted); font-size: 0.82rem; overflow-wrap: anywhere; text-align: start; }
+.link-note { color: var(--ink-2); font-size: 0.9rem; }
+.link-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+textarea { width: 100%; resize: vertical; }
 
 /* ------------------------------------------------------------ حوارات وإشعارات */
 .dlg { border: 0; border-radius: 12px; padding: 0; width: min(520px, calc(100vw - 24px)); max-height: calc(100vh - 32px); color: var(--ink); box-shadow: 0 20px 60px rgba(46, 21, 18, 0.3); }

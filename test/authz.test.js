@@ -79,6 +79,7 @@ const WRITE = {
   importEmployees: (e, c) => call(e, 'POST', '/api/import/employees', { cookie: c, body: { rows: [{ code: `IMP-${Math.floor(Math.random() * 1e6)}`, name: 'مستورد' }] } }),
   importMovements: (e, c) => call(e, 'POST', '/api/import/movements', { cookie: c, body: { rows: [{ id: `X-${Math.random()}`, code: 'NW-004', type: 'حضور', date: '2026-03-02', time: '08:20' }] } }),
   recompute: (e, c) => call(e, 'POST', '/api/recompute', { cookie: c, body: { from: '2026-03-01', to: '2026-03-02' } }),
+  putLinks: (e, c) => call(e, 'PUT', '/api/links', { cookie: c, body: { links: [{ title: 'اختبار', url: 'https://example.org/x', audience: 'staff' }] } }),
 };
 
 const MATRIX = {
@@ -101,6 +102,7 @@ const MATRIX = {
   importEmployees: [403, 403, 200, 403, 200],
   importMovements: [403, 403, 200, 403, 200],
   recompute: [403, 403, 200, 403, 200],
+  putLinks: [403, 403, 403, 403, 200],
 };
 
 for (const [action, expected] of Object.entries(MATRIX)) {
@@ -113,7 +115,7 @@ for (const [action, expected] of Object.entries(MATRIX)) {
 }
 
 test('المصفوفة تغطي كل إجراءات authz.ACTIONS الفعلية (لا إجراء بلا اختبار)', () => {
-  const covered = new Set(['employee.create', 'employee.update', 'badge.manage', 'center.manage', 'settings.read', 'settings.write', 'device.manage', 'user.manage', 'audit.read', 'holiday.write', 'import.run', 'recompute.run']);
+  const covered = new Set(['employee.create', 'employee.update', 'badge.manage', 'center.manage', 'settings.read', 'settings.write', 'device.manage', 'user.manage', 'audit.read', 'holiday.write', 'import.run', 'recompute.run', 'links.manage']);
   const uncovered = Object.keys(ACTIONS).filter((a) => !covered.has(a));
   // day.correct (التصحيح اليدوي) مخصص لمرحلة 2 ولا مسار له بعد
   assert.deepEqual(uncovered.sort(), ['day.correct']);
@@ -135,7 +137,7 @@ test('لا مسار بلا مصادقة عدا الدخول وبوابة الأ�
     ['GET', '/api/me'], ['GET', '/api/employees'], ['POST', '/api/employees'], ['PATCH', '/api/employees/1'], ['GET', '/api/employees/1/days?from=2026-03-01&to=2026-03-02'],
     ['GET', '/api/centers'], ['POST', '/api/centers'], ['POST', '/api/badges'], ['POST', '/api/badges/x/revoke'], ['GET', '/api/settings'], ['PUT', '/api/settings/work'], ['GET', '/api/devices'], ['POST', '/api/devices'],
     ['POST', '/api/devices/DEV-01/rotate'], ['POST', '/api/devices/DEV-01/deactivate'], ['GET', '/api/users'], ['POST', '/api/users'], ['PATCH', '/api/users/1'], ['GET', '/api/audit'],
-    ['GET', '/api/day?date=2026-03-02'], ['GET', '/api/holidays?year=2026'], ['PUT', '/api/holidays'], ['POST', '/api/recompute'], ['POST', '/api/import/employees'], ['POST', '/api/import/badges'], ['GET', '/api/employees/1/badges'], ['POST', '/api/import/movements'],
+    ['GET', '/api/day?date=2026-03-02'], ['GET', '/api/holidays?year=2026'], ['PUT', '/api/holidays'], ['POST', '/api/recompute'], ['POST', '/api/import/employees'], ['POST', '/api/import/badges'], ['GET', '/api/employees/1/badges'], ['POST', '/api/import/movements'], ['GET', '/api/links'], ['PUT', '/api/links'],
   ];
   for (const [m, p] of paths) {
     const r = await call(env, m, p, { body: m === 'GET' ? undefined : {} });

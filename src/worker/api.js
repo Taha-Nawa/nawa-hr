@@ -13,6 +13,7 @@ import { ingestMoves, MAX_MOVES } from './gate.js';
 import { recomputeSlice } from './close.js';
 import { validateAllocations, replaceStatements } from './projects.js';
 import { timesheetReport } from './reports.js';
+import { loadLinks, validateLinks, visibleTo } from './links.js';
 
 const MAX_BODY = 64 * 1024;
 const MAX_RANGE_DAYS = 366;
@@ -388,6 +389,26 @@ add('PUT', '/api/settings/work', async ({ request, db, user }) => {
   ]);
   // تغيير القواعد يغيّر نتائج الأيام المحسوبة سابقاً؛ إعادة الحساب الشاملة خطوة منفصلة (المرحلة 2).
   return json({ ok: true, needsRecompute: true });
+});
+
+// ---------------------------------------------------------------- الروابط
+add('GET', '/api/links', async ({ db, user }) => {
+  const all = await loadLinks(db);
+  const canManage = can(user, 'links.manage');
+  return json({ ok: true, canManage, links: canManage ? all : all.filter((l) => visibleTo(user.role, l)) });
+});
+
+add('PUT', '/api/links', async ({ request, db, user }) => {
+  if (!can(user, 'links.manage')) return forbidden();
+  const { body, error } = await readJson(request);
+  if (error) return error;
+  const v = validateLinks(body.links);
+  if (v.error) return bad(v.error);
+  await db.batch([
+    db.prepare("INSERT INTO settings (key, value) VALUES ('links', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')").bind(JSON.stringify(v.links)),
+    auditStmt(db, user, 'links.update', 'settings', 'links', { count: v.links.length }),
+  ]);
+  return json({ ok: true, links: v.links });
 });
 
 // ---------------------------------------------------------------- الأجهزة

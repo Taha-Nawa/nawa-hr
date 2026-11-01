@@ -28,6 +28,7 @@ export const ACTIONS = {
   'device.manage': ['admin'],
   'user.manage': ['admin'],
   'audit.read': ['hr', 'director', 'admin'],
+  'links.manage': ['admin'],
 };
 
 export function can(user, action) {

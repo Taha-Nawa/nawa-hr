@@ -10,6 +10,7 @@ const PAGES = [
   { path: 'employees', title: 'الموظفون', roles: ALL, load: () => import('./pages/employees.js') },
   { path: 'employees/:id', title: 'الموظف', roles: ALL, nav: 'employees', load: () => import('./pages/employee.js') },
   { path: 'reports', title: 'التقارير', roles: ALL, load: () => import('./pages/reports.js') },
+  { path: 'links', title: 'الروابط', roles: ALL, load: () => import('./pages/links.js') },
   { path: 'settings', title: 'الإعدادات والعطل', roles: ['hr', 'director', 'admin'], load: () => import('./pages/settings.js') },
   { path: 'import', title: 'الاستيراد من إكسل', roles: ['hr', 'admin'], load: () => import('./pages/import.js') },
   { path: 'devices', title: 'أجهزة البوابة', roles: ['admin'], load: () => import('./pages/devices.js') },
