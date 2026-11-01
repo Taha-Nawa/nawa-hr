@@ -1,5 +1,5 @@
 /* طباعة التقرير الشهري (PDF) بنفس نموذج الجمعية. يُحمَّل بـ media="print" فقط: لا يؤثر على الشاشة. */
-@page { size: A4 portrait; margin: 8mm 7mm 11mm; }
+@page { size: A4 portrait; margin: 6mm 6mm 10mm; }
 @page { @bottom-center { content: counter(page) " / " counter(pages); font: 8pt Alexandria, Arial, sans-serif; color: #555; direction: ltr; unicode-bidi: isolate; } }
 
 html, body { background: #fff !important; }
@@ -7,7 +7,8 @@ body.printing #app, body.printing .toasts, body.printing dialog { display: none 
 body.printing #print-root { display: block; }
 
 .rp { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000; font-family: "Sakkal Majalla", Alexandria, "Segoe UI", Tahoma, sans-serif; font-size: 7.6pt; line-height: 1.5; }
-.rp.rp-sk { font-size: 10.5pt; line-height: 1.25; }
+.rp.rp-sk { font-size: 11pt; line-height: 1.08; }
+.rp.rp-sk .rp-t td { padding-block: 0.7mm; }
 .rp-t { width: 100%; border-collapse: collapse; table-layout: fixed; }
 /* نسب أعمدة النموذج الأصلي: 10.6 / 68.4 / 42.3 / 30 / 23.9، مع توسيع عمود التسميات قليلاً كي لا تنكسر «الوظيفة» و«المرفقات» بالخط الاحتياطي الأعرض */
 .rp-c1 { width: 8.2%; } .rp-c2 { width: 37.6%; } .rp-c3 { width: 23.6%; } .rp-c4 { width: 17%; } .rp-c5 { width: 13.6%; }
