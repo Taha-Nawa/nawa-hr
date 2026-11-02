@@ -19,7 +19,7 @@ import { mailerFor, logMailFailure } from './mail.js';
 export const BACKUP_TABLES = [
   'centers', 'employees', 'badges', 'devices', 'users', 'settings', 'holidays', 'employee_projects',
   'day_overrides', 'requests', 'leave_balances', 'emergencies', 'leave_plans', 'leave_plan_days', 'leave_released',
-  'volunteers', 'volunteer_days', 'daily_results', 'movements', 'audit_log',
+  'volunteers', 'volunteer_days', 'monthly_reports', 'daily_results', 'movements', 'audit_log',
 ];
 export const BACKUP_EXCLUDED = ['sessions', 'auth_nonces', 'trusted_devices', 'user_pins', 'email_codes', 'auth_meta'];
 // أعمدة لا تُصدَّر (بصمات رموز). بعد الاسترجاع تُعاد إصدار رموز الأجهزة من صفحة «أجهزة البوابة».

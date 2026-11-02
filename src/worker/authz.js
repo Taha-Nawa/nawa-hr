@@ -72,6 +72,11 @@ export function canDecideRequest(user, target) {
   return canManageRequests(user, target) && !(user.employeeId != null && user.employeeId === target.id);
 }
 
+/** ملاحظات المدير المباشر على تقرير شهري مُقدَّم: من يدير الموظف (مدير مباشر، موارد بشرية، مدير عام، مسؤول) وليس صاحب التقرير. */
+export function canReviewReport(user, target) {
+  return canDecideRequest(user, target);
+}
+
 /** إلغاء طلب معتمد بعد اعتماده: الموارد البشرية والمدير العام والمسؤول فقط، وليس لطلبهم هم. */
 export function canRevokeRequest(user, target) {
   return !!user && READ_ALL.has(user.role) && !(user.employeeId != null && user.employeeId === target.id);
