@@ -71,7 +71,7 @@ function alertMessage(problems, origin) {
 <ul style="margin:0 0 14px;padding-inline-start:18px">${lines.map((l) => `<li style="margin:4px 0">${esc(l)}</li>`).join('')}</ul>
 <p style="margin:0 0 14px;color:#5a4a45">الحركات تُحفظ على جهاز البوابة وتُرسل عند عودة الاتصال، لكن لا تُحتسب قبل ذلك.</p>
 <p style="margin:0 0 14px"><a href="${esc(link)}" style="display:inline-block;background:#a21008;color:#fff;text-decoration:none;padding:9px 18px;border-radius:9px;font-weight:700">مراجعة الأجهزة</a></p>
-<p style="margin:0;color:#7d6f68;font-size:12px">نظام الحضور والطلبات — جمعية نوى للثقافة والفنون</p></div>`;
+<p style="margin:0;color:#72655f;font-size:12px">نظام الحضور والطلبات — جمعية نوى للثقافة والفنون</p></div>`;
   return { subject, text, html };
 }
 

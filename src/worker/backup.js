@@ -142,7 +142,7 @@ function reminderMessage(info, origin) {
 <p style="margin:0 0 12px;font-weight:700;font-size:16px">${esc(subject)}</p>
 <p style="margin:0 0 14px;color:#5a4a45">${esc(body)}</p>
 <p style="margin:0 0 16px"><a href="${esc(link)}" style="display:inline-block;background:#a21008;color:#fff;text-decoration:none;padding:9px 18px;border-radius:9px;font-weight:700">تنزيل نسخة كاملة</a></p>
-<p style="margin:0;color:#7d6f68;font-size:12px">نظام الحضور والطلبات — جمعية نوى للثقافة والفنون</p></div>`;
+<p style="margin:0;color:#72655f;font-size:12px">نظام الحضور والطلبات — جمعية نوى للثقافة والفنون</p></div>`;
   return { subject, text, html };
 }
 

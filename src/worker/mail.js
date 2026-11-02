@@ -89,6 +89,6 @@ export function codeMessage(code, minutes) {
 <p style="margin:0 0 14px;color:#5a4a45">رمز الدخول الخاص بك:</p>
 <p style="margin:0 0 14px;font-size:34px;letter-spacing:8px;font-weight:800;color:#a21008;direction:ltr;text-align:center">${code}</p>
 <p style="margin:0 0 6px;color:#5a4a45">صالح لمدة ${minutes} دقائق ويُستعمل مرة واحدة.</p>
-<p style="margin:0;color:#7d6f68;font-size:13px">إن لم تطلب هذا الرمز فتجاهل الرسالة، ولا تُشارك الرمز مع أحد.</p></div>`;
+<p style="margin:0;color:#72655f;font-size:13px">إن لم تطلب هذا الرمز فتجاهل الرسالة، ولا تُشارك الرمز مع أحد.</p></div>`;
   return { subject, text, html };
 }
