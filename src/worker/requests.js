@@ -14,7 +14,9 @@ import { loadWorkSettings } from './settings.js';
 import { recomputePairs } from './recompute.js';
 import { tzOf } from './close.js';
 import { json, isDate, clip, localDate, localTime, nowOf, addDays, daysBetween } from './util.js';
-import { canReadEmployee, canManageRequests, canDecideRequest, canRevokeRequest, employeeScope } from './authz.js';
+import { can, canReadEmployee, canManageRequests, canDecideRequest, canRevokeRequest, employeeScope } from './authz.js';
+import { employeeBalance } from './balances.js';
+import { notifyRequest } from './notify.js';
 import { validateRequest, mergeRules, workingDates, suggestLeaveType, monthOf, monthBounds, needsMedical, KINDS, PURPOSES } from '../engine/requests.js';
 
 const LIST_LIMIT = 300;
@@ -163,9 +165,12 @@ export function registerRequestRoutes(add, kit) {
       out.year = Number(year);
       out.usedApproved = sum('approved');
       out.usedPending = sum('pending');
-      const ent = ctx.rules.entitlement?.[v.purpose];
+      // الرصيد الخاص بالموظف في هذه السنة أولاً، وإلا الافتراضي من القواعد
+      const personal = await db.prepare('SELECT days FROM leave_balances WHERE employee_id = ? AND year = ? AND purpose = ?').bind(employeeId, Number(year), v.purpose).first('days');
+      const ent = personal ?? ctx.rules.entitlement?.[v.purpose];
       if (ent !== undefined) {
         out.entitlement = ent;
+        out.entitlementSource = personal !== null ? 'personal' : 'default';
         out.remaining = ent - out.usedApproved[v.purpose] - v.days;
         if (out.remaining < 0) out.warnings.push(`يتجاوز الرصيد السنوي المحدد (${ent} يوماً)`);
       }
@@ -285,7 +290,8 @@ export function registerRequestRoutes(add, kit) {
     stmts.push(auditStmt(db, user, 'request.approve', 'request', row.id, { employeeId: row.employee_id, kind: row.kind, from: val.fromDate, to: val.toDate, days: val.days, minutes: val.minutes, adjusted: changed, medicalConfirmedBy: val.medicalRequired ? user.email : null }));
     const res = await db.batch(stmts);
     if (!res[0].meta.changes) return { error: bad('الطلب لم يعد معلّقاً', 409) };
-    if (isLeave) await recomputeDates(db, row.employee_id, dates, ctx0.today, settings);
+    // الإجازة تكتب أيامها؛ والإذن لا يكتب شيئاً لكنه يعفي يومه من العجز والتأخير فيُعاد حسابه (إن كان اليوم قد بدأ)
+    await recomputeDates(db, row.employee_id, isLeave ? dates : [val.fromDate], ctx0.today, settings);
     return { ok: true };
   }
 
@@ -296,9 +302,13 @@ export function registerRequestRoutes(add, kit) {
     const medicalOk = await isMedicalApprover(db, user);
     const ib = inboxWhere(user, medicalOk, ctx.rules.medical.freeDays);
     const pending = ib ? await db.prepare(`SELECT COUNT(*) AS n FROM requests r JOIN employees e ON e.id = r.employee_id WHERE ${ib.sql}`).bind(...ib.params).first('n') : 0;
+    // رصيد الموظف في هذه السنة (خاص أو افتراضي)، فارغ إن لم يُحدَّد له رصيد
+    const items = user.employeeId != null ? await employeeBalance(db, user.employeeId, Number(ctx.today.slice(0, 4)), ctx.rules) : [];
+    const balance = items.length ? { year: Number(ctx.today.slice(0, 4)), items } : null;
     return json({
       ok: true,
       today: ctx.today,
+      balance,
       rules: { annual: ctx.rules.annual, emergency: ctx.rules.emergency, sick: ctx.rules.sick, other: ctx.rules.other, maxSpanDays: ctx.rules.maxSpanDays, medical: ctx.rules.medical },
       leaveTypes: ctx.settings ? Object.keys(ctx.settings.leaveTypes) : [],
       work: ctx.settings ? { start: ctx.settings.start, end: ctx.settings.end } : null,
@@ -391,7 +401,7 @@ export function registerRequestRoutes(add, kit) {
     return json({ ok: true, calc: await calcOf(db, p.v, p.target.id, except, p.ctx) });
   });
 
-  add('POST', '/api/requests', async ({ request, env, db, user }) => {
+  add('POST', '/api/requests', async ({ request, env, db, user, url, defer }) => {
     const { body, error } = await readJson(request);
     if (error) return error;
     const p = await prepare(env, db, user, body);
@@ -409,18 +419,24 @@ export function registerRequestRoutes(add, kit) {
       auditStmt(db, user, 'request.create', 'request', null, { employeeId: target.id, kind: v.kind, purpose: v.purpose, from: v.fromDate, to: v.toDate, onBehalf: !p.self }),
     ]);
     const id = ins.meta.last_row_id;
+    const send = (event, opts) => notifyRequest({ env, db, url, defer }, event, id, { actor: user.email, ...opts });
     if (body.approve === true) {
       const row = await db.prepare('SELECT * FROM requests WHERE id = ?').bind(id).first();
       const medicalOk = await isMedicalApprover(db, user);
       if (!decideAllowed(user, medicalOk, { id: target.id, manager_id: target.manager_id }, row, ctx.rules)) {
+        await send('submitted');
         return json({ ok: false, error: 'تم إدخال الطلب لكنك لا تملك صلاحية اعتماده', requestId: id }, 403);
       }
       // من يدخل الإجازة المرضية ويمنحها مباشرة وهي بين يديه الورقة الطبية يؤكّدها بإقراره (medicalProof)
       const r = await approveRow({ env, db, user, row, adjust: { leaveType: body.leaveType, note: body.note, medicalConfirmed: v.medicalProof } });
       if (r.error) {
         const msg = (await r.error.json()).error;
+        await send('submitted'); // بقي معلّقاً فيلزمه معتمِد
         return json({ ok: false, error: `أُدخل الطلب (#${id}) لكن تعذّر اعتماده: ${msg}`, requestId: id }, r.error.status);
       }
+      if (!p.self) await send('approved'); // منح مباشر نيابة عن الموظف: يعلم بالقرار
+    } else {
+      await send('submitted');
     }
     return json({ ok: true, id }, 201);
   });
@@ -451,7 +467,7 @@ export function registerRequestRoutes(add, kit) {
     });
   });
 
-  add('POST', '/api/requests/:id/approve', async ({ request, env, db, user, params }) => {
+  add('POST', '/api/requests/:id/approve', async ({ request, env, db, user, params, url, defer }) => {
     const { body, error } = await readJson(request);
     if (error) return error;
     const id = Number(params.id);
@@ -461,10 +477,11 @@ export function registerRequestRoutes(add, kit) {
     if (row.status !== 'pending') return bad('الطلب لم يعد معلّقاً', 409);
     const r = await approveRow({ env, db, user, row, adjust: body });
     if (r.error) return r.error;
+    await notifyRequest({ env, db, url, defer }, 'approved', id, { actor: user.email });
     return json({ ok: true });
   });
 
-  add('POST', '/api/requests/:id/reject', async ({ request, db, user, params }) => {
+  add('POST', '/api/requests/:id/reject', async ({ request, env, db, user, params, url, defer }) => {
     const { body, error } = await readJson(request);
     if (error) return error;
     const id = Number(params.id);
@@ -477,10 +494,12 @@ export function registerRequestRoutes(add, kit) {
       db.prepare("UPDATE requests SET status = 'rejected', decided_by = ?, decided_at = datetime('now'), decision_note = ? WHERE id = ? AND status = 'pending'").bind(user.email, note, id),
       auditStmt(db, user, 'request.reject', 'request', id, { employeeId: row.employee_id, note }),
     ]);
-    return r.meta.changes ? json({ ok: true }) : bad('الطلب لم يعد معلّقاً', 409);
+    if (!r.meta.changes) return bad('الطلب لم يعد معلّقاً', 409);
+    await notifyRequest({ env, db, url, defer }, 'rejected', id, { actor: user.email, note });
+    return json({ ok: true });
   });
 
-  add('POST', '/api/requests/:id/cancel', async ({ request, env, db, user, params }) => {
+  add('POST', '/api/requests/:id/cancel', async ({ request, env, db, user, params, url, defer }) => {
     const { body, error } = await readJson(request);
     if (error) return error;
     const id = Number(params.id);
@@ -504,10 +523,50 @@ export function registerRequestRoutes(add, kit) {
     stmts.push(auditStmt(db, user, wasApproved ? 'request.revoke' : 'request.cancel', 'request', id, { employeeId: row.employee_id, note }));
     const res = await db.batch(stmts);
     if (!res[0].meta.changes) return bad('تغيّرت حالة الطلب، حدّث الصفحة', 409);
-    if (wasApproved && row.kind === 'leave') {
+    if (wasApproved) {
       const ctx = await context(env, db, row.from_date, row.to_date);
-      if (ctx.settings) await recomputeDates(db, row.employee_id, workingDates(row.from_date, row.to_date, ctx.settings, ctx.holidays), ctx.today, ctx.settings);
+      if (ctx.settings) await recomputeDates(db, row.employee_id, row.kind === 'leave' ? workingDates(row.from_date, row.to_date, ctx.settings, ctx.holidays) : [row.from_date], ctx.today, ctx.settings);
     }
+    // الموظف يعلم بإلغاء اعتماد طلبه، أو بإلغاء طلبه المعلّق من غيره؛ لا إشعار لمن ألغى طلبه بنفسه
+    if (wasApproved || !owner) await notifyRequest({ env, db, url, defer }, 'cancelled', id, { actor: user.email, note });
     return json({ ok: true });
+  });
+
+  // ------------------------------------------------------------ قواعد الطلبات (الأرصدة والمهل والإعفاءات والإشعارات)
+  add('GET', '/api/settings/requests', async ({ db, user }) => {
+    if (!can(user, 'settings.read')) return forbidden();
+    return json({ ok: true, rules: await loadRules(db), canEdit: can(user, 'settings.write') });
+  });
+
+  add('PUT', '/api/settings/requests', async ({ request, env, db, user }) => {
+    if (!can(user, 'settings.write')) return forbidden();
+    const { body, error } = await readJson(request);
+    if (error) return error;
+    if (!body || typeof body.rules !== 'object' || body.rules === null) return bad('القواعد غير صالحة');
+    // mergeRules يهمل كل قيمة خارج حدودها ويُرجع الشكل الكامل الصالح، فلا يُخزَّن إلا ما هو سليم
+    const clean = mergeRules(body.rules);
+    const before = await loadRules(db);
+    await db.batch([
+      db.prepare("INSERT INTO settings (key, value) VALUES ('requests', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')").bind(JSON.stringify(clean)),
+      auditStmt(db, user, 'settings.requests', 'settings', 'requests', clean),
+    ]);
+    // تغيير إعفاء الأذونات من العجز يغيّر نتائج الأيام التي فيها أذونات معتمدة: نعيد حسابها هنا (أحدث 300 يوم-موظف)
+    let recomputed = 0;
+    let partial = false;
+    if (before.permits.exempt !== clean.permits.exempt) {
+      const settings = await loadWorkSettings(db);
+      if (settings) {
+        const LIMIT = 300;
+        const pairs = (
+          await db
+            .prepare("SELECT DISTINCT employee_id AS e, from_date AS d FROM requests WHERE kind IN ('exit', 'late') AND status = 'approved' AND from_date <= ? ORDER BY from_date DESC LIMIT ?")
+            .bind(localDate(tzOf(env), nowOf(env)), LIMIT)
+            .all()
+        ).results;
+        recomputed = await recomputePairs(db, pairs, settings);
+        partial = pairs.length === LIMIT;
+      }
+    }
+    return json({ ok: true, rules: clean, recomputed, partial });
   });
 }

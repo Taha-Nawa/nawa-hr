@@ -1,14 +1,14 @@
 /**
  * توزيع الموظف على المشاريع/الممولين (ورقة «توزيع المشاريع» بإكسل).
- * كل صف: ممول + نسبة (جزء من 1) + فترة. القاعدة: في أي يوم له توزيع نافذ يكون مجموع النسب = 1 وبحد أقصى 3 ممولين متزامنين
- * (لأن قائمة الموظفين تحمل ثلاث خانات تحميل). الفجوات بين الفترات مسموحة (موظف بلا تحميل في تلك الفترة).
+ * كل صف: ممول/مشروع + نسبة (جزء من 1) + فترة. القاعدة: في أي يوم له توزيع نافذ يكون مجموع النسب = 1 وبحد أقصى MAX_CONCURRENT مشاريع متزامنة
+ * (موظف بنسبة 50% على مشروعين، أو 3 و4 مشاريع بالمبدأ نفسه). الفجوات بين الفترات مسموحة (موظف بلا تحميل في تلك الفترة).
  * دوال نقية بلا قاعدة بيانات كي تُختبر منفردة.
  */
 import { isDate, clip, addDays } from './util.js';
 
-export const MAX_CONCURRENT = 3;
+export const MAX_CONCURRENT = 6;
 export const MAX_ALLOCATIONS = 12;
-const EPS = 1e-4;
+const EPS = 1e-4 + 1e-9; // فرق التقريب حتى 0.01% مقبول (33.33 × 3)
 
 /** يُرجع { rows } منظّفة أو { error }. rows: [{funder, share, from, to}] */
 export function validateAllocations(input) {
@@ -34,7 +34,7 @@ export function validateAllocations(input) {
   for (const d of [...points].sort()) {
     const active = rows.filter((r) => r.from <= d && d <= r.to);
     if (active.length === 0) continue;
-    if (active.length > MAX_CONCURRENT) return { error: `أكثر من ${MAX_CONCURRENT} ممولين متزامنين في ${d}` };
+    if (active.length > MAX_CONCURRENT) return { error: `أكثر من ${MAX_CONCURRENT} مشاريع متزامنة في ${d}` };
     const total = active.reduce((s, r) => s + r.share, 0);
     if (Math.abs(total - 1) > EPS) return { error: `مجموع النسب في ${d} هو ${Math.round(total * 10000) / 100}% وليس 100%` };
   }

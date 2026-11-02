@@ -448,6 +448,31 @@ test('منح الإجازة المرضية مباشرة: الموارد البش
   assert.equal((await get(env, u.mgr, `/api/requests/${bad.body.requestId}`)).body.request.status, 'pending');
 });
 
+test('اعتماد إذن تأخير/مغادرة يعفي يومه من العجز والتأخير، وإلغاؤه يعيدهما، وإيقاف الإعفاء يلغي الأثر', async () => {
+  const { db, env, u } = await world();
+  await addOverride(db, 2, '2026-11-01', { manual: { in: '09:50', dep: '15:00' } }); // الأحد: حضور 09:50
+  const row = async (d) => db.prepare('SELECT late_minutes AS late, deficit_hours AS def, approved_hours AS ap, status FROM daily_results WHERE employee_id = 2 AND date = ?').bind(d).first();
+  assert.equal(await row('2026-11-01'), null, 'لم يُحسب بعد');
+
+  const a = await post(env, u.hr, '/api/requests', permit('late', { employeeId: 2, fromDate: '2026-11-01', fromTime: '08:30', toTime: '10:00', approve: true }));
+  assert.equal(a.status, 201, JSON.stringify(a.body));
+  assert.deepEqual(await row('2026-11-01'), { late: 0, def: 0, ap: 6.5, status: 'حاضر' }, 'أُعفي من التأخير والعجز');
+
+  assert.equal((await post(env, u.hr, `/api/requests/${a.body.id}/cancel`, { note: 'تراجع' })).status, 200);
+  assert.deepEqual(await row('2026-11-01'), { late: 80, def: 1.33, ap: 5.17, status: 'متأخر' }, 'عاد الاحتساب الأصلي');
+
+  // الإعفاء يُوقَف من القواعد فلا يتأثر اليوم
+  await db.prepare("INSERT INTO settings (key, value) VALUES ('requests', ?)").bind(JSON.stringify({ permits: { exempt: false } })).run();
+  const b = await post(env, u.hr, '/api/requests', permit('late', { employeeId: 2, fromDate: '2026-11-01', fromTime: '08:30', toTime: '10:00', approve: true }));
+  assert.equal(b.status, 201);
+  assert.deepEqual(await row('2026-11-01'), { late: 80, def: 1.33, ap: 5.17, status: 'متأخر' });
+
+  // إذن بتاريخ مستقبلي لا يحسب شيئاً الآن (يتكفّل به الإقفال الليلي)
+  const f = await post(env, u.hr, '/api/requests', permit('exit', { employeeId: 2, fromDate: '2026-11-10', approve: true }));
+  assert.equal(f.status, 201);
+  assert.equal(await row('2026-11-10'), null);
+});
+
 test('السقف الشهري للمغادرات يعمل عند تفعيله صراحةً (جاهز للمستقبل) وهو تنبيه لا منع', async () => {
   const { db, env, u } = await world();
   await db.prepare("INSERT INTO settings (key, value) VALUES ('requests', ?)").bind(JSON.stringify({ monthlyCap: { enabled: true } })).run();
@@ -504,4 +529,53 @@ test('عدد الاستعلامات ثابت وصغير (حدّ D1: 50 لكل ط
   assert.equal(r.status, 201, JSON.stringify(r.body));
   assert.ok(env.DB.maxQueries <= 50, `استعلامات: ${env.DB.maxQueries}`);
   assert.ok((await db.prepare('SELECT COUNT(*) AS n FROM day_overrides').first('n')) > 40);
+});
+
+// ---------------------------------------------------------------- قواعد الطلبات من الإعدادات
+
+test('قراءة قواعد الطلبات للموارد البشرية والمدير العام والمسؤول، والكتابة للمسؤول وحده', async () => {
+  const { env, u } = await world();
+  for (const who of [u.emp2, u.mgr]) assert.equal((await get(env, who, '/api/settings/requests')).status, 403);
+  const r = await get(env, u.hr, '/api/settings/requests');
+  assert.equal(r.status, 200);
+  assert.deepEqual([r.body.rules.permits.exempt, r.body.rules.notify.enabled, r.body.rules.monthlyCap.enabled, r.body.canEdit], [true, true, false, false]);
+  const put = (who, rules) => call(env, 'PUT', '/api/settings/requests', { cookie: who.cookie, body: { rules } });
+  for (const who of [u.emp2, u.mgr, u.hr, u.director]) assert.equal((await put(who, {})).status, 403);
+  assert.equal((await call(env, 'PUT', '/api/settings/requests', { cookie: u.admin.cookie, body: {} })).status, 400);
+  const ok = await put(u.admin, { annual: { minNoticeDays: 3 }, sick: { maxBackdateDays: 30 }, medical: { freeDays: 2 }, entitlement: { annual: 21, sick: 'x', other: 400 }, notify: { enabled: false }, maxSpanDays: 'x' });
+  assert.equal(ok.status, 200, JSON.stringify(ok.body));
+  assert.deepEqual(ok.body.rules.entitlement, { annual: 21 }, 'القيم الخاطئة تُهمل');
+  assert.deepEqual([ok.body.rules.annual.minNoticeDays, ok.body.rules.sick.maxBackdateDays, ok.body.rules.medical.freeDays, ok.body.rules.notify.enabled, ok.body.rules.maxSpanDays], [3, 30, 2, false, 100]);
+  assert.deepEqual((await get(env, u.director, '/api/settings/requests')).body.rules.entitlement, { annual: 21 });
+  assert.equal((await get(env, u.emp2, '/api/requests/meta')).body.rules.annual.minNoticeDays, 3, 'تسري القواعد المحفوظة فوراً');
+});
+
+test('سقف المغادرات المحفوظ لا يُفعَّل بحفظ بقية القواعد، ويبقى إن أُرسل كما هو', async () => {
+  const { db, env, u } = await world();
+  await db.prepare("INSERT INTO settings (key, value) VALUES ('requests', ?)").bind(JSON.stringify({ monthlyCap: { enabled: true } })).run();
+  const cur = (await get(env, u.admin, '/api/settings/requests')).body.rules;
+  assert.equal(cur.monthlyCap.enabled, true);
+  const r = await call(env, 'PUT', '/api/settings/requests', { cookie: u.admin.cookie, body: { rules: { ...cur, annual: { minNoticeDays: 2 } } } });
+  assert.equal(r.body.rules.monthlyCap.enabled, true, 'أُرسل كما هو فبقي');
+  const r2 = await call(env, 'PUT', '/api/settings/requests', { cookie: u.admin.cookie, body: { rules: { annual: { minNoticeDays: 2 } } } });
+  assert.equal(r2.body.rules.monthlyCap.enabled, false, 'غير المُرسَل يعود للافتراضي (معطَّل)');
+  assert.equal(await db.prepare("SELECT COUNT(*) AS n FROM audit_log WHERE action = 'settings.requests'").first('n'), 2);
+});
+
+test('إيقاف إعفاء الأذونات من الإعدادات يعيد حساب الأيام المتأثرة فوراً', async () => {
+  const { db, env, u } = await world();
+  await addOverride(db, 2, '2026-11-01', { manual: { in: '09:50', dep: '15:00' } });
+  const a = await post(env, u.hr, '/api/requests', permit('late', { employeeId: 2, fromDate: '2026-11-01', fromTime: '08:30', toTime: '10:00', approve: true }));
+  assert.equal(a.status, 201, JSON.stringify(a.body));
+  const row = () => db.prepare('SELECT late_minutes AS late, deficit_hours AS def FROM daily_results WHERE employee_id = 2 AND date = ?').bind('2026-11-01').first();
+  assert.deepEqual(await row(), { late: 0, def: 0 });
+  const cur = (await get(env, u.admin, '/api/settings/requests')).body.rules;
+  const off = await call(env, 'PUT', '/api/settings/requests', { cookie: u.admin.cookie, body: { rules: { ...cur, permits: { exempt: false } } } });
+  assert.equal(off.body.recomputed, 1);
+  assert.deepEqual(await row(), { late: 80, def: 1.33 }, 'عاد الاحتساب الكامل');
+  const on = await call(env, 'PUT', '/api/settings/requests', { cookie: u.admin.cookie, body: { rules: { ...cur, permits: { exempt: true } } } });
+  assert.equal(on.body.recomputed, 1);
+  assert.deepEqual(await row(), { late: 0, def: 0 });
+  const same = await call(env, 'PUT', '/api/settings/requests', { cookie: u.admin.cookie, body: { rules: { ...cur, permits: { exempt: true } } } });
+  assert.equal(same.body.recomputed, 0, 'لا تغيير فلا إعادة حساب');
 });

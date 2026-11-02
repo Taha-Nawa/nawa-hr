@@ -29,6 +29,10 @@ export const DEFAULT_RULES = {
   monthlyCap: { enabled: false },
   // الإجازة المرضية: حتى freeDays يوم عمل بلا ورقة طبية، وما فوقها يلزمها ورقة طبية تؤكّدها الموارد البشرية (قرار 2 نوفمبر 2026)
   medical: { freeDays: 1 },
+  // أذونات المغادرة/التأخير المعتمدة: تُعفى من العجز والتأخير بقدرها (الحضور يلزم لليوم). إيقافها يعيد كل شيء كما كان.
+  permits: { exempt: true },
+  // إشعارات البريد عند التقديم والقرار (تعمل فقط إن كان إرسال البريد مضبوطاً في docs/EMAIL-SETUP.md)
+  notify: { enabled: true },
 };
 
 /** يدمج ما حفظه المسؤول (إن وُجد) فوق الافتراضي، ويتجاهل أي قيمة غير صالحة. */
@@ -45,6 +49,8 @@ export function mergeRules(stored) {
   const span = int(stored.maxSpanDays, 1, 366);
   if (span !== undefined) r.maxSpanDays = span;
   if (stored.monthlyCap?.enabled === true) r.monthlyCap.enabled = true;
+  if (stored.permits?.exempt === false) r.permits.exempt = false;
+  if (stored.notify?.enabled === false) r.notify.enabled = false;
   const free = int(stored.medical?.freeDays, 0, 30);
   if (free !== undefined) r.medical.freeDays = free;
   if (stored.entitlement && typeof stored.entitlement === 'object') {

@@ -50,7 +50,10 @@ export function timesheetSheet(ts, info, logoPng) {
     for (let i = 0; i < 31; i++) put(`${L(DAY_COL0 + i)}${r}`, i < ts.daysInMonth ? values[i] : null, style);
   };
 
-  for (let k = 0; k < 3; k++) {
+  // صفوف الممولين: ثلاثة كما في الشيت الأصلي كحد أدنى، وتزيد بعدد المشاريع (ما تحتها يُزاح بالزيادة)
+  const funderRows = Math.max(3, ts.funders.length);
+  const off = funderRows - 3;
+  for (let k = 0; k < funderRows; k++) {
     const r = FIRST_FUNDER_ROW + k;
     const f = ts.funders[k];
     put(`A${r}`, f ? f.funder : '', 'label');
@@ -62,7 +65,7 @@ export function timesheetSheet(ts, info, logoPng) {
   }
   const rest = [ts.official, ts.annual, ts.sick, ts.emergency, ts.others, ts.unpaid];
   rest.forEach((row, i) => {
-    const r = 13 + i;
+    const r = 13 + off + i;
     put(`A${r}`, row.label, 'label');
     put(`B${r}`, null, 'pct');
     put(`C${r}`, row.total, 'hoursFill');
@@ -70,28 +73,30 @@ export function timesheetSheet(ts, info, logoPng) {
     rowHeights[r] = 18.75;
   });
 
-  box(19, 0, 1, 'Total', 'labelFill');
-  put('C19', ts.total.total, 'hoursFill');
-  dayCells(19, ts.total.values, 'hoursFill');
-  rowHeights[19] = 23.25;
+  const totalRow = 19 + off;
+  box(totalRow, 0, 1, 'Total', 'labelFill');
+  put(`C${totalRow}`, ts.total.total, 'hoursFill');
+  dayCells(totalRow, ts.total.values, 'hoursFill');
+  rowHeights[totalRow] = 23.25;
 
   // التواقيع
-  box(21, 0, 3, null, 'boxFill');
-  box(21, 4, 18, 'Name', 'boxFill');
-  box(21, 19, LAST_COL, 'Date & Signature', 'boxFill');
+  const signRow = 21 + off;
+  box(signRow, 0, 3, null, 'boxFill');
+  box(signRow, 4, 18, 'Name', 'boxFill');
+  box(signRow, 19, LAST_COL, 'Date & Signature', 'boxFill');
   const sign = [
     ['Employee', info.name],
     ['Direct Supervisor', info.supervisor],
     ['Administration and Finance Manager', info.approver],
   ];
   sign.forEach(([label, name], i) => {
-    const r = 22 + i;
+    const r = signRow + 1 + i;
     box(r, 0, 3, label, 'boxFill');
     box(r, 4, 18, name || '', 'boxText');
     box(r, 19, 25, 'Date:', 'boxLeft');
     box(r, 26, LAST_COL, 'Signature:', 'boxLeft');
   });
-  for (const r of [21, 22, 23, 24]) rowHeights[r] = 22.5;
+  for (const r of [signRow, signRow + 1, signRow + 2, signRow + 3]) rowHeights[r] = 22.5;
 
   return {
     name: info.code,

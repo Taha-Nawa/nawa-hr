@@ -9,15 +9,18 @@ const C = 'Funder C';
 const D = 'Funder D';
 const row = (funder, share, from = '2026-01-01', to = '2030-12-31') => ({ funder, share, from, to });
 
-test('توزيع المشاريع: نسبة مفردة، نصفان، ثلاثة أثلاث', () => {
+test('توزيع المشاريع: نسبة مفردة، نصفان، ثلاثة أثلاث، وأربعة مشاريع', () => {
   assert.ok(validateAllocations([row(A, 1)]).rows);
   assert.ok(validateAllocations([row(A, 0.5), row(B, 0.5)]).rows);
   assert.ok(validateAllocations([row(A, 0.3334), row(B, 0.3333), row(C, 0.3333)]).rows);
+  assert.ok(validateAllocations([row(A, 0.4), row(B, 0.3), row(C, 0.2), row(D, 0.1)]).rows, 'أربعة مشاريع بمجموع 100%');
 });
 
-test('توزيع المشاريع: يرفض المجموع الخاطئ، أكثر من 3 متزامنين، فترات معكوسة، ممولاً مفقوداً، نسباً خارج المدى', () => {
+test('توزيع المشاريع: يرفض المجموع الخاطئ، أكثر من 6 متزامنة، فترات معكوسة، ممولاً مفقوداً، نسباً خارج المدى', () => {
   assert.match(validateAllocations([row(A, 0.5), row(B, 0.4)]).error, /100%/);
-  assert.match(validateAllocations([row(A, 0.25), row(B, 0.25), row(C, 0.25), row(D, 0.25)]).error, /3 ممولين/);
+  const seven = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((f, i) => row(f, i < 6 ? 0.14 : 0.16));
+  assert.match(validateAllocations(seven).error, /6 مشاريع/);
+  assert.match(validateAllocations([row(A, 0.25), row(B, 0.25), row(C, 0.25), row(D, 0.2)]).error, /100%/, 'أربعة بمجموع 95%');
   assert.match(validateAllocations([row(A, 1, '2026-06-01', '2026-01-01')]).error, /النهاية قبل البداية/);
   assert.match(validateAllocations([row(null, 1)]).error, /الممول/);
   assert.match(validateAllocations([row(A, 0)]).error, /النسبة/);

@@ -1,5 +1,6 @@
 import { h, clear, field, toast, AR_DAYS, todayLocal, addDays } from '../dom.js';
 import { get, put, post } from '../api.js';
+import { requestRulesPanel, timesheetPanel, emergencyPanel } from './settings-extra.js';
 
 export default async function render({ user }) {
   const canWorkEdit = user.role === 'admin';
@@ -76,7 +77,15 @@ export default async function render({ user }) {
     canWorkEdit ? h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { leaveTypes.push({ name: '', counted: true }); drawLeaves(); } }, 'نوع جديد') : null),
   workErr,
   canWorkEdit ? h('div', { class: 'dlg-actions' }, h('button', { type: 'submit', class: 'btn btn-primary' }, 'حفظ قواعد الدوام')) : null);
-  page.append(workForm);
+  // الطوارئ أولاً (إجراء عاجل)، ثم قواعد الدوام، ثم ساعات التايم شيت وقواعد الطلبات
+  const safe = async (build) => {
+    try {
+      return await build();
+    } catch (ex) {
+      return h('div', { class: 'notice notice-err' }, ex.message);
+    }
+  };
+  page.append(await safe(() => emergencyPanel({ work })), workForm, await safe(() => timesheetPanel()), await safe(() => requestRulesPanel()));
 
   // ------------------------------------------------------------ العطل الرسمية
   let year = new Date().getFullYear();

@@ -2,6 +2,7 @@ import { h, clear, icon, field, select } from '../dom.js';
 import { get } from '../api.js';
 import { KIND, statusChip, purposeText, fmtPeriod, fmtLength, fmtDate } from '../requests-lib.js';
 import { openRequestForm, openRequestDetail } from '../request-ui.js';
+import { PURPOSES, fmtDays } from '../balances-lib.js';
 
 export default async function render({ user }) {
   const meta = await get('/api/requests/meta');
@@ -89,15 +90,27 @@ export default async function render({ user }) {
     notice.append(h('div', { class: 'notice notice-warn' }, 'لم تُدخل إعدادات الدوام بعد، لذا لا يمكن احتساب الإجازات. أدخلها من «الإعدادات والعطل».'));
   }
 
+  // رصيدي لهذه السنة (خاص بي أو الافتراضي): المتبقي بعد المعتمد، وما هو معلّق بانتظار القرار
+  const balanceStrip = meta.balance
+    ? h('section', { class: 'bal-strip', 'aria-label': 'رصيد إجازاتي' },
+      meta.balance.items.map((b) => h('div', { class: 'sum' },
+        h('b', null, fmtDays(b.remaining)),
+        h('span', null, `${PURPOSES[b.purpose] || b.purpose}: متبقٍّ من ${fmtDays(b.total)} (مستهلك ${fmtDays(b.used)}${b.pending ? `، معلّق ${fmtDays(b.pending)}` : ''})`))))
+    : null;
+
   const page = h('div', { class: 'page' },
     h('header', { class: 'page-head' },
       h('div', null, h('h1', null, 'الطلبات'), h('p', { class: 'sub' }, 'الإجازات وأذونات المغادرة والتأخير')),
       h('div', { class: 'row-actions new-req' }, newButtons)),
     notice,
+    balanceStrip,
     shown.length > 1 ? tabBar : null,
     tools, box);
   drawTabs();
   if (shown.length) await load();
   else clear(box).append(h('p', { class: 'empty' }, 'لا شيء لعرضه.'));
+  // رابط البريد: #/requests?open=ID يفتح الطلب مباشرة
+  const wanted = Number(new URLSearchParams(location.hash.split('?')[1] || '').get('open')) || null;
+  if (wanted) open(wanted);
   return page;
 }

@@ -92,11 +92,17 @@ test('تغيير الممول في منتصف الشهر: الممول القد�
   assert.equal(t.funders[0].costCenter, 0.5);
 });
 
-test('أكثر من 3 ممولين: أول 3 فقط مع تنبيه؛ بلا توزيع: صفوف الممولين فارغة مع تنبيه', () => {
-  const four = ['A', 'B', 'C', 'D'].map((f, i) => ({ funder: f, share: i < 3 ? 1 / 3 : 0.1, from: '2026-01-01', to: '2030-12-31' }));
-  const many = build({ [OCT(1)]: day('عمل', 6.5) }, four);
-  assert.equal(many.funders.length, 3);
-  assert.ok(many.notes.includes('more_than_three'));
+test('أربعة مشاريع تظهر كلها بنسبها؛ وأكثر من 6 يُقتطع مع تنبيه؛ وبلا توزيع صفوف الممولين فارغة مع تنبيه', () => {
+  const four = [['A', 0.4], ['B', 0.3], ['C', 0.2], ['D', 0.1]].map(([f, share]) => ({ funder: f, share, from: '2026-01-01', to: '2030-12-31' }));
+  const t4 = build({ [OCT(1)]: day('عمل', 6.5) }, four);
+  assert.deepEqual(t4.funders.map((f) => f.funder), ['A', 'B', 'C', 'D']);
+  assert.deepEqual(t4.funders.map((f) => Math.round(at(f, 1) * 100) / 100), [2.6, 1.95, 1.3, 0.65]);
+  assert.ok(Math.abs(t4.funders.reduce((s, f) => s + at(f, 1), 0) - 6.5) < 1e-9, 'مجموع الموزَّع = ساعات الدوام');
+  assert.deepEqual(t4.notes, []);
+  const seven = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((f) => ({ funder: f, share: 1 / 7, from: '2026-01-01', to: '2030-12-31' }));
+  const many = build({ [OCT(1)]: day('عمل', 6.5) }, seven);
+  assert.equal(many.funders.length, 6);
+  assert.ok(many.notes.includes('too_many_funders'));
   const none = build({ [OCT(1)]: day('عمل', 6.5) }, []);
   assert.equal(none.funders.length, 0);
   assert.ok(none.notes.includes('no_allocation'));
@@ -242,4 +248,111 @@ test('API التايم شيت: عدد الاستعلامات ثابت وصغير
   const r = await q(env, hr.cookie, 'month=2026-10&employees=1,2,3,4');
   assert.equal(r.status, 200);
   assert.ok(env.DB.queries <= 10, `استعلامات: ${env.DB.queries}`);
+});
+
+// ------------------------------------------------------------------ إعداد الساعات لكل فترة (قرار 2 نوفمبر 2026)
+import { mergeTimesheetConfig, validateTimesheetConfig, hoursFor } from '../src/engine/timesheet.js';
+
+const close = (a, b) => Math.abs(a - b) < 1e-9;
+const cfg = (periods) => mergeTimesheetConfig({ periods });
+const withCfg = (days, config, allocations = one) => buildTimesheet({ year: 2026, month: 10, days, allocations, dayHours: 6.5, config });
+
+test('بلا إعداد أو بإعداد افتراضي صريح: النتائج كما كانت (6.5 دوام + 1 طارئة = 7.5)', () => {
+  const days = { [OCT(1)]: day('عمل', 6.5), [OCT(5)]: day('عمل', 6.38), [OCT(6)]: day('عمل', 0), [OCT(7)]: day('عطلة رسمية', 0) };
+  const plain = build(days);
+  const explicit = withCfg(days, cfg([{ from: '', attendanceHours: null, extraHours: 1, extraRow: 'emergency' }]));
+  assert.deepEqual(explicit, plain);
+  assert.deepEqual(withCfg(days, null), plain);
+});
+
+test('فترات مختلفة في الشهر نفسه: الدوام الموزّع والإضافي وصفّه يتبعان فترة كل يوم', () => {
+  const config = cfg([
+    { from: '', attendanceHours: null, extraHours: 1, extraRow: 'emergency' },
+    { from: '2026-10-15', attendanceHours: 7, extraHours: 0.5, extraRow: 'other' },
+  ]);
+  const t = withCfg({ [OCT(1)]: day('عمل', 6.5), [OCT(18)]: day('عمل', 6.5), [OCT(19)]: day('عمل', 3.25), [OCT(20)]: day('عمل', 0), [OCT(21)]: day('عطلة رسمية', 0) }, config);
+  // قبل 15: كما كان
+  assert.deepEqual([at(t.funders[0], 1), at(t.emergency, 1), at(t.others, 1), at(t.total, 1)], [6.5, 1, null, 7.5]);
+  // بعد 15: دوام كامل يوزّع 7 ساعات، و0.5 في «Others»
+  assert.deepEqual([at(t.funders[0], 18), at(t.emergency, 18), at(t.others, 18), at(t.annual, 18), at(t.total, 18)], [7, null, 0.5, null, 7.5]);
+  // نصف الدوام (3.25 من 6.5) = 3.5 موزّعة، والنقص 3.5 إجازة سنوية، واليوم يكتمل 7.5
+  assert.ok(close(at(t.funders[0], 19), 3.5) && close(at(t.annual, 19), 3.5) && close(at(t.total, 19), 7.5));
+  // غياب يوم عمل وعطلة رسمية: يوم كامل بحسب فترته (7 + 0.5)
+  assert.equal(at(t.annual, 20), 7.5);
+  assert.equal(at(t.official, 21), 7.5);
+  assert.equal(t.others.total, 1, 'يومان عملا بعد 15 أكتوبر × 0.5، ومجموع صف أخرى يدخل المجموع العام');
+  assert.ok(close(t.total.total, t.funders[0].total + t.annual.total + t.official.total + t.emergency.total + t.others.total));
+});
+
+test('المسؤول يحدّد يوم الشيت كما يشاء: دوام 7 + إضافي 1 = 8، أو بلا إضافي', () => {
+  const eight = withCfg({ [OCT(1)]: day('عمل', 6.5), [OCT(4)]: day('عطلة رسمية', 0), [OCT(5)]: day('عمل', 0, 'إجازة مرضية') }, cfg([{ from: '', attendanceHours: 7, extraHours: 1, extraRow: 'emergency' }]));
+  assert.deepEqual([at(eight.funders[0], 1), at(eight.emergency, 1), at(eight.total, 1)], [7, 1, 8]);
+  assert.equal(at(eight.official, 4), 8);
+  assert.equal(at(eight.sick, 5), 8);
+  const none = withCfg({ [OCT(1)]: day('عمل', 6.5) }, cfg([{ from: '', attendanceHours: null, extraHours: 0, extraRow: 'emergency' }]));
+  assert.deepEqual([at(none.funders[0], 1), at(none.emergency, 1), at(none.total, 1)], [6.5, null, 6.5], 'صفر إضافي = لا خلية');
+});
+
+test('التوزيع على عدة مشاريع يتبع ساعات الدوام الموزّعة في الفترة', () => {
+  const split = [{ funder: 'A', share: 0.5, from: '2026-01-01', to: '2030-12-31' }, { funder: 'B', share: 0.5, from: '2026-01-01', to: '2030-12-31' }];
+  const t = withCfg({ [OCT(1)]: day('عمل', 6.5) }, cfg([{ from: '', attendanceHours: 7, extraHours: 0.5, extraRow: 'emergency' }]), split);
+  assert.deepEqual([at(t.funders[0], 1), at(t.funders[1], 1)], [3.5, 3.5]);
+  assert.equal(t.funders[0].costCenter, 0.5);
+});
+
+test('تنقية الإعداد: التاريخ والساعات والتكرار وصف الإضافي، والفترات تُرتَّب', () => {
+  const c = cfg([
+    { from: '2026-06-01', attendanceHours: 6, extraHours: 2, extraRow: 'other' },
+    { from: '', attendanceHours: null, extraHours: 1, extraRow: 'x' },
+    { from: '2026-06-01', attendanceHours: 5, extraHours: 1, extraRow: 'emergency' }, // مكرر
+    { from: 'غلط', extraHours: 1 },
+    { from: '2026-09-01', attendanceHours: 30, extraHours: 1 },
+    { from: '2026-09-02', attendanceHours: 20, extraHours: 5 }, // 25 ساعة
+  ]);
+  assert.deepEqual(c.periods.map((p) => [p.from, p.extraRow]), [['', 'emergency'], ['2026-06-01', 'other']]);
+  assert.deepEqual(hoursFor('2026-05-31', c, 6.5), { attendance: 6.5, extra: 1, full: 7.5, extraRow: 'emergency', factor: 1 });
+  assert.deepEqual(hoursFor('2026-06-01', c, 6.5).full, 8);
+  assert.deepEqual(hoursFor('2026-10-01', null, 6.5).full, 7.5);
+});
+
+test('الحفظ من الإعدادات يرفض بدل أن يتجاهل، برسالة تحدد الفترة', () => {
+  const bad = (p) => validateTimesheetConfig({ periods: [p] }).error;
+  const ok = { from: '2026-01-01', attendanceHours: 6.5, extraHours: 1, extraRow: 'emergency' };
+  assert.ok(validateTimesheetConfig({ periods: [ok] }).config);
+  assert.match(bad({ ...ok, from: '2026-02-30' }), /تاريخ البداية/);
+  assert.match(bad({ ...ok, attendanceHours: -1 }), /ساعات الدوام/);
+  assert.match(bad({ ...ok, extraHours: '1' }), /الإضافية/);
+  assert.match(bad({ ...ok, extraRow: 'unpaid' }), /صف/);
+  assert.match(bad({ ...ok, attendanceHours: 23, extraHours: 2 }), /24/);
+  assert.match(validateTimesheetConfig({ periods: [ok, ok] }).error, /مكرر/);
+  assert.match(validateTimesheetConfig({}).error, /غير صالحة/);
+  assert.deepEqual(validateTimesheetConfig({ periods: [] }).config, { periods: [] }, 'قائمة فارغة = العودة للافتراضي');
+});
+
+test('API: إعداد ساعات التايم شيت — الكتابة للمسؤول، وتنعكس في تقرير الشهر، وأربعة مشاريع تُحفظ', async () => {
+  const { db, env } = await apiEnv();
+  env.__NOW = '2026-11-02T07:00:00Z';
+  await seedOrg(db);
+  const hr = await login(db, 'hr@nawaculture.org', 'hr', 4);
+  const admin = await login(db, 'adm@nawaculture.org', 'admin', null);
+  const emp = await login(db, 'e@nawaculture.org', 'employee', 2);
+  const body = { config: { periods: [{ from: '', attendanceHours: 7, extraHours: 0.5, extraRow: 'other' }] } };
+  assert.equal((await call(env, 'PUT', '/api/settings/timesheet', { cookie: hr.cookie, body })).status, 403);
+  assert.equal((await call(env, 'GET', '/api/settings/timesheet', { cookie: emp.cookie })).status, 403);
+  assert.equal((await call(env, 'PUT', '/api/settings/timesheet', { cookie: admin.cookie, body: { config: { periods: [{ from: '', extraHours: 99, extraRow: 'other' }] } } })).status, 400);
+  const saved = await call(env, 'PUT', '/api/settings/timesheet', { cookie: admin.cookie, body });
+  assert.equal(saved.status, 200, JSON.stringify(saved.body));
+  const read = await call(env, 'GET', '/api/settings/timesheet', { cookie: hr.cookie });
+  assert.deepEqual([read.body.config.periods[0].extraRow, read.body.dayHours, read.body.canEdit], ['other', 6.5, false]);
+
+  // 4 مشاريع للموظف 2 (50 + 25 + 15 + 10)
+  const four = [['A', 0.5], ['B', 0.25], ['C', 0.15], ['D', 0.1]].map(([funder, share]) => ({ funder, share, from: '2026-01-01', to: '2026-12-31' }));
+  const put = await call(env, 'PUT', '/api/employees/2/projects', { cookie: hr.cookie, body: { allocations: four } });
+  assert.equal(put.status, 200, JSON.stringify(put.body));
+  await db.prepare("INSERT INTO daily_results (employee_id, date, day_type, required_hours, approved_hours, status) VALUES (2, '2026-10-01', 'عمل', 6.5, 6.5, 'حاضر')").run();
+  const rep = await call(env, 'GET', '/api/reports/timesheet?month=2026-10&employees=2', { cookie: hr.cookie });
+  assert.equal(rep.status, 200, JSON.stringify(rep.body));
+  const t = rep.body.sheets[0].timesheet;
+  assert.deepEqual(t.funders.map((f) => f.funder), ['A', 'B', 'C', 'D']);
+  assert.deepEqual([t.funders[0].values[0], t.others.values[0], t.emergency.values[0], t.total.values[0]], [3.5, 0.5, null, 7.5]);
 });

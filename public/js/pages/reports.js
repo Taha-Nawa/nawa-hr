@@ -6,7 +6,7 @@ import { timesheetSheet } from '../timesheet-sheet.js';
 const CHUNK = 25; // الحد الأقصى للموظفين في طلب واحد (يطابق الخادم)
 const NOTE = {
   no_allocation: 'لا يوجد توزيع على ممول في هذا الشهر — صفوف الممولين فارغة (أضف التوزيع من صفحة الموظف).',
-  more_than_three: 'أكثر من 3 ممولين في هذا الشهر — يُعرض أول 3 فقط كما في الشيت.',
+  too_many_funders: 'أكثر من 6 مشاريع متزامنة في هذا الشهر — يُعرض أول 6 فقط.',
 };
 const fmt = (v) => (v === null || v === undefined ? '' : String(Math.round(v * 100) / 100));
 
@@ -16,7 +16,7 @@ function previewTable(sheet) {
   const ts = sheet.timesheet;
   const rows = [
     ...ts.funders.map((f) => ({ label: f.funder, cc: `${Math.round(f.costCenter * 100)}%`, row: f })),
-    ...[ts.official, ts.annual, ts.sick, ts.emergency].map((r) => ({ label: r.label, cc: '', row: r })),
+    ...[ts.official, ts.annual, ts.sick, ts.emergency, ...(ts.others.total ? [ts.others] : [])].map((r) => ({ label: r.label, cc: '', row: r })),
     { label: 'Total', cc: '', row: ts.total, strong: true },
   ];
   return h('div', { class: 'table-wrap', dir: 'ltr' },

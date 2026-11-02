@@ -12,6 +12,8 @@ const FONTS = [
   '<font><b/><sz val="11"/><name val="Georgia"/></font>', // 1 عناوين
   '<font><sz val="10"/><name val="Georgia"/></font>', // 2 تسميات
   '<font><b/><sz val="14"/><name val="Georgia"/></font>', // 3 عنوان كبير
+  '<font><b/><sz val="11"/><name val="Arial"/></font>', // 4 عناوين عربية
+  '<font><b/><sz val="14"/><name val="Arial"/></font>', // 5 عنوان عربي كبير
 ];
 const FILLS = ['<fill><patternFill patternType="none"/></fill>', '<fill><patternFill patternType="gray125"/></fill>', '<fill><patternFill patternType="solid"><fgColor rgb="FFF2DCDB"/><bgColor indexed="64"/></patternFill></fill>'];
 const THIN = '<left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/>';
@@ -35,6 +37,14 @@ const STYLES = {
   boxFill: [1, 2, 1, 0, 'center', true],
   boxText: [0, 0, 1, 0, 'center', true],
   boxLeft: [0, 0, 1, 0, 'left', true],
+  // تقارير عربية (أوراق من اليمين إلى اليسار): عناوين وخلايا نص ورقم ومجاميع
+  titleAr: [5, 0, 0, 0, 'right', false],
+  hdrAr: [4, 2, 1, 0, 'center', true],
+  cellAr: [0, 0, 1, 0, 'right', true],
+  cellCtr: [0, 0, 1, 0, 'center', true],
+  cellNum: [0, 0, 1, 0, 'center', false],
+  sumTxt: [4, 2, 1, 0, 'right', true],
+  sumNum: [4, 2, 1, 0, 'center', false],
 };
 const STYLE_IDS = Object.keys(STYLES);
 const styleId = (name) => {
@@ -116,7 +126,7 @@ function sheetXml(sh, hasImage) {
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
     '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
-    '<sheetViews><sheetView workbookViewId="0" showGridLines="0"/></sheetViews><sheetFormatPr defaultRowHeight="15"/>' +
+    `<sheetViews><sheetView workbookViewId="0" showGridLines="0"${sh.rtl ? ' rightToLeft="1"' : ''}/></sheetViews><sheetFormatPr defaultRowHeight="15"/>` +
     colsXml + `<sheetData>${body}</sheetData>` + merges +
     '<printOptions horizontalCentered="1"/><pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>' +
     `<pageSetup paperSize="9" orientation="${sh.landscape === false ? 'portrait' : 'landscape'}" fitToWidth="1" fitToHeight="0"/>` +

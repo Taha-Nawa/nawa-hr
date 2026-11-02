@@ -79,6 +79,12 @@ const WRITE = {
   importEmployees: (e, c) => call(e, 'POST', '/api/import/employees', { cookie: c, body: { rows: [{ code: `IMP-${Math.floor(Math.random() * 1e6)}`, name: 'مستورد' }] } }),
   importMovements: (e, c) => call(e, 'POST', '/api/import/movements', { cookie: c, body: { rows: [{ id: `X-${Math.random()}`, code: 'NW-004', type: 'حضور', date: '2026-03-02', time: '08:20' }] } }),
   recompute: (e, c) => call(e, 'POST', '/api/recompute', { cookie: c, body: { from: '2026-03-01', to: '2026-03-02' } }),
+  setBalances: (e, c) => call(e, 'PUT', '/api/balances', { cookie: c, body: { year: 2026, employeeIds: [3], items: { annual: 21 } } }),
+  copyBalances: (e, c) => call(e, 'POST', '/api/balances/copy', { cookie: c, body: { from: 2026, to: 2027 } }),
+  // الإعلان بجسم ناقص: من يملك الصلاحية يصل إلى التحقق (400/404) والبقية يُرفضون 403 قبل أي قراءة
+  declareEmergency: (e, c) => call(e, 'POST', '/api/emergencies', { cookie: c, body: {} }),
+  cancelEmergency: (e, c) => call(e, 'POST', '/api/emergencies/999/cancel', { cookie: c }),
+  listEmergencies: (e, c) => call(e, 'GET', '/api/emergencies', { cookie: c }),
   putLinks: (e, c) => call(e, 'PUT', '/api/links', { cookie: c, body: { links: [{ title: 'اختبار', url: 'https://example.org/x', audience: 'staff' }] } }),
 };
 
@@ -103,6 +109,11 @@ const MATRIX = {
   importMovements: [403, 403, 200, 403, 200],
   recompute: [403, 403, 200, 403, 200],
   putLinks: [403, 403, 403, 403, 200],
+  setBalances: [403, 403, 200, 403, 200],
+  copyBalances: [403, 403, 200, 403, 200],
+  declareEmergency: [403, 403, 400, 403, 400],
+  cancelEmergency: [403, 403, 404, 403, 404],
+  listEmergencies: [403, 403, 200, 200, 200],
 };
 
 for (const [action, expected] of Object.entries(MATRIX)) {
@@ -115,7 +126,7 @@ for (const [action, expected] of Object.entries(MATRIX)) {
 }
 
 test('المصفوفة تغطي كل إجراءات authz.ACTIONS الفعلية (لا إجراء بلا اختبار)', () => {
-  const covered = new Set(['employee.create', 'employee.update', 'badge.manage', 'center.manage', 'settings.read', 'settings.write', 'device.manage', 'user.manage', 'audit.read', 'holiday.write', 'import.run', 'recompute.run', 'links.manage']);
+  const covered = new Set(['employee.create', 'employee.update', 'badge.manage', 'center.manage', 'settings.read', 'settings.write', 'device.manage', 'user.manage', 'audit.read', 'holiday.write', 'import.run', 'recompute.run', 'links.manage', 'balance.manage', 'emergency.manage']);
   const uncovered = Object.keys(ACTIONS).filter((a) => !covered.has(a));
   // day.correct (التصحيح اليدوي) مخصص لمرحلة 2 ولا مسار له بعد
   assert.deepEqual(uncovered.sort(), ['day.correct']);

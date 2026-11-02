@@ -172,6 +172,39 @@ input[type="search"] { min-width: min(300px, 100%); }
 .inline-form .field { flex: 1 1 240px; }
 .tools { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 
+/* ------------------------------------------------------------ أرصدة الإجازات */
+.bal-main { display: flex; align-items: baseline; justify-content: center; gap: 2px; white-space: nowrap; }
+.bal-main strong { font-size: 1.1rem; }
+.bal-bar { display: block; height: 5px; margin: 5px auto 3px; max-width: 120px; background: var(--line-2); border-radius: 3px; overflow: hidden; }
+.bal-bar > i { display: block; height: 100%; background: var(--olive); border-radius: 3px; }
+.bal-bar.out > i { background: var(--gold); }
+.bal-bar.over > i { background: var(--red); }
+.bal-sub { display: block; color: var(--muted); font-size: 0.74rem; white-space: nowrap; }
+.bal-req { color: var(--ink-2); white-space: nowrap; }
+.tbl .pick { width: 1%; padding-inline-end: 0; }
+.bal-assign { display: flex; flex-direction: column; gap: 10px; }
+.bal-assign-row { display: grid; grid-template-columns: minmax(110px, 1.1fr) minmax(110px, 1fr) auto; gap: 10px 14px; align-items: center; }
+.bal-assign-name { font-weight: 600; }
+.sums + .seg-tabs, .tools + .sums { margin-top: 2px; }
+@media (max-width: 640px) {
+  .bal-assign-row { grid-template-columns: 1fr; gap: 6px; padding-bottom: 8px; border-bottom: 1px solid var(--line-2); }
+}
+
+/* ------------------------------------------------------------ طوارئ الدوام وقواعد الإعدادات */
+.emg-list { display: flex; flex-direction: column; gap: 8px; }
+.emg-item { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: #fff; }
+.emg-item.off { opacity: 0.6; }
+.emg-item .emg-what { flex: 1 1 260px; min-width: 0; }
+.emg-item .emg-what b { display: block; }
+.period-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px 12px; align-items: end; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: #fff; }
+.period-row .field-label { font-size: 0.8rem; }
+.alloc-row { display: grid; grid-template-columns: minmax(180px, 2fr) minmax(80px, 0.7fr) minmax(130px, 1fr) minmax(130px, 1fr) auto; gap: 8px 10px; align-items: center; }
+.alloc-seg { display: flex; flex-wrap: wrap; gap: 6px; }
+@media (max-width: 640px) {
+  .alloc-row { grid-template-columns: 1fr 1fr; padding-bottom: 10px; border-bottom: 1px solid var(--line-2); }
+  .alloc-row > :first-child { grid-column: 1 / -1; }
+}
+
 /* ------------------------------------------------------------ لوحات وجداول */
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow); }
 .panel-plain { display: flex; flex-direction: column; gap: 14px; }
@@ -225,6 +258,7 @@ input[type="search"] { min-width: min(300px, 100%); }
 .info { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px 24px; margin: 0; }
 .info dt { color: var(--muted); font-size: 0.82rem; }
 .info dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.bal-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 4px 0 10px; }
 .sums { display: flex; flex-wrap: wrap; gap: 10px; }
 .sum { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 14px; min-width: 110px; }
 .sum b { display: block; font-size: 1.25rem; font-variant-numeric: tabular-nums; line-height: 1.4; }

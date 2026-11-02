@@ -5,7 +5,7 @@
 import { json } from './util.js';
 import { loadWorkSettings } from './settings.js';
 import { toMin } from '../engine/attendance.js';
-import { buildTimesheet, daysInMonth } from '../engine/timesheet.js';
+import { buildTimesheet, daysInMonth, mergeTimesheetConfig } from '../engine/timesheet.js';
 import { employeeScope } from './authz.js';
 
 export const MAX_TIMESHEET_EMPLOYEES = 25;
@@ -54,7 +54,7 @@ export async function timesheetReport({ db, user, url }) {
   ).results;
   if (emps.length !== ids.length) return bad('موظف غير موجود أو خارج صلاحيتك', 403);
 
-  const [allocs, days, approver] = await Promise.all([
+  const [allocs, days, approver, cfgRow] = await Promise.all([
     db
       .prepare(
         `SELECT employee_id AS employeeId, funder, share, from_date AS "from", to_date AS "to"
@@ -74,7 +74,14 @@ export async function timesheetReport({ db, user, url }) {
     db
       .prepare("SELECT name_en AS nameEn FROM employees WHERE status = 'active' AND job_title_en LIKE '%Finance%' AND job_title_en LIKE '%Manager%' ORDER BY code LIMIT 1")
       .first(),
+    db.prepare("SELECT value FROM settings WHERE key = 'timesheet'").first(),
   ]);
+  let config = null;
+  try {
+    config = mergeTimesheetConfig(cfgRow ? JSON.parse(cfgRow.value) : null);
+  } catch {
+    config = null;
+  }
 
   const allocBy = new Map();
   for (const a of allocs.results) allocBy.set(a.employeeId, [...(allocBy.get(a.employeeId) || []), a]);
@@ -93,7 +100,7 @@ export async function timesheetReport({ db, user, url }) {
       place: e.centerEn || e.center || '',
       supervisor: e.managerLabelEn || (e.managerNameEn ? [e.managerNameEn, e.managerTitleEn].filter(Boolean).join(' – ') : ''),
     },
-    timesheet: buildTimesheet({ year, month, days: daysBy.get(e.id) || {}, allocations: allocBy.get(e.id) || [], dayHours }),
+    timesheet: buildTimesheet({ year, month, days: daysBy.get(e.id) || {}, allocations: allocBy.get(e.id) || [], dayHours, config }),
   }));
   return json({ ok: true, month: `${m[1]}-${m[2]}`, approver: approver?.nameEn || '', sheets });
 }

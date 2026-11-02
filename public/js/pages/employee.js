@@ -1,5 +1,6 @@
-import { h, clear, todayLocal, dayName, AR_MONTHS, hrs, dash, toast, confirmBox, field } from '../dom.js';
-import { get, post } from '../api.js';
+import { h, clear, todayLocal, dayName, AR_MONTHS, hrs, dash, toast, confirmBox, field, dialog } from '../dom.js';
+import { get, post, put } from '../api.js';
+import { allocationCheck, MAX_CONCURRENT } from '../allocations-lib.js';
 import { statusChip, groupOf } from './today.js';
 import { employeeForm } from './employees.js';
 
@@ -81,7 +82,9 @@ export default async function render({ user, params }) {
 
   async function loadAllocations() {
     const { allocations } = await get(`/api/employees/${id}/projects`);
-    clear(allocBox).append(h('h2', null, 'توزيع الموظف على المشاريع والممولين'));
+    clear(allocBox).append(h('div', { class: 'page-head' },
+      h('h2', null, 'توزيع الموظف على المشاريع والممولين'),
+      canEdit ? h('button', { type: 'button', class: 'btn btn-sm', onclick: () => allocationDialog(allocations) }, allocations.length ? 'تعديل التوزيع' : 'إضافة توزيع') : null));
     if (!allocations.length) {
       allocBox.append(h('p', { class: 'muted' }, 'لا توزيع مسجّل (يظهر «مشروع غير محدد» في التايم شيت حتى يُحدَّد).'));
       return;
@@ -90,6 +93,62 @@ export default async function render({ user, params }) {
       h('thead', null, h('tr', null, ['الممول / المشروع', 'النسبة', 'من', 'إلى'].map((t, i) => h('th', { class: i ? 'num' : '' }, t)))),
       h('tbody', null, allocations.map((a) => h('tr', null,
         h('td', { dir: 'ltr', lang: 'en' }, a.funder), h('td', { class: 'num' }, `${Math.round(a.share * 10000) / 100}%`), h('td', { class: 'num' }, a.from), h('td', { class: 'num' }, a.to))))));
+  }
+
+  // تحرير التوزيع: من 1 إلى MAX_CONCURRENT مشاريع متزامنة، ومجموع النسب 100% في كل فترة (فحص فوري، والخادم يراجع)
+  function allocationDialog(current) {
+    const year = todayLocal().slice(0, 4);
+    const rows = current.length
+      ? current.map((a) => ({ funder: a.funder, percent: Math.round(a.share * 10000) / 100, from: a.from, to: a.to }))
+      : [{ funder: '', percent: 100, from: `${year}-01-01`, to: `${year}-12-31` }];
+    const list = h('div', { class: 'bal-assign' });
+    const status = h('div', { class: 'alloc-seg', 'aria-live': 'polite' });
+    const err = h('div', { class: 'notice notice-err', hidden: true, role: 'alert' });
+    const save = h('button', { type: 'submit', class: 'btn btn-primary' }, 'حفظ التوزيع');
+
+    function check() {
+      const c = allocationCheck(rows);
+      clear(status).append(...c.segments.map((s) => h('span', { class: `chip ${s.ok ? 'chip-present' : 'chip-absent'}` }, `${s.from} → ${s.to}: ${s.total}%${s.reason ? ` — ${s.reason}` : ' ✓'}`)),
+        ...c.problems.map((p) => h('span', { class: 'chip chip-absent' }, p)));
+      save.disabled = !c.valid;
+    }
+    function drawRows() {
+      clear(list).append(...rows.map((r, i) => h('div', { class: 'alloc-row' },
+        h('input', { dir: 'ltr', lang: 'en', value: r.funder, placeholder: 'اسم المشروع / الممول', maxlength: '300', 'aria-label': 'المشروع', oninput: (e) => { r.funder = e.target.value; check(); } }),
+        h('input', { type: 'number', min: '0.01', max: '100', step: '0.01', inputmode: 'decimal', value: r.percent, 'aria-label': 'النسبة %', title: 'النسبة %', oninput: (e) => { r.percent = Number(e.target.value); check(); } }),
+        h('input', { type: 'date', value: r.from, 'aria-label': 'من', onchange: (e) => { r.from = e.target.value; check(); } }),
+        h('input', { type: 'date', value: r.to, 'aria-label': 'إلى', onchange: (e) => { r.to = e.target.value; check(); } }),
+        rows.length > 1 ? h('button', { type: 'button', class: 'btn btn-sm btn-danger-ghost', onclick: () => { rows.splice(i, 1); drawRows(); } }, 'حذف') : h('span'))));
+      check();
+    }
+    drawRows();
+    const dlg = dialog({
+      title: `توزيع ${emp.name} على المشاريع`,
+      wide: true,
+      content: h('form', { class: 'form-grid', onsubmit: async (ev) => {
+        ev.preventDefault();
+        err.hidden = true;
+        try {
+          await put(`/api/employees/${id}/projects`, { allocations: rows.map((r) => ({ funder: r.funder.trim(), share: Math.round(r.percent * 100) / 10000, from: r.from, to: r.to })) });
+          toast('حُفظ التوزيع');
+          dlg.close();
+          loadAllocations();
+        } catch (ex) {
+          err.textContent = ex.message;
+          err.hidden = false;
+        }
+      } },
+      h('p', { class: 'field-hint span-all' }, `وزّع الدوام على مشروعين أو أكثر (حتى ${MAX_CONCURRENT}) بنسب مجموعها 100% في كل فترة. مثال: مشروع أ 50% ومشروع ب 50%، أو ثلاثة أو أربعة مشاريع. يُقسَّم الدوام على التايم شيت بهذه النسب. لتغيير النسب في منتصف السنة أنهِ الصف الحالي في تاريخ وأضف صفوفاً من اليوم التالي.`),
+      h('div', { class: 'span-all' }, list),
+      h('div', { class: 'span-all' }, h('button', { type: 'button', class: 'btn btn-sm', onclick: () => {
+        const last = rows[rows.length - 1];
+        rows.push({ funder: '', percent: 0, from: last?.from || `${year}-01-01`, to: last?.to || `${year}-12-31` });
+        drawRows();
+      } }, 'إضافة مشروع')),
+      h('div', { class: 'span-all' }, status),
+      h('div', { class: 'span-all' }, err),
+      h('div', { class: 'dlg-actions span-all' }, h('button', { type: 'button', class: 'btn', onclick: () => dlg.close() }, 'إلغاء'), save)),
+    });
   }
 
   async function loadBadges() {

@@ -15,6 +15,9 @@ import { validateAllocations, replaceStatements } from './projects.js';
 import { timesheetReport } from './reports.js';
 import { loadLinks, validateLinks, visibleTo } from './links.js';
 import { registerRequestRoutes } from './requests.js';
+import { registerBalanceRoutes } from './balances.js';
+import { registerEmergencyRoutes } from './emergency.js';
+import { registerTimesheetSettings } from './timesheet-settings.js';
 import { registerLoginRoutes, resetLoginStatements, DEVICE_COOKIE, clearDeviceCookie } from './login.js';
 
 const MAX_BODY = 64 * 1024;
@@ -55,6 +58,9 @@ const routes = [];
 const add = (method, pattern, handler, { auth = true } = {}) => routes.push({ method, re: new RegExp(`^${pattern.replace(/:(\w+)/g, '(?<$1>[^/]+)')}$`), handler, auth });
 
 registerRequestRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
+registerBalanceRoutes(add, { bad, forbidden, readJson, auditStmt });
+registerEmergencyRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
+registerTimesheetSettings(add, { bad, forbidden, readJson, auditStmt });
 const { establish } = registerLoginRoutes(add, { bad, readJson, auditStmt });
 
 /** يُرجع Response أو null إن لم يطابق أي مسار. */

@@ -29,6 +29,8 @@ export const ACTIONS = {
   'user.manage': ['admin'],
   'audit.read': ['hr', 'director', 'admin'],
   'links.manage': ['admin'],
+  'balance.manage': ['hr', 'admin'], // توزيع أرصدة الإجازات على الموظفين
+  'emergency.manage': ['hr', 'admin'], // إعلان طارئ أثناء الدوام (إخلاء فوري / احتساب اليوم كاملاً) وإلغاؤه
 };
 
 export function can(user, action) {

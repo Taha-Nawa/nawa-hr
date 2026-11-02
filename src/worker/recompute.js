@@ -7,6 +7,7 @@
  *  - 100 كيلوبايت لنص الاستعلام → الكتابة على دفعات من CHUNK يوماً.
  */
 import { computeDay, dayTypeOf } from '../engine/attendance.js';
+import { mergeRules } from '../engine/requests.js';
 
 const CHUNK = 100;
 
@@ -58,7 +59,7 @@ export async function recomputePairs(db, pairs, settings, extraStatements = []) 
     const key = JSON.stringify(chunk);
     const dates = JSON.stringify([...new Set(chunk.map((p) => p.d))]);
 
-    const [mv, ov, hol] = await db.batch([
+    const [mv, ov, hol, pm, rl, em] = await db.batch([
       db.prepare(
         `SELECT m.employee_id AS e, m.date AS d, m.type, m.time FROM movements m
          WHERE (m.employee_id, m.date) IN (SELECT json_extract(value,'$.e'), json_extract(value,'$.d') FROM json_each(?))`,
@@ -69,7 +70,33 @@ export async function recomputePairs(db, pairs, settings, extraStatements = []) 
          WHERE (o.employee_id, o.date) IN (SELECT json_extract(value,'$.e'), json_extract(value,'$.d') FROM json_each(?))`,
       ).bind(key),
       db.prepare('SELECT date FROM holidays WHERE date IN (SELECT value FROM json_each(?))').bind(dates),
+      // دقائق الأذونات المعتمدة (مغادرة/تأخير) لهذه الأيام
+      db.prepare(
+        `SELECT r.employee_id AS e, r.from_date AS d, r.kind, SUM(r.minutes) AS m FROM requests r
+         WHERE r.status = 'approved' AND r.kind IN ('exit', 'late')
+           AND (r.employee_id, r.from_date) IN (SELECT json_extract(value,'$.e'), json_extract(value,'$.d') FROM json_each(?))
+         GROUP BY r.employee_id, r.from_date, r.kind`,
+      ).bind(key),
+      db.prepare("SELECT value FROM settings WHERE key = 'requests'"),
+      // إخلاء فوري معلَن (أبكر وقت إن تعدّدت الإعلانات) لمركز الموظف في هذا اليوم أو لكل المراكز
+      db.prepare(
+        `SELECT p.e, p.d, MIN(em.dismiss_time) AS t
+         FROM (SELECT json_extract(value,'$.e') AS e, json_extract(value,'$.d') AS d FROM json_each(?)) p
+         JOIN employees x ON x.id = p.e
+         JOIN emergencies em ON em.status = 'active' AND em.dismiss_time IS NOT NULL AND em.date = p.d
+           AND (em.center_id IS NULL OR em.center_id = x.center_id)
+         GROUP BY p.e, p.d`,
+      ).bind(key),
     ]);
+    const dismiss = new Map(em.results.map((r) => [`${r.e}|${r.d}`, r.t]));
+    let exempt = true;
+    try {
+      exempt = mergeRules(rl.results[0] ? JSON.parse(rl.results[0].value) : null).permits.exempt;
+    } catch {
+      exempt = true;
+    }
+    const permits = new Map();
+    if (exempt) for (const r of pm.results) permits.set(`${r.e}|${r.d}`, { ...(permits.get(`${r.e}|${r.d}`) || {}), [r.kind]: r.m });
 
     const holidays = new Set(hol.results.map((r) => r.date));
     const moves = new Map();
@@ -90,6 +117,8 @@ export async function recomputePairs(db, pairs, settings, extraStatements = []) 
           movements: moves.get(k) || [],
           manual: o ? { in: o.in_time, out: o.out_time, ret: o.ret_time, dep: o.dep_time } : {},
           leaveType: o?.leave_type || '',
+          permit: permits.get(k),
+          dismissAt: dismiss.get(k),
         },
         settings,
       );

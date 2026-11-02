@@ -67,6 +67,9 @@ const sum = (a) => a.reduce((s, x) => s + x, 0);
  * @param {{type:string,time:string}[]} input.movements  حركات هذا الموظف في هذا اليوم فقط
  * @param {{in?:string,out?:string,ret?:string,dep?:string}} [input.manual]  تصحيحات يدوية (لها الأولوية)
  * @param {string} [input.leaveType]          نوع الإجازة المعتمدة لهذا اليوم أو ''
+ * @param {{exit?:number,late?:number}} [input.permit]  دقائق أذونات المغادرة والتأخير المعتمدة لهذا اليوم (تُعفى من العجز والتأخير)
+ * @param {string} [input.dismissAt]          إخلاء فوري معلَن لهذا اليوم (HH:MM): ينتهي الدوام الفعلي عنده، فلا عجز ولا انصراف مبكر لمن بقي حتى ذلك الوقت،
+ *                                            ومن لم يسجّل انصرافه يُعدّ منصرفاً عنده. لا أثر له على يوم عليه إجازة (تُحتسب الإجازة يوماً كاملاً).
  * @param {object} settings
  */
 export function computeDay(input, settings) {
@@ -83,7 +86,12 @@ export function computeDay(input, settings) {
   const checkIn = has(manual.in) ? toMin(manual.in) : ins.length ? Math.min(...ins) : null;
   const exitFirst = has(manual.out) ? toMin(manual.out) : outs.length ? Math.min(...outs) : null;
   const returnLast = has(manual.ret) ? toMin(manual.ret) : rets.length ? Math.max(...rets) : null;
-  const departure = has(manual.dep) ? toMin(manual.dep) : deps.length ? Math.max(...deps) : null;
+  let departure = has(manual.dep) ? toMin(manual.dep) : deps.length ? Math.max(...deps) : null;
+
+  // الإخلاء الفوري: يسري على يوم دوام بلا إجازة فقط. نهاية الدوام الفعلية = وقت الإخلاء، ومن حضر قبله ولم يسجّل انصرافاً يُعدّ منصرفاً عنده.
+  const dismissMin = has(input.dismissAt) && dayType === DAY_WORK && leaveType === '' ? toMin(input.dismissAt) : null;
+  const eff = dismissMin !== null && dismissMin < toMin(settings.end) ? { ...settings, end: toHHMM(dismissMin) } : settings;
+  if (eff !== settings && checkIn !== null && checkIn < dismissMin && departure === null) departure = dismissMin;
 
   const anyManual = has(manual.in) || has(manual.out) || has(manual.ret) || has(manual.dep);
   const source = anyManual ? 'يدوي' : ins.length + deps.length > 0 ? 'بطاقة' : '—';
@@ -100,21 +108,27 @@ export function computeDay(input, settings) {
 
   const netHours = round2(Math.max(0, presenceHours - exitHours));
   const isWork = dayType === DAY_WORK;
-  const requiredHours = isWork ? officialHours(settings) : 0;
+  const requiredHours = isWork ? officialHours(eff) : 0;
 
   // الساعات المعتمدة والإضافي (مطابق لعمودي «الساعات المعتمدة» و«الإضافي» في إكسل):
   //  - بلا إجازة: min(المطلوب، الصافي + دقائق التأخير المسموحة/60)، والباقي إضافي
   //  - إجازة محتسبة: المطلوب كاملاً، وما زاد عن الصافي فوق المطلوب إضافي
   //  - إجازة غير محتسبة: min(المطلوب، الصافي)
   const start0 = toMin(settings.start);
-  const lateRaw = !isWork || checkIn === null || leaveType !== '' ? 0 : Math.max(0, checkIn - start0);
+  const lateGross = !isWork || checkIn === null || leaveType !== '' ? 0 : Math.max(0, checkIn - start0);
+  // الأذونات المعتمدة: إذن التأخير يعفي من دقائق التأخير بمقداره، وكل إذن (مغادرة/تأخير) يعوّض نقص الساعات بقدر نقصه الفعلي
+  // ولا يعوّض غياب اليوم كله (يلزم حضور). بلا أذونات تبقى النتائج كما في إكسل تماماً.
+  const permitExit = Math.max(0, input.permit?.exit || 0);
+  const permitLate = Math.max(0, input.permit?.late || 0);
+  const lateRaw = Math.max(0, lateGross - permitLate);
+  const permitHours = isWork && leaveType === '' && checkIn !== null ? (permitExit + permitLate) / 60 : 0;
   const forgiven = leaveType === '' && lateRaw > 0 && lateRaw <= settings.toleranceMinutes ? lateRaw / 60 : 0;
   const counted = leaveType !== '' && settings.leaveTypes[leaveType] === true;
 
   let approvedRaw;
   let overtimeRaw;
   if (leaveType === '') {
-    approvedRaw = Math.min(requiredHours, netHours + forgiven);
+    approvedRaw = Math.min(requiredHours, netHours + forgiven + permitHours);
     overtimeRaw = Math.max(0, netHours + forgiven - requiredHours);
   } else if (counted) {
     approvedRaw = requiredHours;
@@ -125,7 +139,7 @@ export function computeDay(input, settings) {
   }
   const approvedHours = Math.round(approvedRaw * 1e6) / 1e6;
 
-  const end = toMin(settings.end);
+  const end = toMin(eff.end);
   const lateMinutes = lateRaw;
   const earlyLeaveMinutes =
     !isWork || departure === null || leaveType !== '' ? 0 : Math.max(0, end - departure);
