@@ -24,6 +24,7 @@ export async function requestRulesPanel() {
   const free = num(rules.medical.freeDays, { min: '0', max: '30', step: '1', required: true, disabled: dis });
   const exempt = h('input', { type: 'checkbox', checked: rules.permits.exempt, disabled: dis });
   const notify = h('input', { type: 'checkbox', checked: rules.notify.enabled, disabled: dis });
+  const release = h('input', { type: 'checkbox', checked: rules.leave.cancelOnCheckIn, disabled: dis });
   const err = h('div', { class: 'notice notice-err', hidden: true, role: 'alert' });
 
   return h('form', { class: 'panel', onsubmit: async (e) => {
@@ -41,6 +42,7 @@ export async function requestRulesPanel() {
       medical: { freeDays: val(free) },
       permits: { exempt: exempt.checked },
       notify: { enabled: notify.checked },
+      leave: { cancelOnCheckIn: release.checked },
       entitlement,
     };
     try {
@@ -68,6 +70,9 @@ export async function requestRulesPanel() {
   h('div', { class: 'span-all' },
     h('label', { class: 'check' }, exempt, h('span', null, 'تُعفى الأذونات المعتمدة (مغادرة/تأخير) من العجز والتأخير بقدرها')),
     h('p', { class: 'field-hint' }, 'عند الإيقاف تُحسب المغادرة والتأخير كما لو لم يكن هناك إذن. يُعاد حساب الأيام المتأثرة فور الحفظ.')),
+  h('div', { class: 'span-all' },
+    h('label', { class: 'check' }, release, h('span', null, 'تسجيل دخول فعلي على البوابة يلغي الإجازة المعتمدة لذلك اليوم')),
+    h('p', { class: 'field-hint' }, 'إن اعتُمدت إجازة ثم غيّر الموظف رأيه وسجّل دخوله، يُحذف ذلك اليوم وحده من إجازته (ويعود إلى رصيده) ويُحتسب يوم حضور مرهوناً بانصرافه؛ وإن كانت الإجازة يوماً واحداً أُلغي الطلب. يُسجَّل في سجل التدقيق ويُشعَر الموظف ومعتمِدها.')),
   h('div', { class: 'span-all' },
     h('label', { class: 'check' }, notify, h('span', null, 'إرسال إشعارات بريد عند تقديم الطلب (للمعتمِد) وعند اعتماده أو رفضه أو إلغائه (للموظف)')),
     conf.code === false

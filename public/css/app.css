@@ -258,6 +258,8 @@ input[type="search"] { min-width: min(300px, 100%); }
 .info { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px 24px; margin: 0; }
 .info dt { color: var(--muted); font-size: 0.82rem; }
 .info dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.manual-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; margin: 8px 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.manual-bar[hidden] { display: none; }
 .bal-strip { display: flex; flex-wrap: wrap; gap: 10px; margin: 4px 0 10px; }
 .sums { display: flex; flex-wrap: wrap; gap: 10px; }
 .sum { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 14px; min-width: 110px; }
@@ -485,6 +487,9 @@ textarea { width: 100%; resize: vertical; }
   .tbl.stack td.row-actions .btn { flex: 1 1 auto; margin: 0; }
   .tbl.stack td.num { text-align: start; }
   .tbl.stack td.blank { display: none; }
+  .tbl.stack td.pick { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); }
+  .tbl.stack td.pick::before { display: inline; content: 'تحديد'; }
+  .tbl.stack td.pick input { width: 20px; height: 20px; margin: 0; }
   .tbl.stack td.wide { grid-column: 1 / -1; }
   .tbl.stack td.w2 { grid-column: span 2; }
   .tbl.stack tr.has-alert { border-inline-start: 4px solid var(--gold); }

@@ -12,12 +12,14 @@ import { mergeRules, needsMedical, KINDS, PURPOSES } from '../engine/requests.js
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_RECIPIENTS = 10;
+const MAX_RELEASE_MAILS = 4;
 
 const TITLE = {
   submitted: (r) => `${KINDS[r.kind]} جديد من ${r.employeeName} بانتظار قرارك`,
   approved: (r) => `اعتُمد ${KINDS[r.kind]} الخاص بك`,
   rejected: (r) => `رُفض ${KINDS[r.kind]} الخاص بك`,
   cancelled: (r) => `أُلغي ${KINDS[r.kind]} الخاص بك`,
+  released: (r) => `أُلغيت إجازة ${r.employeeName} المعتمدة لتسجيله الدخول فعلياً`,
 };
 
 function lines(r) {
@@ -31,10 +33,13 @@ function lines(r) {
   return out;
 }
 
-export function message(event, r, origin, note) {
+export function message(event, r, origin, note, extra = null) {
   const subject = TITLE[event](r);
   const rows = lines(r);
-  if (note && event !== 'submitted') rows.push([event === 'rejected' ? 'سبب الرفض' : 'ملاحظة', note]);
+  if (event === 'released' && extra) {
+    rows.push(['الأيام التي أُلغيت', extra.dates.join('، ')], ['حالة الطلب', extra.cancelled ? 'أُلغي كاملاً' : `بقيت ${extra.days} من أيامه معتمدة`], ['السبب', 'سجّل الموظف دخولاً فعلياً على البوابة في هذه الأيام فاحتُسب حضوراً مرهوناً بانصرافه']);
+  }
+  if (note && event !== 'submitted' && event !== 'released') rows.push([event === 'rejected' ? 'سبب الرفض' : 'ملاحظة', note]);
   const link = `${origin}/#/requests?open=${r.id}`;
   const text = `${subject}\n\n${rows.map(([k, v]) => `${k}: ${v}`).join('\n')}\n\nافتح الطلب: ${link}\n— نظام الحضور والطلبات، جمعية نوى للثقافة والفنون`;
   const html = `<div dir="rtl" lang="ar" style="font-family:Segoe UI,Tahoma,Arial,sans-serif;max-width:480px;margin:auto;padding:22px;border:1px solid #e6dccf;border-radius:14px;color:#2a1410">
@@ -60,6 +65,14 @@ async function recipientsOf(db, event, r, rules, actorEmail) {
     // لا يُشعَر صاحب الطلب بطلبه هو، ولا أحد يعتمد طلب نفسه
     const own = await emails('SELECT email FROM users WHERE employee_id = ?', r.employee_id);
     list = list.filter((e) => !own.includes(e));
+  } else if (event === 'released') {
+    // الموظف نفسه، ومديره المباشر، ومن اعتمد إجازته
+    list = [
+      ...(await emails('SELECT email FROM users WHERE active = 1 AND employee_id = ?', r.employee_id)),
+      ...(r.manager_id != null ? await emails("SELECT email FROM users WHERE active = 1 AND employee_id = ? AND role IN ('manager', 'hr', 'director', 'admin')", r.manager_id) : []),
+      ...(r.decided_by && r.decided_by !== 'system' ? [r.decided_by] : []),
+    ];
+    if (!list.length && r.employeeEmail) list = [r.employeeEmail];
   } else {
     list = await emails('SELECT email FROM users WHERE active = 1 AND employee_id = ?', r.employee_id);
     if (!list.length && r.employeeEmail) list = [r.employeeEmail];
@@ -75,7 +88,7 @@ async function recipientsOf(db, event, r, rules, actorEmail) {
  * يجدول إرسال إشعار طلب. ctx = { env, db, url, defer }. يُرجع وعداً (للانتظار في الاختبارات) أو undefined إن لم يُضبط بريد.
  * actor: بريد من أحدث الحدث (لا يُشعَر هو).
  */
-export function notifyRequest(ctx, event, requestId, { actor = null, note = null } = {}) {
+export function notifyRequest(ctx, event, requestId, { actor = null, note = null, extra = null } = {}) {
   const mailer = mailerFor(ctx.env);
   if (!mailer) return undefined;
   const origin = new URL(ctx.url).origin;
@@ -99,7 +112,7 @@ export function notifyRequest(ctx, event, requestId, { actor = null, note = null
       if (!r) return;
       const to = await recipientsOf(ctx.db, event, r, rules, actor);
       if (!to.length) return;
-      const m = message(event, r, origin, note ?? r.decision_note);
+      const m = message(event, r, origin, note ?? r.decision_note, extra);
       for (const addr of to) {
         try {
           await mailer.send({ to: addr, ...m });
@@ -112,4 +125,11 @@ export function notifyRequest(ctx, event, requestId, { actor = null, note = null
     }
   })();
   return ctx.defer ? ctx.defer(job) : job;
+}
+
+/** إشعار الأيام التي أُفرج عنها من إجازات معتمدة بسبب الدخول الفعلي: list من releaseLeaveDays. */
+export function notifyRelease(ctx, list) {
+  // سقف 4 إشعارات للدفعة الواحدة: كل إشعار يستهلك استعلامات من حدّ الطلب الواحد (50)؛ والباقي مسجَّل في التدقيق
+  const jobs = list.slice(0, MAX_RELEASE_MAILS).map((x) => notifyRequest(ctx, 'released', x.requestId, { extra: x }));
+  return Promise.all(jobs); // بلا waitUntil (الاختبارات) كل وعد مُنتظَر؛ ومعه تكون القيم undefined فتنتهي فوراً
 }

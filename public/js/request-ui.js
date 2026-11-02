@@ -229,6 +229,14 @@ export async function openRequestDetail({ id, meta, onChanged }) {
         r.leaveType ? h('div', { class: 'small muted' }, `نوع الإجازة في السجل: ${r.leaveType}`) : null));
     }
 
+    if (data.released?.length) {
+      const why = { checkin: 'سجّل الموظف دخولاً فعلياً على البوابة', manual: 'سُجّل له حضور يدوي' };
+      for (const src of ['checkin', 'manual']) {
+        const ds = data.released.filter((x) => x.source === src).map((x) => fmtDate(x.date));
+        if (ds.length) parts.push(h('div', { class: 'notice notice-warn' }, `أُلغيت من هذه الإجازة أيام لأنه ${why[src]}: ${ds.join('، ')}. عادت إلى رصيده واحتُسبت حضوراً.`));
+      }
+    }
+
     // ---- الاحتساب
     const calcHost = h('div', { class: 'calc-slot', 'aria-live': 'polite' });
     const showCalc = (c) => clear(calcHost).append(h('div', { class: 'calc' },

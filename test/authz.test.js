@@ -85,6 +85,7 @@ const WRITE = {
   declareEmergency: (e, c) => call(e, 'POST', '/api/emergencies', { cookie: c, body: {} }),
   cancelEmergency: (e, c) => call(e, 'POST', '/api/emergencies/999/cancel', { cookie: c }),
   listEmergencies: (e, c) => call(e, 'GET', '/api/emergencies', { cookie: c }),
+  manualAttendance: (e, c) => call(e, 'POST', '/api/attendance/manual', { cookie: c, body: {} }),
   putLinks: (e, c) => call(e, 'PUT', '/api/links', { cookie: c, body: { links: [{ title: 'اختبار', url: 'https://example.org/x', audience: 'staff' }] } }),
 };
 
@@ -114,6 +115,7 @@ const MATRIX = {
   declareEmergency: [403, 403, 400, 403, 400],
   cancelEmergency: [403, 403, 404, 403, 404],
   listEmergencies: [403, 403, 200, 200, 200],
+  manualAttendance: [403, 403, 400, 403, 400],
 };
 
 for (const [action, expected] of Object.entries(MATRIX)) {
@@ -126,10 +128,9 @@ for (const [action, expected] of Object.entries(MATRIX)) {
 }
 
 test('المصفوفة تغطي كل إجراءات authz.ACTIONS الفعلية (لا إجراء بلا اختبار)', () => {
-  const covered = new Set(['employee.create', 'employee.update', 'badge.manage', 'center.manage', 'settings.read', 'settings.write', 'device.manage', 'user.manage', 'audit.read', 'holiday.write', 'import.run', 'recompute.run', 'links.manage', 'balance.manage', 'emergency.manage']);
+  const covered = new Set(['employee.create', 'employee.update', 'badge.manage', 'center.manage', 'settings.read', 'settings.write', 'device.manage', 'user.manage', 'audit.read', 'holiday.write', 'import.run', 'recompute.run', 'links.manage', 'balance.manage', 'emergency.manage', 'day.correct']);
   const uncovered = Object.keys(ACTIONS).filter((a) => !covered.has(a));
-  // day.correct (التصحيح اليدوي) مخصص لمرحلة 2 ولا مسار له بعد
-  assert.deepEqual(uncovered.sort(), ['day.correct']);
+  assert.deepEqual(uncovered.sort(), []);
 });
 
 test('دوال التفويض النقية', () => {

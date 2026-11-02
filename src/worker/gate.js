@@ -11,6 +11,8 @@
 import { json, sha256hex, isDate, isTime, clip } from './util.js';
 import { loadWorkSettings } from './settings.js';
 import { recomputePairs } from './recompute.js';
+import { releaseOnCheckIn } from './release.js';
+import { notifyRelease } from './notify.js';
 
 const MAX_BODY_BYTES = 256 * 1024;
 export const MAX_MOVES = 100;
@@ -29,7 +31,7 @@ FROM (
 ) j
 LEFT JOIN badges b ON b.card = j.card
 LEFT JOIN employees e ON e.code = j.code
-RETURNING id, employee_id, date`;
+RETURNING id, employee_id, date, type`;
 
 export async function authDevice(db, token) {
   if (typeof token !== 'string' || token.length < 16 || token.length > 200) return null;
@@ -47,12 +49,12 @@ function cors(res) {
   return res;
 }
 
-export async function handleGate(request, env) {
+export async function handleGate(request, env, execCtx) {
   if (request.method === 'OPTIONS') return cors(new Response(null, { status: 204 }));
-  return cors(await route(request, env));
+  return cors(await route(request, env, execCtx));
 }
 
-async function route(request, env) {
+async function route(request, env, execCtx) {
   const url = new URL(request.url);
   let token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || null;
   let body = null;
@@ -81,7 +83,9 @@ async function route(request, env) {
     if (action === 'badges') return badges(env.DB);
     return json({ ok: false, error: 'إجراء غير معروف' }, 400);
   }
-  return ingest(env.DB, device, body);
+  // إشعار الإجازة الملغاة بعد الرد (ولا يعطّل الحفظ): بلا waitUntil (الاختبارات) يُنتظر الوعد
+  const defer = (p) => (execCtx?.waitUntil ? void execCtx.waitUntil(p) : p);
+  return ingest(env.DB, device, body, { onReleased: (list) => notifyRelease({ env, db: env.DB, url, defer }, list) });
 }
 
 async function badges(db) {
@@ -113,18 +117,18 @@ function validateMove(m) {
   return null;
 }
 
-async function ingest(db, device, body) {
+async function ingest(db, device, body, hooks = {}) {
   const moves = Array.isArray(body?.moves) ? body.moves : null;
   if (!moves) return json({ ok: false, error: 'لا توجد حركات في الطلب' }, 400);
   if (moves.length > MAX_MOVES) return json({ ok: false, error: `الحد الأقصى ${MAX_MOVES} حركة في الطلب` }, 413);
-  return json(await ingestMoves(db, device.id, moves, { touchDevice: true }));
+  return json(await ingestMoves(db, device.id, moves, { touchDevice: true, ...hooks }));
 }
 
 /**
  * يحفظ حركات ويعيد حساب أيامها. يُستعمل من البوابة (جهاز مصادَق) ومن استيراد الإدارة (deviceId = 'IMPORT').
  * يُرجع كائن الاستجابة { ok, saved, skipped, rejected?, unmatched?, warning? }.
  */
-export async function ingestMoves(db, deviceId, moves, { touchDevice = false } = {}) {
+export async function ingestMoves(db, deviceId, moves, { touchDevice = false, onReleased = null } = {}) {
   const good = [];
   const rejected = [];
   for (const m of moves) {
@@ -174,12 +178,17 @@ export async function ingestMoves(db, deviceId, moves, { touchDevice = false } =
     await touchNow();
     return out;
   }
+  // الدخول الفعلي يلغي الإجازة المعتمدة لذلك اليوم (قبل الحساب كي لا يبقى اليوم إجازة)
+  const checkIns = ins.results.filter((r) => r.employee_id !== null && r.type === 'حضور').map((r) => ({ e: r.employee_id, d: r.date }));
+  const released = checkIns.length ? await releaseOnCheckIn(db, checkIns) : [];
+  if (released.length) out.releasedLeaveDays = released.reduce((n, r) => n + r.dates.length, 0);
   const settings = await loadWorkSettings(db);
   if (!settings) {
     out.warning = 'settings_missing';
     await touchNow();
-    return out;
+  } else {
+    await recomputePairs(db, pairs, settings, touch ? [touch] : []);
   }
-  await recomputePairs(db, pairs, settings, touch ? [touch] : []);
+  if (released.length && onReleased) await onReleased(released);
   return out;
 }

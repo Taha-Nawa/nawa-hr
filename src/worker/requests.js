@@ -460,8 +460,10 @@ export function registerRequestRoutes(add, kit) {
         .bind(row.managerId)
         .first());
     }
+    // الأيام التي أُفرج عنها تلقائياً (دخول فعلي) أو بتأكيد الحضور اليدوي
+    const released = (await db.prepare('SELECT date, source, released_by AS by, released_at AS at FROM leave_released WHERE request_id = ? ORDER BY date').bind(row.id).all()).results;
     return json({
-      ok: true, request: row, calc, managerCanDecide,
+      ok: true, request: row, calc, managerCanDecide, released,
       leaveTypes: ctx.settings ? Object.keys(ctx.settings.leaveTypes) : [],
       suggestedLeaveType: ctx.settings ? suggestLeaveType(row.purpose, ctx.settings.leaveTypes) : null,
     });
@@ -519,7 +521,11 @@ export function registerRequestRoutes(add, kit) {
     const stmts = [
       db.prepare("UPDATE requests SET status = 'cancelled', decided_by = ?, decided_at = datetime('now'), decision_note = ? WHERE id = ? AND status = ?").bind(user.email, note, id, row.status),
     ];
-    if (wasApproved && row.kind === 'leave') stmts.push(...revokeStatements(db, id));
+    if (wasApproved && row.kind === 'leave') {
+      stmts.push(...revokeStatements(db, id));
+      // أيام الخطة التي نتج عنها هذا الطلب تتحرر فيستطيع الموظف تخطيطها من جديد
+      stmts.push(db.prepare("UPDATE leave_plan_days SET status = 'withdrawn' WHERE request_id = ? AND status = 'approved'").bind(id));
+    }
     stmts.push(auditStmt(db, user, wasApproved ? 'request.revoke' : 'request.cancel', 'request', id, { employeeId: row.employee_id, note }));
     const res = await db.batch(stmts);
     if (!res[0].meta.changes) return bad('تغيّرت حالة الطلب، حدّث الصفحة', 409);

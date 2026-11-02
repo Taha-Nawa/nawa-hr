@@ -11,7 +11,7 @@ export default {
         const r = await env.DB.prepare('SELECT 1 AS ok').first();
         return json({ ok: r?.ok === 1, service: 'nawa-hr' });
       }
-      if (url.pathname === '/api/gate') return await handleGate(request, env);
+      if (url.pathname === '/api/gate') return await handleGate(request, env, ctx);
       if (url.pathname.startsWith('/api/')) {
         return (await handleApi(request, env, url, ctx)) || json({ ok: false, error: 'غير موجود' }, 404);
       }

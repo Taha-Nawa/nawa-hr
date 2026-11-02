@@ -33,6 +33,8 @@ export const DEFAULT_RULES = {
   permits: { exempt: true },
   // إشعارات البريد عند التقديم والقرار (تعمل فقط إن كان إرسال البريد مضبوطاً في docs/EMAIL-SETUP.md)
   notify: { enabled: true },
+  // إجازة معتمدة ثم سجّل الموظف دخولاً فعلياً على البوابة: يُلغى ذلك اليوم منها (يُعاد إلى رصيده) ويُحسب حضوراً.
+  leave: { cancelOnCheckIn: true },
 };
 
 /** يدمج ما حفظه المسؤول (إن وُجد) فوق الافتراضي، ويتجاهل أي قيمة غير صالحة. */
@@ -51,6 +53,7 @@ export function mergeRules(stored) {
   if (stored.monthlyCap?.enabled === true) r.monthlyCap.enabled = true;
   if (stored.permits?.exempt === false) r.permits.exempt = false;
   if (stored.notify?.enabled === false) r.notify.enabled = false;
+  if (stored.leave?.cancelOnCheckIn === false) r.leave.cancelOnCheckIn = false;
   const free = int(stored.medical?.freeDays, 0, 30);
   if (free !== undefined) r.medical.freeDays = free;
   if (stored.entitlement && typeof stored.entitlement === 'object') {

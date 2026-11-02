@@ -3,6 +3,7 @@ import { get, post, put } from '../api.js';
 import { allocationCheck, MAX_CONCURRENT } from '../allocations-lib.js';
 import { statusChip, groupOf } from './today.js';
 import { employeeForm } from './employees.js';
+import { openManualDialog } from './manual.js';
 
 const monthRange = (ym) => {
   const [y, m] = ym.split('-').map(Number);
@@ -43,6 +44,12 @@ export default async function render({ user, params }) {
     ...row('Center', emp.centerEn), ...row('Line manager', emp.managerLabelEn));
   const hasEn = [emp.nameEn, emp.jobTitleEn, emp.departmentEn, emp.centerEn, emp.managerLabelEn].some(Boolean);
   const allocBox = h('section', { class: 'panel' });
+  let work = null;
+  const editDay = async (date) => {
+    work ||= (await get('/api/settings').catch(() => null))?.work || null;
+    if (!work) return toast('أدخل إعدادات الدوام أولاً', 'err');
+    openManualDialog({ employees: [{ id: emp.id, name: emp.name }], date, work, onDone: loadMonth });
+  };
 
   async function loadMonth() {
     const { from, to } = monthRange(ym);
@@ -71,13 +78,14 @@ export default async function render({ user, params }) {
       return;
     }
     tableBox.append(h('table', { class: 'tbl' },
-      h('thead', null, h('tr', null, ['اليوم', 'الحالة', 'حضور', 'خروج', 'عودة', 'انصراف', 'الصافي', 'المطلوب', 'تأخر', 'عجز', 'إضافي'].map((t, i) => h('th', { class: i >= 2 ? 'num' : '' }, t)))),
+      h('thead', null, h('tr', null, ['اليوم', 'الحالة', 'حضور', 'خروج', 'عودة', 'انصراف', 'الصافي', 'المطلوب', 'تأخر', 'عجز', 'إضافي', ...(canEdit ? [''] : [])].map((t, i) => h('th', { class: i >= 2 && i <= 10 ? 'num' : '' }, t)))),
       h('tbody', null, days.map((d) => h('tr', { class: d.dayType === 'عمل' ? '' : 'row-off' },
         h('td', null, d.date.slice(8), ' ', h('span', { class: 'muted' }, dayName(d.date))),
         h('td', null, statusChip(d.status), d.alert ? h('div', { class: 'alert-text' }, d.alert) : null),
         h('td', { class: 'num' }, dash(d.checkIn)), h('td', { class: 'num' }, dash(d.exitFirst)), h('td', { class: 'num' }, dash(d.returnLast)), h('td', { class: 'num' }, dash(d.departure)),
         h('td', { class: 'num' }, d.netHours ? hrs(d.netHours) : '—'), h('td', { class: 'num' }, d.requiredHours ? hrs(d.requiredHours) : '—'),
-        h('td', { class: 'num' }, d.lateMinutes ? `${d.lateMinutes} د` : '—'), h('td', { class: 'num' }, d.deficitHours ? hrs(d.deficitHours) : '—'), h('td', { class: 'num' }, d.overtimeHours ? hrs(d.overtimeHours) : '—'))))));
+        h('td', { class: 'num' }, d.lateMinutes ? `${d.lateMinutes} د` : '—'), h('td', { class: 'num' }, d.deficitHours ? hrs(d.deficitHours) : '—'), h('td', { class: 'num' }, d.overtimeHours ? hrs(d.overtimeHours) : '—'),
+        canEdit ? h('td', { class: 'row-actions' }, d.date <= todayLocal() ? h('button', { type: 'button', class: 'btn btn-sm', onclick: () => editDay(d.date) }, 'تعديل') : null) : null)))));
   }
 
   async function loadAllocations() {
