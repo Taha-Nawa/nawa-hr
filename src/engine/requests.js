@@ -24,6 +24,9 @@ export const DEFAULT_RULES = {
   maxSpanDays: 100, // أطول مدة إجازة في طلب واحد (أيام تقويمية)
   maxAheadDays: 366, // أبعد موعد يُقبل
   entitlement: {}, // اختياري: { annual: 21 } يُعرض الرصيد المتبقي إن وُجد
+  // إجمالي المغادرات الشهري وسقفه: مُعطَّل عمداً (قرار 2 نوفمبر 2026). الكود جاهز ويُفعَّل لاحقاً
+  // بحفظ { monthlyCap: { enabled: true } } في إعداد 'requests' مع settings.monthlyExitCapHours.
+  monthlyCap: { enabled: false },
 };
 
 /** يدمج ما حفظه المسؤول (إن وُجد) فوق الافتراضي، ويتجاهل أي قيمة غير صالحة. */
@@ -39,6 +42,7 @@ export function mergeRules(stored) {
   }
   const span = int(stored.maxSpanDays, 1, 366);
   if (span !== undefined) r.maxSpanDays = span;
+  if (stored.monthlyCap?.enabled === true) r.monthlyCap.enabled = true;
   if (stored.entitlement && typeof stored.entitlement === 'object') {
     for (const p of Object.keys(PURPOSES)) {
       const v = stored.entitlement[p];

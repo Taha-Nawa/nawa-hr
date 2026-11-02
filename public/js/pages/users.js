@@ -34,6 +34,11 @@ export default async function render({ user }) {
     const emp = select([['', 'بلا ربط'], ...employees.map((e) => [e.id, `${e.name} (${e.code})`])], u?.employeeId ?? '');
     const active = select([['1', 'فعّال'], ['0', 'موقوف']], u ? String(u.active) : '1');
     const err = h('div', { class: 'notice notice-err', hidden: true, role: 'alert' });
+    // مستخدم جديد: اختيار الموظف يملأ بريده المسجّل في بطاقته إن كان الحقل فارغاً (يبقى قابلاً للتعديل)
+    if (isNew) {
+      const mail = new Map(employees.map((e) => [String(e.id), e.email]));
+      emp.addEventListener('change', () => { if (!email.value && mail.get(emp.value)) email.value = mail.get(emp.value); });
+    }
     const dlg = dialog({
       title: isNew ? 'مستخدم جديد' : 'تعديل المستخدم',
       content: h('form', { class: 'form-grid', onsubmit: async (e) => {

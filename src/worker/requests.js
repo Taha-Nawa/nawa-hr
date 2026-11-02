@@ -128,7 +128,8 @@ export function registerRequestRoutes(add, kit) {
         out.remaining = ent - out.usedApproved[v.purpose] - v.days;
         if (out.remaining < 0) out.warnings.push(`يتجاوز الرصيد السنوي المحدد (${ent} يوماً)`);
       }
-    } else if (v.kind === 'exit') {
+    } else if (v.kind === 'exit' && ctx.rules.monthlyCap?.enabled) {
+      // مُعطَّل افتراضياً: لا يُحسب إجمالي الشهر ولا يُقارَن بسقف (انظر DEFAULT_RULES.monthlyCap)
       const { from, to } = monthBounds(monthOf(v.fromDate));
       const used = await db
         .prepare(
@@ -393,7 +394,19 @@ export function registerRequestRoutes(add, kit) {
     );
     // يُحسب من القيم الحالية؛ إن لم تعد صالحة (إعدادات تغيّرت) نعرض المخزّن بلا احتساب
     const calc = v.ok ? await calcOf(db, v.value, row.employeeId, row.id, ctx) : { kind: row.kind, days: row.days, minutes: row.minutes, warnings: [v.error], overlaps: [] };
-    return json({ ok: true, request: row, calc, leaveTypes: ctx.settings ? Object.keys(ctx.settings.leaveTypes) : [], suggestedLeaveType: ctx.settings ? suggestLeaveType(row.purpose, ctx.settings.leaveTypes) : null });
+    // من يستطيع اعتماده فعلاً؟ المدير المباشر المسجّل يلزمه حساب فعّال بدور يملك الاعتماد، وإلا يبقى للموارد البشرية/المدير العام
+    let managerCanDecide = false;
+    if (row.status === 'pending' && row.managerId != null) {
+      managerCanDecide = !!(await db
+        .prepare("SELECT 1 AS ok FROM users WHERE employee_id = ? AND active = 1 AND role IN ('manager', 'hr', 'director', 'admin') LIMIT 1")
+        .bind(row.managerId)
+        .first());
+    }
+    return json({
+      ok: true, request: row, calc, managerCanDecide,
+      leaveTypes: ctx.settings ? Object.keys(ctx.settings.leaveTypes) : [],
+      suggestedLeaveType: ctx.settings ? suggestLeaveType(row.purpose, ctx.settings.leaveTypes) : null,
+    });
   });
 
   add('POST', '/api/requests/:id/approve', async ({ request, env, db, user, params }) => {

@@ -8,6 +8,30 @@ const pf = (label, value, cls = '') => h('div', { class: `pf ${cls}`.trim() }, h
 const band = (text) => h('div', { class: 'pband' }, text);
 const cb = (on, text, extra) => h('div', { class: 'pcb' }, h('i', { class: `box${on ? ' on' : ''}`, 'aria-hidden': 'true' }), h('span', null, text), extra || null);
 
+const A4_PX = (210 * 96) / 25.4; // عرض الورقة بالبكسل (المليمتر ثابت في CSS)
+
+/** على الشاشات الضيقة تُصغَّر الورقة كاملة للمعاينة فقط؛ الطباعة دائماً بالحجم الحقيقي (انظر @media print). */
+function fitToScreen(frame) {
+  const apply = () => frame.style.setProperty('--fit', String(Math.min(1, (frame.clientWidth || A4_PX) / A4_PX).toFixed(4)));
+  if (typeof ResizeObserver === 'function') new ResizeObserver(apply).observe(frame);
+  else window.addEventListener('resize', apply);
+  requestAnimationFrame(apply);
+}
+
+/** Sakkal Majalla خط مايكروسوفت: نكتشف وجوده بقياس العرض مقابل خط احتياطي. */
+function hasMajalla() {
+  try {
+    const c = document.createElement('canvas').getContext('2d');
+    const w = (font) => { c.font = font; return c.measureText('جمعية نوى للثقافة والفنون 0123').width; };
+    return ['serif', 'monospace'].some((f) => w(`40px "Sakkal Majalla", ${f}`) !== w(`40px ${f}`));
+  } catch {
+    return true;
+  }
+}
+
+const fontNote = () => hasMajalla() ? null
+  : h('div', { class: 'notice no-print' }, 'خط النموذج الأصلي (Sakkal Majalla) غير مثبّت على هذا الجهاز، فيُستعمل خط قريب بحجم مكافئ. للحصول على الخط نفسه اطبع من جهاز ويندوز أو فيه Microsoft Office.');
+
 export default async function render({ params }) {
   const { request: r } = await get(`/api/requests/${Number(params.id)}`);
   const isLeave = r.kind === 'leave';
@@ -35,28 +59,36 @@ export default async function render({ params }) {
       pf('مكان العمل:', r.center)),
     band(isLeave ? 'نوع الاجازة والغرض منها:' : `الغرض من ${word}:`),
     h('div', { class: 'pchecks' }, purposes),
-    pf(isLeave ? 'الغرض من الإجازة:' : `الغرض من ${word}:`, r.reason, 'wide tall'),
+    h('div', { class: 'pf wide tall' }, h('span', { class: 'pl' }, isLeave ? 'الغرض من الإجازة:' : `الغرض من ${word}:`),
+      h('span', { class: 'pv' }, h('span', { class: 'pln' }, r.reason || ''), h('span', { class: 'pln' }))),
     band(`مدة ${word}:`),
     h('div', { class: 'pgrid' }, period),
     h('div', { class: 'psign' }, pf('الاسم:', r.employeeName), pf('التوقيع والتاريخ:', '')),
-    band('موافقة المسؤول/ة:'),
+    h('div', { class: 'pgap' }),
+    h('div', { class: 'pbold' }, 'موافقة المسؤول/ة:'),
     h('div', { class: 'pchecks one' },
       cb(approved, grantText, h('span', { class: 'pline' }, approved ? from : '')),
       cb(rejected, denyText)),
     pf('السبب:', rejected ? r.decisionNote : '', 'wide'),
     h('div', { class: 'psign' }, pf('الاسم:', approved || rejected ? r.decidedByName || r.decidedBy : ''), pf('التوقيع والتاريخ:', '')),
     h('footer', { class: 'pfoot' },
-      h('span', null, `طلب رقم ${r.id}`),
-      approved && r.leaveType ? h('span', null, `النوع في السجل: ${r.leaveType}`) : null,
-      h('span', null, isLeave ? `المحتسب: ${fmtDays(r.days)}` : `المحتسب: ${fmtMinutes(r.minutes)}`)));
+      h('span', null, 'صفحة | 1'),
+      h('span', { class: 'pmeta' },
+        h('span', null, `طلب رقم ${r.id}`),
+        approved && r.leaveType ? h('span', null, `النوع في السجل: ${r.leaveType}`) : null,
+        h('span', null, isLeave ? `المحتسب: ${fmtDays(r.days)}` : `المحتسب: ${fmtMinutes(r.minutes)}`))));
 
   const statusNote = approved ? null
     : h('div', { class: 'notice notice-warn no-print' }, rejected ? 'هذا الطلب مرفوض؛ تُطبع خانة «لا أوافق» مع السبب.' : r.status === 'pending' ? 'هذا الطلب لم يُعتمد بعد؛ تُطبع خانة موافقة المسؤول فارغة ليعبّئها المسؤول بخطّ يده، أو اعتمده أولاً من صفحة الطلبات.' : 'هذا الطلب ملغى.');
+
+  const frame = h('div', { class: 'paper-frame' }, h('div', { class: 'paper-sheet' }, paper));
+  fitToScreen(frame);
 
   return h('div', { class: 'page print-page' },
     h('header', { class: 'page-head no-print' },
       h('div', null, h('a', { href: '#/requests', class: 'back' }, 'كل الطلبات'), h('h1', null, `${KIND[r.kind].label} #${r.id}`)),
       h('div', { class: 'row-actions' }, h('button', { type: 'button', class: 'btn btn-primary', onclick: () => window.print() }, icon('printer'), 'طباعة'))),
     statusNote,
-    h('div', { class: 'paper-frame' }, paper));
+    fontNote(),
+    frame);
 }

@@ -140,6 +140,8 @@ test('حساب Microsoft صحيح لكن غير مسجّل في النظام أ�
   const stranger = await loginFlow(env, iss, { preferred_username: 'stranger@nawaculture.org' });
   assert.equal(stranger.res.status, 403);
   assert.equal(stranger.res.body.code, 'not_registered');
+  assert.equal(stranger.res.body.email, 'stranger@nawaculture.org', 'يُعاد بريد Microsoft ليعرف المسؤول ما يسجّله');
+  assert.match(stranger.res.body.error, /stranger@nawaculture\.org/);
   assert.equal(stranger.res.res.headers.get('set-cookie'), null);
 
   const off = await loginFlow(env, iss, { preferred_username: 'off@nawaculture.org' });

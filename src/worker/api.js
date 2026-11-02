@@ -104,7 +104,8 @@ add('POST', '/api/auth/session', async (ctx) => {
   if (!(await consumeNonce(db, claims.nonce))) return bad('انتهت صلاحية طلب الدخول، أعد المحاولة', 401);
   const email = emailOf(claims);
   const user = email && (await userForEmail(db, email));
-  if (!user) return json({ ok: false, error: 'حسابك غير مسجّل في النظام، راجع الموارد البشرية', code: 'not_registered' }, 403);
+  // نذكر للشخص البريد الذي أرجعته Microsoft (هو بريده هو، موثَّق بالتوكن) ليعرف المسؤول ما يُسجَّل بالضبط
+  if (!user) return json({ ok: false, error: `حسابك${email ? ` (⁦${email}⁩)` : ''} غير مسجّل في النظام، راجع الموارد البشرية`, code: 'not_registered', email: email || null }, 403);
   return establish(ctx, user, 'microsoft', { remember: body.remember === true });
 }, { auth: false });
 

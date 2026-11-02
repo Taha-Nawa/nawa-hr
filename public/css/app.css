@@ -338,28 +338,40 @@ textarea { width: 100%; resize: vertical; }
 .decide { border-top: 1px dashed var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
 .decide h3 { font-size: 1rem; }
 
-/* ------------------------------------------------------------ نموذج الطباعة (يطابق النماذج الورقية) */
-.paper-frame { container-type: inline-size; width: min(100%, 210mm); margin-inline: auto; }
-.paper { background: #fff; color: #161110; border: 1px solid var(--line); box-shadow: var(--shadow); aspect-ratio: 210 / 297; padding: 6cqw 8cqw 5cqw; font-size: 1.85cqw; line-height: 1.6; display: flex; flex-direction: column; gap: 1.1cqw; }
+/* ------------------------------------------------------------ نموذج الطباعة (يطابق ملفات Word المعتمدة)
+   الخط والأحجام مأخوذة من الملفات الأصلية: Sakkal Majalla، النص 11pt، العنوان 12pt عريض، الهوامش 17.8/20.3/17.8mm،
+   خطوط الحقول 0.5pt بلون 920000، شريط العناوين F2DCDB. الوحدات مطلقة (pt/mm) فلا تتغيّر مع حجم الشاشة.
+   Sakkal Majalla خط مايكروسوفت لا يجوز تضمينه؛ إن لم يكن مثبّتاً على الجهاز يحلّ محلّه Alexandria مصغَّراً ليقارب حجمه. */
+@font-face { font-family: "Form Fallback"; font-style: normal; font-weight: 100 900; src: url(/fonts/alexandria-arabic.woff2) format("woff2"); size-adjust: 80%; unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FE80-FEFC; }
+@font-face { font-family: "Form Fallback"; font-style: normal; font-weight: 100 900; src: url(/fonts/alexandria-latin.woff2) format("woff2"); size-adjust: 80%; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+.paper-frame { --fit: 1; width: 100%; overflow: hidden; }
+.paper-sheet { zoom: var(--fit); width: 210mm; margin-inline: auto; }
+.paper { --form-font: "Sakkal Majalla", "Form Fallback", "Traditional Arabic", serif; --pline: 0.5pt solid #920000;
+  box-sizing: border-box; width: 210mm; height: 296mm; padding: 20.3mm 17.8mm 17.8mm; background: #fff; color: #000; border: 1px solid #d9d2cc; box-shadow: var(--shadow);
+  font-family: var(--form-font); font-size: 11pt; line-height: 1.3; font-weight: 400; display: flex; flex-direction: column; gap: 1.5mm; }
 .phead { text-align: center; }
-.phead img { width: 15cqw; height: auto; display: block; margin: 0 auto; }
-.phead h2 { font-size: 2.7cqw; font-weight: 800; margin: 0.6cqw 0 1.4cqw; }
-.pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6cqw 4cqw; }
-.pf { display: flex; align-items: flex-end; gap: 1cqw; min-width: 0; }
-.pl { white-space: nowrap; font-weight: 600; }
-.pv { flex: 1; min-width: 0; min-height: 3.6cqw; border-bottom: 0.18cqw solid #333; padding-inline: 1cqw; font-weight: 700; overflow-wrap: anywhere; }
+.phead img { width: 30mm; height: auto; display: block; margin: 0 auto; }
+.phead h2 { font: inherit; font-size: 12pt; font-weight: 700; margin: 1mm 0 6.35mm; }
+.pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 7mm; }
+.pf { display: flex; align-items: flex-end; gap: 2mm; min-width: 0; }
+.pl { white-space: nowrap; }
+.pv { flex: 1; min-width: 0; min-height: 6mm; border-bottom: var(--pline); padding-inline: 1.5mm; overflow-wrap: anywhere; }
 .pf.wide { grid-column: 1 / -1; }
 .pf.tall { align-items: flex-start; }
-.pf.tall .pv { border-bottom: 0; line-height: 4.4cqw; min-height: 8.8cqw; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 4.2cqw, #444 4.2cqw, #444 4.4cqw); }
-.pband { background: #f2dcdc; font-weight: 800; padding: 0.3cqw 1.4cqw; margin-top: 1.2cqw; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.pchecks { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8cqw 4cqw; padding-inline: 1cqw; }
-.pchecks.one { grid-template-columns: 1fr; }
-.pcb { display: flex; align-items: center; gap: 1.2cqw; min-width: 0; }
-.pcb .pline { flex: 1; min-height: 3.2cqw; border-bottom: 0.18cqw solid #333; font-weight: 700; padding-inline: 1cqw; }
-.box { flex: none; width: 2cqw; height: 2cqw; border: 0.24cqw solid #222; display: inline-block; }
-.box.on { background: linear-gradient(45deg, transparent 43%, #222 43% 57%, transparent 57%), linear-gradient(-45deg, transparent 43%, #222 43% 57%, transparent 57%); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.psign { display: grid; grid-template-columns: 1fr 1fr; gap: 0 4cqw; margin-top: 3cqw; }
-.pfoot { margin-top: auto; display: flex; justify-content: space-between; gap: 2cqw; font-size: 1.4cqw; color: #6b5f5a; border-top: 0.12cqw solid #c9bfb6; padding-top: 1cqw; }
+.pf.tall .pv { border-bottom: 0; padding: 0; min-height: 0; display: flex; flex-direction: column; }
+.pln { display: block; min-height: 6.5mm; line-height: 6.5mm; border-bottom: var(--pline); padding-inline: 1.5mm; overflow-wrap: anywhere; }
+.pband { background: #f2dcdb; font-weight: 700; padding: 0.4mm 1.5mm; margin-top: 4mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.pbold { font-weight: 700; margin-top: 0; }
+.pchecks { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5mm 7mm; padding-inline: 1mm; }
+.pchecks.one { grid-template-columns: 1fr; gap: 0.5mm; }
+.pcb { display: flex; align-items: center; gap: 1.5mm; min-width: 0; }
+.pcb .pline { flex: 1; min-height: 5mm; border-bottom: var(--pline); padding-inline: 1.5mm; }
+.box { flex: none; width: 3.3mm; height: 3.3mm; border: 0.4mm solid #000; display: inline-block; }
+.box.on { background: linear-gradient(45deg, transparent 43%, #000 43% 57%, transparent 57%), linear-gradient(-45deg, transparent 43%, #000 43% 57%, transparent 57%); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.psign { display: grid; grid-template-columns: 1fr 1fr; gap: 0 7mm; margin-top: 7mm; }
+.pgap { height: 22mm; flex: none; }
+.pfoot { margin-top: auto; border-top: 0.5pt solid #000; padding-top: 1mm; display: flex; flex-direction: row-reverse; justify-content: space-between; gap: 4mm; font-size: 11pt; }
+.pfoot .pmeta { display: flex; gap: 5mm; font-size: 9pt; color: #444; }
 
 /* ------------------------------------------------------------ تابلت (آيباد أفقي/عمودي) */
 @media (max-width: 1100px) {
@@ -478,6 +490,7 @@ textarea { width: 100%; resize: vertical; }
   .shell { display: block; }
   .main { padding: 0 !important; max-width: none; }
   .page { gap: 0; }
-  .paper-frame { width: 210mm; margin: 0; }
-  .paper { border: 0; box-shadow: none; height: 296mm; aspect-ratio: auto; }
+  .paper-frame { width: 210mm; margin: 0; overflow: visible; }
+  .paper-sheet { zoom: 1; margin: 0; }
+  .paper { border: 0; box-shadow: none; }
 }

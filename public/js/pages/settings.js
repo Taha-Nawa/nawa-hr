@@ -19,7 +19,6 @@ export default async function render({ user }) {
   const startIn = h('input', { type: 'time', value: cur.start, required: true, disabled: !canWorkEdit });
   const endIn = h('input', { type: 'time', value: cur.end, required: true, disabled: !canWorkEdit });
   const tolIn = h('input', { type: 'number', min: '0', max: '240', step: '1', value: cur.toleranceMinutes, required: true, disabled: !canWorkEdit });
-  const capIn = h('input', { type: 'number', min: '0', step: '0.5', value: cur.monthlyExitCapHours ?? '', placeholder: 'بلا سقف', disabled: !canWorkEdit });
   const daysBox = h('div', { class: 'weekdays', role: 'group', 'aria-label': 'أيام الأسبوع' });
   const leaveBox = h('div', { class: 'leave-list' });
   const workErr = h('div', { class: 'notice notice-err', hidden: true, role: 'alert' });
@@ -54,7 +53,8 @@ export default async function render({ user }) {
     const body = {
       start: startIn.value, end: endIn.value, toleranceMinutes: Number(tolIn.value), weekdays,
       leaveTypes: Object.fromEntries(leaveTypes.map((t) => [t.name.trim(), !!t.counted])),
-      ...(capIn.value === '' ? {} : { monthlyExitCapHours: Number(capIn.value) }),
+      // سقف المغادرات الشهري معطَّل ولا حقل له؛ تُحفظ القيمة المخزَّنة (إن وُجدت) كما هي لاستعمال لاحق
+      ...(Number.isFinite(cur.monthlyExitCapHours) ? { monthlyExitCapHours: cur.monthlyExitCapHours } : {}),
     };
     try {
       await put('/api/settings/work', body);
@@ -70,8 +70,7 @@ export default async function render({ user }) {
   canWorkEdit ? null : h('p', { class: 'muted' }, 'للعرض فقط. يعدّل القواعد مسؤول النظام.'),
   h('div', { class: 'form-grid' },
     field('بداية الدوام', startIn), field('نهاية الدوام', endIn),
-    field('سماحية التأخير (دقائق)', tolIn, 'يُحسب الموظف «متأخراً» إذا تجاوز هذا الحد بعد بداية الدوام'),
-    field('سقف ساعات المغادرة الشهرية', capIn, 'اتركه فارغاً بلا سقف')),
+    field('سماحية التأخير (دقائق)', tolIn, 'يُحسب الموظف «متأخراً» إذا تجاوز هذا الحد بعد بداية الدوام')),
   h('fieldset', { class: 'fieldset' }, h('legend', null, 'أيام الأسبوع'), daysBox, h('p', { class: 'field-hint' }, 'اضغط اليوم لتبديله بين دوام وعطلة أسبوعية.')),
   h('fieldset', { class: 'fieldset' }, h('legend', null, 'أنواع الإجازات'), leaveBox,
     canWorkEdit ? h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { leaveTypes.push({ name: '', counted: true }); drawLeaves(); } }, 'نوع جديد') : null),

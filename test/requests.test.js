@@ -124,6 +124,9 @@ test('دمج قواعد محفوظة: القيم غير الصالحة تُهم�
   assert.equal(r.maxSpanDays, 100);
   assert.deepEqual(r.entitlement, { annual: 21 });
   assert.deepEqual(mergeRules(null), DEFAULT_RULES);
+  assert.equal(DEFAULT_RULES.monthlyCap.enabled, false, 'السقف الشهري معطَّل افتراضياً');
+  assert.equal(mergeRules({ monthlyCap: { enabled: 'yes' } }).monthlyCap.enabled, false, 'لا يُفعَّل إلا بـ true صريحة');
+  assert.equal(mergeRules({ monthlyCap: { enabled: true } }).monthlyCap.enabled, true);
 });
 
 // ---------------------------------------------------------------- الصلاحيات
@@ -320,7 +323,7 @@ test('الرفض يحتاج سبباً، والملغى والمرفوض لا ي
   assert.equal((await post(env, u.emp2, `/api/requests/${p.body.id}/cancel`, {})).status, 200);
 });
 
-test('الأذونات: مغادرة وتأخير، تعارض الوقت، وسقف المغادرات الشهري تنبيه لا منع', async () => {
+test('الأذونات: مغادرة وتأخير وتعارض الوقت، ولا إجمالي شهري ولا سقف افتراضياً', async () => {
   const { env, u } = await world();
   const a = await post(env, u.emp2, '/api/requests', permit('exit', { fromTime: '10:00', toTime: '12:00' }));
   assert.equal(a.status, 201, JSON.stringify(a.body));
@@ -329,17 +332,13 @@ test('الأذونات: مغادرة وتأخير، تعارض الوقت، وس
   // إذن تأخير في اليوم نفسه لا يتعارض مع المغادرة
   assert.equal((await post(env, u.emp2, '/api/requests', permit('late', { fromTime: '08:30', toTime: '10:00' }))).status, 201);
 
-  // 3 + 2 ساعات = 5، ثم إذن ساعتين يتجاوز سقف الست ساعات: تنبيه
-  const pv = await post(env, u.emp2, '/api/requests/preview', permit('exit', { fromDate: '2026-11-04', fromTime: '09:00', toTime: '11:00' }));
+  // السقف الشهري معطَّل رغم أن settings.monthlyExitCapHours = 6: لا إجمالي ولا تحذير مهما بلغت الساعات
+  const pv = await post(env, u.emp2, '/api/requests/preview', permit('exit', { fromDate: '2026-11-04', fromTime: '09:00', toTime: '13:00' }));
   assert.equal(pv.status, 200);
-  assert.equal(pv.body.calc.minutes, 120);
-  assert.equal(pv.body.calc.monthPendingMinutes, 180);
-  assert.equal(pv.body.calc.capMinutes, 360);
-  assert.deepEqual(pv.body.calc.warnings, [], '5 ساعات من 6');
-  const pv2 = await post(env, u.emp2, '/api/requests/preview', permit('exit', { fromDate: '2026-11-04', fromTime: '09:00', toTime: '13:00' }));
-  assert.match(pv2.body.calc.warnings[0], /سقف المغادرات/);
-  const save = await post(env, u.emp2, '/api/requests', permit('exit', { fromDate: '2026-11-04', fromTime: '09:00', toTime: '13:00' }));
-  assert.equal(save.status, 201, 'لا يُمنع الحفظ، المعتمِد يقرّر');
+  assert.equal(pv.body.calc.minutes, 240, 'مدة هذا الإذن وحده');
+  for (const k of ['month', 'monthApprovedMinutes', 'monthPendingMinutes', 'capMinutes']) assert.equal(k in pv.body.calc, false, `${k} غير موجود`);
+  assert.deepEqual(pv.body.calc.warnings, []);
+  assert.equal((await post(env, u.emp2, '/api/requests', permit('exit', { fromDate: '2026-11-04', fromTime: '09:00', toTime: '13:00' }))).status, 201);
 
   // اعتماد إذن لا يكتب شيئاً في day_overrides
   const id = a.body.id;
@@ -347,6 +346,38 @@ test('الأذونات: مغادرة وتأخير، تعارض الوقت، وس
   const d = (await get(env, u.mgr, `/api/requests/${id}`)).body.request;
   assert.deepEqual([d.fromTime, d.toTime, d.minutes], ['10:00', '11:30', 90]);
   assert.deepEqual([d.original.toTime, d.original.minutes], ['12:00', 120]);
+});
+
+test('تفاصيل الطلب تُبيّن إن كان المدير المباشر قادراً على اعتماده أم يبقى للموارد البشرية', async () => {
+  const { db, env, u } = await world();
+  const a = await post(env, u.emp2, '/api/requests', leave());
+  const d1 = (await get(env, u.emp2, `/api/requests/${a.body.id}`)).body;
+  assert.equal(d1.request.managerName != null, true, 'اسم المدير المباشر يصل للواجهة');
+  assert.equal(d1.managerCanDecide, true, 'مديرته لها حساب بدور مدير');
+
+  // المدير بلا حساب فعّال: لا يستطيع الاعتماد فتظهر الحالة للجميع
+  await db.prepare("UPDATE users SET active = 0 WHERE email = 'mgr@nawaculture.org'").run();
+  assert.equal((await get(env, u.emp2, `/api/requests/${a.body.id}`)).body.managerCanDecide, false);
+
+  // موظف بلا مدير مباشر (رقم 4): لا مدير ولا اعتماد إلا من الموارد البشرية/المدير العام
+  const b = await post(env, u.hr, '/api/requests', leave());
+  const d2 = (await get(env, u.hr, `/api/requests/${b.body.id}`)).body;
+  assert.equal(d2.request.managerId, null);
+  assert.equal(d2.managerCanDecide, false);
+  assert.equal((await post(env, u.director, `/api/requests/${b.body.id}/approve`, { leaveType: 'إجازة سنوية' })).status, 200, 'المدير العام يعتمد');
+});
+
+test('السقف الشهري للمغادرات يعمل عند تفعيله صراحةً (جاهز للمستقبل) وهو تنبيه لا منع', async () => {
+  const { db, env, u } = await world();
+  await db.prepare("INSERT INTO settings (key, value) VALUES ('requests', ?)").bind(JSON.stringify({ monthlyCap: { enabled: true } })).run();
+  assert.equal((await post(env, u.emp2, '/api/requests', permit('exit', { fromTime: '10:00', toTime: '13:00' }))).status, 201); // 3 ساعات
+  const ok = await post(env, u.emp2, '/api/requests/preview', permit('exit', { fromDate: '2026-11-04', fromTime: '09:00', toTime: '11:00' }));
+  assert.equal(ok.body.calc.monthPendingMinutes, 180);
+  assert.equal(ok.body.calc.capMinutes, 360);
+  assert.deepEqual(ok.body.calc.warnings, [], '5 ساعات من 6');
+  const over = await post(env, u.emp2, '/api/requests/preview', permit('exit', { fromDate: '2026-11-04', fromTime: '09:00', toTime: '13:00' }));
+  assert.match(over.body.calc.warnings[0], /سقف المغادرات/);
+  assert.equal((await post(env, u.emp2, '/api/requests', permit('exit', { fromDate: '2026-11-04', fromTime: '09:00', toTime: '13:00' }))).status, 201, 'لا يُمنع الحفظ');
 });
 
 test('الإجازة تعرض المستهلك هذا العام والرصيد إن حُدّد في القواعد', async () => {

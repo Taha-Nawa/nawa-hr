@@ -68,6 +68,7 @@ export function calcLines(c) {
     if (c.entitlement !== undefined) lines.push(['الرصيد المتبقي', `${c.remaining} يوماً من ${c.entitlement}`]);
   } else {
     lines.push(['المحتسب', fmtMinutes(c.minutes)]);
+    // إجمالي الشهر وسقفه: لا يصل من الخادم ما لم يُفعَّل (rules.monthlyCap.enabled)
     if (c.kind === 'exit' && c.month !== undefined) {
       const cap = c.capMinutes !== undefined ? ` من ${fmtMinutes(c.capMinutes)}` : '';
       lines.push(['مغادرات هذا الشهر', `${fmtMinutes(c.monthApprovedMinutes) === '—' ? '0' : fmtMinutes(c.monthApprovedMinutes)} معتمدة${c.monthPendingMinutes ? ` + ${fmtMinutes(c.monthPendingMinutes)} معلّقة` : ''}${cap}`]);

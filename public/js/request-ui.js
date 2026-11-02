@@ -195,6 +195,15 @@ export async function openRequestDetail({ id, meta, onChanged }) {
     const head = h('div', { class: 'req-head' }, h('span', { class: 'req-kind' }, KIND[r.kind].label, ' #', r.id), statusChip(r.status));
     const parts = [head, info];
 
+    // من يعتمد هذا الطلب؟ (يُعرض ما دام معلّقاً كي يعرف الجميع أين وصل)
+    if (r.status === 'pending') {
+      const hr = 'الموارد البشرية أو المدير العام';
+      const who = !r.managerId ? `لا مدير مباشر مسجّل لهذا الموظف، فيعتمد طلبه ${hr}.`
+        : !data.managerCanDecide ? `المدير المباشر (${r.managerName}) بلا حساب دخول بدور «مدير مباشر»، فيعتمد الطلب ${hr}.`
+          : `ينتظر اعتماد المدير المباشر (${r.managerName})، ويستطيع ${hr} اعتماده أيضاً.`;
+      parts.push(h('div', { class: `notice${r.managerId && data.managerCanDecide ? '' : ' notice-warn'}` }, who));
+    }
+
     if (r.original) {
       const o = r.original;
       parts.push(h('div', { class: 'notice notice-warn' }, `عدّل المعتمِد ما طلبه الموظف. المطلوب أصلاً: ${fmtPeriod({ kind: r.kind, ...o })}.`));
