@@ -19,9 +19,13 @@ import { mailerFor, logMailFailure } from './mail.js';
 export const BACKUP_TABLES = [
   'centers', 'employees', 'badges', 'devices', 'users', 'settings', 'holidays', 'employee_projects',
   'day_overrides', 'requests', 'leave_balances', 'emergencies', 'leave_plans', 'leave_plan_days', 'leave_released',
-  'volunteers', 'volunteer_days', 'monthly_reports', 'work_log', 'daily_results', 'movements', 'audit_log',
+  'volunteers', 'volunteer_days', 'monthly_reports', 'daily_results', 'movements', 'audit_log',
 ];
-export const BACKUP_EXCLUDED = ['sessions', 'auth_nonces', 'trusted_devices', 'user_pins', 'email_codes', 'auth_meta'];
+// work_log: ملاحظات عمل يومية خاصة بأصحابها (قرار 6.19) ومسودات التقارير خاصة بأصحابها أيضاً: لا تدخل ملفاً يحمله المسؤول.
+// تبقى محمية بسجل الاسترجاع الزمني (Time Travel) داخل Cloudflare 30 يوماً؛ وما قدّمه الموظف من تقارير يُنسخ.
+export const BACKUP_EXCLUDED = ['sessions', 'auth_nonces', 'trusted_devices', 'user_pins', 'email_codes', 'auth_meta', 'work_log', 'report_reminders'];
+// جداول تُنسخ جزئياً: شرط SQL ثابت (لا مدخلات مستخدم) يطبَّق على العدّ والصفحات معاً.
+export const BACKUP_FILTERS = { monthly_reports: "status = 'submitted'" };
 // أعمدة لا تُصدَّر (بصمات رموز). بعد الاسترجاع تُعاد إصدار رموز الأجهزة من صفحة «أجهزة البوابة».
 export const HIDDEN_COLUMNS = { devices: ['token_hash'] };
 
@@ -33,6 +37,7 @@ const REMIND_EVERY_DAYS = 7;
 const MIN_TOKEN = 24;
 
 const q = (name) => `"${name}"`;
+const source = (name) => `${q(name)}${BACKUP_FILTERS[name] ? ` WHERE ${BACKUP_FILTERS[name]}` : ''}`;
 
 /** من يطلب؟ سكربت برمز، أو مسؤول بجلسة. يُرجع { actor } أو { error: Response }. */
 async function authorize({ request, env, db }) {
@@ -83,7 +88,7 @@ export function registerBackupRoutes(add, kit) {
   add('GET', '/api/backup/manifest', async (ctx) => {
     const a = await authorize(ctx);
     if (a.error) return a.error;
-    const counts = await Promise.all(BACKUP_TABLES.map((t) => ctx.db.prepare(`SELECT COUNT(*) AS n FROM ${q(t)}`).first('n')));
+    const counts = await Promise.all(BACKUP_TABLES.map((t) => ctx.db.prepare(`SELECT COUNT(*) AS n FROM ${source(t)}`).first('n')));
     return json({
       ok: true, app: 'nawa-hr', generatedAt: nowOf(ctx.env).toISOString(), pageSize: PAGE_DEFAULT,
       tables: BACKUP_TABLES.map((name, i) => ({ name, rows: counts[i] })),
@@ -105,7 +110,7 @@ export function registerBackupRoutes(add, kit) {
     const columns = info.map((c) => c.name).filter((c) => !hidden.includes(c));
     const pk = info.filter((c) => c.pk > 0).sort((x, y) => x.pk - y.pk).map((c) => q(c.name));
     const order = pk.length ? pk.join(', ') : 'rowid';
-    const res = await ctx.db.prepare(`SELECT ${columns.map(q).join(', ')} FROM ${q(name)} ORDER BY ${order} LIMIT ? OFFSET ?`).bind(limit + 1, offset).all();
+    const res = await ctx.db.prepare(`SELECT ${columns.map(q).join(', ')} FROM ${source(name)} ORDER BY ${order} LIMIT ? OFFSET ?`).bind(limit + 1, offset).all();
     const more = res.results.length > limit;
     const rows = res.results.slice(0, limit).map((r) => columns.map((c) => r[c]));
     return json({ ok: true, name, columns, offset, rows, done: !more });

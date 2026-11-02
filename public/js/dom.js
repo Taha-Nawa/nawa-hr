@@ -106,7 +106,7 @@ export function confirmBox(message, okLabel = 'تأكيد', danger = false) {
     const d = dialog({
       title: 'تأكيد',
       content: h('div', null,
-        h('p', { class: 'dlg-text' }, message),
+        message instanceof Node ? h('div', { class: 'dlg-text' }, message) : h('p', { class: 'dlg-text' }, message),
         h('div', { class: 'dlg-actions' },
           h('button', { type: 'button', class: 'btn', onclick: () => d.close() }, 'تراجع'),
           h('button', { type: 'button', class: danger ? 'btn btn-danger' : 'btn btn-primary', onclick: () => { answer = true; d.close(); } }, okLabel))),

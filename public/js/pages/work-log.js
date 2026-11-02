@@ -3,7 +3,7 @@
 import { h, clear, toast, confirmBox, dialog, icon, todayLocal, longDate } from '../dom.js';
 import { get, post, patch, del } from '../api.js';
 import { monthLabel, shiftMonthStr, STATUS_SUGGESTIONS, IMPORTANCE_SUGGESTIONS, dmy } from '../monthly-report-lib.js';
-import { KIND_META, KIND_ORDER, countKinds, groupByDay, doneFromTodo } from '../work-log-lib.js';
+import { KIND_META, KIND_ORDER, countKinds, groupByDay, doneFromTodo, suggestFor, applySuggestion, repeatToday } from '../work-log-lib.js';
 
 const LIM = { title: 400, short: 80, details: 500, place: 120 };
 let lastMonth = null;
@@ -13,13 +13,26 @@ let lastMonth = null;
  * يُرجع { el, read(), focus(), reset() }.
  */
 let formSeq = 0;
-function entryForm({ vals, today, onSubmit, submitLabel, submitIcon = null, showKinds = true }) {
+function entryForm({ vals, today, onSubmit, submitLabel, submitIcon = null, showKinds = true, getSuggestions = () => [] }) {
   const uid = `wl${++formSeq}`;
   const box = h('form', { class: 'wl-form', novalidate: true });
   const kinds = h('div', { class: 'seg-tabs wl-kinds', role: 'tablist', 'aria-label': 'نوع السطر' });
   const fields = h('div', { class: 'wl-fields' });
+  let suggBox = null;
+  function drawSugg() {
+    if (!suggBox) return;
+    const list = suggestFor(getSuggestions(), vals.kind, vals.title);
+    clear(suggBox);
+    suggBox.hidden = !list.length;
+    if (!list.length) return;
+    suggBox.append(h('span', { class: 'muted small' }, 'من إدخالاتك السابقة:'),
+      ...list.map((sg) => h('button', {
+        type: 'button', class: 'btn btn-sm wl-chip', title: sg.title,
+        onclick: () => { Object.assign(vals, applySuggestion(vals, sg)); drawFields(); box.querySelector('.wl-title input')?.focus(); },
+      }, sg.title)));
+  }
   const mk = (key, label, { fcls = '', ...attrs } = {}) => {
-    const el = h('input', { ...attrs, 'aria-label': label, value: vals[key] ?? '', oninput: (e) => { vals[key] = e.target.value; } }); // type أولاً ثم value
+    const el = h('input', { ...attrs, 'aria-label': label, value: vals[key] ?? '', oninput: (e) => { vals[key] = e.target.value; if (key === 'title') drawSugg(); } }); // type أولاً ثم value
     return h('label', { class: `field ${fcls}`.trim() }, h('span', { class: 'field-label' }, label), el);
   };
 
@@ -28,7 +41,9 @@ function entryForm({ vals, today, onSubmit, submitLabel, submitIcon = null, show
     const k = vals.kind;
     const dateField = mk('date', k === 'todo' ? 'تاريخ البدء' : 'التاريخ', { type: 'date', ...(k === 'todo' ? {} : { max: today }) });
     const title = mk('title', KIND_META[k].titleLabel, { type: 'text', maxlength: LIM.title, required: true, fcls: 'wl-title', autocomplete: 'off', enterkeyhint: 'done' });
-    fields.append(title, dateField);
+    suggBox = h('div', { class: 'wl-sugg', role: 'group', 'aria-label': 'اقتراحات من إدخالاتك السابقة', hidden: true });
+    fields.append(title, suggBox, dateField);
+    drawSugg();
     if (k === 'done') {
       fields.append(mk('status', 'الحالة', { type: 'text', list: `${uid}-status`, maxlength: LIM.short, placeholder: 'تم الإنجاز' }),
         mk('details', 'تحديات أو ملاحظات (اختياري)', { type: 'text', maxlength: LIM.details, fcls: 'wl-wide' }));
@@ -66,6 +81,7 @@ function entryForm({ vals, today, onSubmit, submitLabel, submitIcon = null, show
     el: box,
     focus: () => box.querySelector('.wl-title input')?.focus(),
     redraw: drawFields,
+    refreshSuggestions: drawSugg,
   };
 }
 
@@ -83,6 +99,7 @@ export default async function render({ user, params }) {
   const reportLink = h('a', { class: 'btn', href: '#' }, icon('report'), 'تقريري الشهري');
   let entries = [];
   let form;
+  let suggestions = [];
 
   if (user.employeeId == null) {
     return h('div', { class: 'page' }, h('header', { class: 'page-head' }, h('div', null, h('h1', null, 'ماذا أنجزت اليوم'))),
@@ -118,6 +135,7 @@ export default async function render({ user, params }) {
             e.details ? h('p', { class: 'muted small wl-meta' }, e.details) : null),
           h('div', { class: 'wl-actions' },
             e.kind === 'todo' ? h('button', { type: 'button', class: 'btn btn-sm', onclick: () => finishTodo(e) }, icon('check'), 'أنجزتها') : null,
+            e.kind !== 'todo' && e.date !== today ? h('button', { type: 'button', class: 'btn btn-sm', title: 'نسخ هذا السطر إلى اليوم', onclick: () => repeatEntry(e) }, 'كرّر اليوم') : null,
             h('button', { type: 'button', class: 'btn btn-sm', onclick: () => editEntry(e) }, 'تعديل'),
             h('button', { type: 'button', class: 'btn btn-sm btn-danger-ghost', 'aria-label': `حذف: ${e.title}`, onclick: () => removeEntry(e) }, icon('trash')))))))); 
     }
@@ -169,6 +187,14 @@ export default async function render({ user, params }) {
     } catch (err) { toast(err.message, 'err'); }
   }
 
+  async function repeatEntry(e) {
+    try {
+      const r = await post('/api/work-log', repeatToday(e, today));
+      toast(`نُسخ السطر إلى اليوم (${dmy(today)})`);
+      if (r.entry.date.slice(0, 7) === month) await load();
+    } catch (err) { toast(err.message, 'err'); }
+  }
+
   async function removeEntry(e) {
     if (!(await confirmBox(`حذف هذا السطر؟\n«${e.title}»`, 'حذف', true))) return;
     try {
@@ -179,7 +205,8 @@ export default async function render({ user, params }) {
     } catch (err) { toast(err.message, 'err'); }
   }
 
-  form = entryForm({ vals, today, submitLabel: 'إضافة', submitIcon: 'plus', onSubmit: add });
+  form = entryForm({ vals, today, submitLabel: 'إضافة', submitIcon: 'plus', onSubmit: add, getSuggestions: () => suggestions });
+  get('/api/work-log/suggest').then((r) => { suggestions = r.suggestions || []; form.refreshSuggestions(); }).catch(() => { /* الاقتراحات اختيارية */ });
   const nav = h('div', { class: 'date-nav' });
   function drawNav() {
     clear(nav).append(

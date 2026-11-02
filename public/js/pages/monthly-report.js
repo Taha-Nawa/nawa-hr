@@ -3,7 +3,7 @@ import { h, clear, toast, confirmBox, icon, todayLocal } from '../dom.js';
 import { get, put, patch } from '../api.js';
 import { fmtStamp } from '../time12.js';
 import {
-  monthLabel, shiftMonthStr, monthBounds, tasksFromPrevious, nextFromTasks, appendUnique, meetingKey, STATUS_SUGGESTIONS, IMPORTANCE_SUGGESTIONS,
+  monthLabel, shiftMonthStr, monthBounds, tasksFromPrevious, nextFromTasks, appendUnique, meetingKey, STATUS_SUGGESTIONS, IMPORTANCE_SUGGESTIONS, reportChecks, checkCounts,
 } from '../monthly-report-lib.js';
 import { tasksFromLog, meetingsFromLog, nextFromLog } from '../work-log-lib.js';
 
@@ -136,6 +136,35 @@ export default async function render({ user, params }) {
   const importNext = importFrom('استيراد من سجلي اليومي', logNext, state.next, next, (t) => t.title || t.start || t.end);
   const logLink = canEdit ? h('a', { href: `#/work-log/${month}`, class: 'btn' }, icon('check'), log ? `سجلي اليومي (${log.cur.length})` : 'سجلي اليومي') : null;
 
+  // ---- مراجعة الاكتمال قبل التقديم (تتحدث مع كل تعديل)
+  const computeChecks = () => reportChecks(state, { month, employee, logTasks, logMeets });
+  const checkBox = canEdit ? h('section', { class: 'panel mr-checks', 'aria-label': 'مراجعة قبل التقديم', 'aria-live': 'polite' }) : null;
+  const CHECK_MARK = { must: 'يمنع التقديم', should: 'يستحق المراجعة', tip: 'تلميح' };
+  function drawChecks() {
+    if (!checkBox) return;
+    const list = computeChecks();
+    const n = checkCounts(list);
+    clear(checkBox).append(
+      h('h2', null, 'مراجعة قبل التقديم'),
+      list.length
+        ? h('p', { class: 'muted small' }, n.must ? `${n.must} شيء يمنع التقديم، و${n.should} يستحق المراجعة.` : n.should ? `لا شيء يمنع التقديم، و${n.should} ملاحظة تستحق المراجعة.` : 'تقريرك جاهز؛ فيه تلميحات فقط.')
+        : h('p', { class: 'mr-ok' }, icon('check'), 'التقرير مكتمل ولا ملاحظات عليه.'),
+      list.length ? h('ul', { class: 'plain mr-chk-list' }, list.map((c) => h('li', { class: `mr-chk mr-chk-${c.level}` }, h('span', { class: 'mr-chk-tag' }, CHECK_MARK[c.level]), c.text))) : null);
+  }
+
+  /** قبل التقديم: يمنع عند وجود must، ويعرض should في نافذة التأكيد. */
+  async function confirmSubmit() {
+    const list = computeChecks();
+    const must = list.filter((c) => c.level === 'must');
+    if (must.length) { toast(must[0].text, 'err'); checkBox?.scrollIntoView({ block: 'center' }); return false; }
+    const should = list.filter((c) => c.level === 'should');
+    if (!should.length) return confirmBox('تقديم التقرير لمديرك المباشر؟ يستطيع قراءته وكتابة ملاحظاته، وتبقى لك إمكانية التعديل.', 'تقديم');
+    return confirmBox(h('div', null,
+      h('p', null, 'قبل التقديم، هذه الملاحظات ما زالت قائمة:'),
+      h('ul', { class: 'bullets' }, should.map((c) => h('li', null, c.text))),
+      h('p', { class: 'muted small' }, 'يمكنك التقديم الآن وتعديل التقرير لاحقاً، أو الرجوع لإكماله.')), 'قدّم رغم الملاحظات');
+  }
+
   // ---- الشريط العلوي وأزرار الحفظ
   const chip = h('span', { class: 'chip' });
   const bar = h('div', { class: 'mr-bar' });
@@ -176,11 +205,12 @@ export default async function render({ user, params }) {
         h('button', { type: 'button', class: status === 'submitted' ? 'btn btn-primary' : 'btn', disabled: busy || (!dirty && status === 'submitted'), onclick: () => save(status === 'submitted' ? 'submitted' : 'draft') }, status === 'submitted' ? 'حفظ التعديلات' : 'حفظ المسودة'),
         status === 'submitted'
           ? h('button', { type: 'button', class: 'btn', disabled: busy, onclick: async () => { if (await confirmBox('إعادة التقرير إلى مسودة؟ يختفي عن مديرك حتى تقدّمه من جديد.', 'إعادة إلى مسودة')) save('draft'); } }, 'إعادة إلى مسودة')
-          : h('button', { type: 'button', class: 'btn btn-primary', disabled: busy, onclick: async () => { if (await confirmBox('تقديم التقرير لمديرك المباشر؟ يستطيع قراءته وكتابة ملاحظاته، وتبقى لك إمكانية التعديل.', 'تقديم')) save('submitted'); } }, 'تقديم التقرير'),
+          : h('button', { type: 'button', class: 'btn btn-primary', disabled: busy, onclick: async () => { if (await confirmSubmit()) save('submitted'); } }, 'تقديم التقرير'),
         dirty ? h('span', { class: 'muted small' }, 'تعديلات لم تُحفظ') : null,
       ].filter(Boolean)); // append الأصلية تكتب null نصاً
     }
     bar.append(...[logLink, printLink].filter(Boolean));
+    drawChecks();
     clear(stamp).append(d.report.updatedAt ? `آخر حفظ: ${fmtStamp(d.report.updatedAt)}` : 'لم يُحفظ بعد');
   }
 
@@ -215,6 +245,7 @@ export default async function render({ user, params }) {
         h('div', { class: 'kv' }, h('dt', null, 'تاريخ تقديم التقرير'), h('dd', null, submitDate))),
       !employee.jobTitle || !employee.department ? h('p', { class: 'muted small' }, 'الوظيفة والإدارة تُؤخذان من بطاقة الموظف؛ اطلب من الموارد البشرية استكمالها إن كانت ناقصة.') : null),
     h('div', { class: 'mr-actions' }, bar, stamp),
+    checkBox,
     section('1. المهام الرئيسية خلال فترة التقرير', canEdit ? (logTasks.length ? 'في سجلك اليومي إنجازات لهذا الشهر: استوردها بنقرة ثم راجع الحالة والتحديات.' : 'اكتب كل مهمة في سطر، وحالتها، وما واجهك من تحديات (إن وُجدت). وسجّل إنجازك يومياً في «ماذا أنجزت اليوم» لتستورده هنا.') : null,
       h('div', null, tasks.el, ...datalists), [importLog, importPrev, addBtn(state.tasks, blankTask, tasks, 'إضافة مهمة')]),
     section('2. الاجتماعات والنشاطات الخارجية خلال فترة التقرير', null, meetings.el, [importMeet, addBtn(state.meetings, blankMeeting, meetings, 'إضافة اجتماع / نشاط')]),

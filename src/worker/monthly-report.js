@@ -6,7 +6,7 @@
 import { json, clip, localDate, nowOf } from './util.js';
 import { canReadEmployee, canReviewReport, employeeScope } from './authz.js';
 import { tzOf } from './close.js';
-import { isMonth, monthBounds, prevMonth, validateReport, parseBody, LIMITS } from '../engine/monthly-report.js';
+import { isMonth, monthBounds, prevMonth, validateReport, parseBody, reportWindows, LIMITS } from '../engine/monthly-report.js';
 
 const EMPLOYEE_SQL = `SELECT e.id, e.code, e.name, e.job_title AS jobTitle, e.department, e.manager_id, c.name AS center
                         FROM employees e LEFT JOIN centers c ON c.id = e.center_id WHERE e.id = ?`;
@@ -46,6 +46,25 @@ export function registerMonthlyReportRoutes(add, kit) {
           counts: visible ? { tasks: r.tasks || 0, meetings: r.meetings || 0, next: r.next || 0 } : null };
       }),
     });
+  });
+
+  // ما ينتظر تقديمه من صاحب الحساب اليوم (لتنبيه لوحة اليوم). المنتهي بالتقديم لا يظهر، ولا شهر سبق تعيينه.
+  add('GET', '/api/monthly-reports/due', async ({ db, user, env }) => {
+    if (user.employeeId == null) return json({ ok: true, items: [] });
+    const today = localDate(tzOf(env), nowOf(env));
+    const win = reportWindows(today).banner;
+    if (!win.length) return json({ ok: true, today, items: [] });
+    const emp = await db.prepare('SELECT status, start_date AS startDate, end_date AS endDate FROM employees WHERE id = ?').bind(user.employeeId).first();
+    if (!emp || emp.status !== 'active') return json({ ok: true, today, items: [] });
+    const ph = win.map(() => '?').join(', ');
+    const rows = (await db.prepare(`SELECT month, status FROM monthly_reports WHERE employee_id = ? AND month IN (${ph})`).bind(user.employeeId, ...win.map((w) => w.month)).all()).results;
+    const items = win
+      .filter((w) => {
+        const { from, to } = monthBounds(w.month);
+        return (!emp.startDate || emp.startDate <= to) && (!emp.endDate || emp.endDate >= from) && rows.find((r) => r.month === w.month)?.status !== 'submitted';
+      })
+      .map((w) => ({ month: w.month, phase: w.phase, status: rows.find((r) => r.month === w.month)?.status || 'none' }));
+    return json({ ok: true, today, employeeId: user.employeeId, items });
   });
 
   add('GET', '/api/monthly-reports/:id/:month', async ({ db, user, params }) => {

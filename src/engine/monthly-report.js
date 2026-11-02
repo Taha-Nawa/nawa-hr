@@ -16,6 +16,32 @@ export function prevMonth(m) {
   return d.toISOString().slice(0, 7);
 }
 
+export const AR_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+export const monthLabelAr = (m) => `${AR_MONTHS[Number(m.slice(5)) - 1]} ${m.slice(0, 4)}`;
+
+/**
+ * أي تقارير تُذكَّر بها اليوم؟ (today بصيغة YYYY-MM-DD المحلية). نقية فتُختبر بلا قاعدة بيانات.
+ *  banner : ما يظهر في لوحة اليوم للموظف إن لم يقدّمه: شهر جارٍ في آخر 7 أيام منه («soon»)، وشهر منصرم حتى اليوم 14 («overdue»).
+ *  mail   : مراحل البريد، كل مرحلة تُرسَل مرة واحدة لكل شخص وشهر (السجل report_reminders):
+ *           eom  = الموظف، آخر 4 أيام من الشهر الجاري
+ *           late = الموظف، من اليوم 3 إلى 14 من الشهر التالي
+ *           mgr  = نشرة المدير المباشر والموارد البشرية بمن لم يقدّم، من اليوم 8 إلى 14 من الشهر التالي
+ */
+export function reportWindows(today) {
+  const month = today.slice(0, 7);
+  const d = Number(today.slice(8, 10));
+  const last = Number(monthBounds(month).to.slice(8, 10));
+  const prev = prevMonth(month);
+  const banner = [];
+  const mail = [];
+  if (d >= last - 6) banner.push({ month, phase: 'soon' });
+  if (d <= 14) banner.push({ month: prev, phase: 'overdue' });
+  if (d >= last - 3) mail.push({ month, stage: 'eom' });
+  if (d >= 3 && d <= 14) mail.push({ month: prev, stage: 'late' });
+  if (d >= 8 && d <= 14) mail.push({ month: prev, stage: 'mgr' });
+  return { banner, mail };
+}
+
 const str = (v, max) => String(v ?? '').replace(/\r\n?/g, '\n').trim().slice(0, max);
 const blank = (...vs) => vs.every((v) => v === '');
 const obj = (r) => (r && typeof r === 'object' && !Array.isArray(r) ? r : {});

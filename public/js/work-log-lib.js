@@ -55,3 +55,33 @@ export function groupByDay(entries) {
 export const doneFromTodo = (entry, today) => ({ kind: 'done', date: today, status: 'تم الإنجاز', title: entry.title, details: entry.details || '' });
 
 export { isDone };
+
+/**
+ * اقتراحات الإدخال: من قائمة الخادم (الأحدث والأكثر تكراراً أولاً) تُرشَّح لنوع السطر وما كُتب في العنوان.
+ * ما يبدأ بما كُتب يتقدم على ما يحويه فقط؛ والمطابق تماماً لا يُقترح. بلا نص: أحدث الاقتراحات.
+ */
+export function suggestFor(list, kind, typed = '', limit = 6) {
+  const q = normText(typed).toLowerCase();
+  const pool = (list || []).filter((s) => s.kind === kind && normText(s.title).toLowerCase() !== q);
+  if (!q) return pool.slice(0, limit);
+  const starts = [];
+  const inside = [];
+  for (const s of pool) {
+    const t = normText(s.title).toLowerCase();
+    if (t.startsWith(q)) starts.push(s);
+    else if (t.includes(q)) inside.push(s);
+  }
+  return [...starts, ...inside].slice(0, limit);
+}
+
+/** ما يُنسخ من الاقتراح إلى النموذج: العنوان دائماً؛ المكان للاجتماع والتدريب؛ الأهمية للمهمة القادمة؛ الحالة فقط إن لم تكن «منجزة» (استمرار عمل). */
+export function applySuggestion(vals, s) {
+  const next = { ...vals, title: s.title };
+  if ((s.kind === 'meeting' || s.kind === 'training') && s.place) next.place = s.place;
+  if (s.kind === 'todo' && s.importance) next.importance = s.importance;
+  if (s.kind === 'done' && s.status && !isDone(s.status)) next.status = s.status;
+  return next;
+}
+
+/** نسخ سطر سابق إلى اليوم («كرّر اليوم»): الإنجاز والاجتماع والتدريب فقط؛ كل الحقول تُنسخ ما عدا التاريخ. */
+export const repeatToday = (e, today) => ({ kind: e.kind, date: today, title: e.title, status: e.status || '', details: e.details || '', place: e.place || '' });

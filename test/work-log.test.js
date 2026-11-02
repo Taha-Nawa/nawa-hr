@@ -93,12 +93,67 @@ test('التعديل والحذف: لصاحب السطر فقط', async () => {
   assert.deepEqual((await j(env, e2, 'GET', '/api/work-log?month=2026-11')).body.entries, []);
 });
 
-test('تعديل مهمة قادمة يُبقي تاريخ انتهائها، والسجل يدخل النسخة الاحتياطية', async () => {
-  const { env, e2, adm } = await world();
+test('تعديل مهمة قادمة يُبقي تاريخ انتهائها', async () => {
+  const { env, e2 } = await world();
   const id = (await j(env, e2, 'POST', '/api/work-log', { kind: 'todo', date: '2026-11-10', title: 'مهمة', endDate: '2026-11-30' })).body.entry.id;
   const p = await j(env, e2, 'PATCH', `/api/work-log/${id}`, { importance: 'مهم جداً' });
   assert.equal(p.body.entry.endDate, '2026-11-30');
   assert.equal(p.body.entry.importance, 'مهم جداً');
+});
+
+test('السجل والمسودات لا يدخلان النسخة الاحتياطية، والمقدَّم يدخل', async () => {
+  const { env, e2, e3, adm } = await world();
+  await j(env, e2, 'POST', '/api/work-log', { kind: 'done', date: TODAY_, title: 'سطر خاص لا يُنسخ' });
+  const body = (extra) => ({ tasks: [{ title: 'مهمة التقرير', status: 'تم الإنجاز' }], meetings: [], next: [], attachments: [], ...extra });
+  assert.equal((await j(env, e2, 'PUT', '/api/monthly-reports/2/2026-10', body({ status: 'draft' }))).status, 200);
+  assert.equal((await j(env, e3, 'PUT', '/api/monthly-reports/3/2026-10', body({ status: 'submitted' }))).status, 200);
   const man = await j(env, adm, 'GET', '/api/backup/manifest');
-  assert.equal(man.body.tables.find((t) => t.name === 'work_log').rows, 1);
+  assert.equal(man.body.tables.some((t) => t.name === 'work_log'), false);
+  assert.equal(man.body.tables.find((t) => t.name === 'monthly_reports').rows, 1);
+  const page = await j(env, adm, 'GET', '/api/backup/table?name=monthly_reports');
+  assert.equal(page.body.rows.length, 1);
+  assert.equal((await j(env, adm, 'GET', '/api/backup/table?name=work_log')).status, 400);
+  assert.ok(!JSON.stringify(page.body).includes('سطر خاص'));
+});
+
+test('نقل سطر إلى شهر ممتلئ يُرفض (سقف الشهر الجديد)', async () => {
+  const { db, env, e2 } = await world();
+  await db.prepare("WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 600) INSERT INTO work_log (employee_id, date, kind, title) SELECT 2, '2026-10-15', 'done', 'x' || i FROM n").run();
+  const id = (await j(env, e2, 'POST', '/api/work-log', { kind: 'done', date: TODAY_, title: 'سطر نوفمبر' })).body.entry.id;
+  const r = await j(env, e2, 'PATCH', `/api/work-log/${id}`, { date: '2026-10-20' });
+  assert.equal(r.status, 400);
+  assert.match(r.body.error, /الحد الأقصى/);
+  assert.equal((await j(env, e2, 'POST', '/api/work-log', { kind: 'done', date: '2026-10-21', title: 'زائد' })).status, 400);
+  assert.equal((await j(env, e2, 'PATCH', `/api/work-log/${id}`, { title: 'يتعدل في مكانه' })).status, 200);
+});
+
+test('اقتراحات من الإدخالات السابقة: السجل أولاً ثم التقارير، بلا تكرار، ولصاحبها فقط', async () => {
+  const { db, env, e2, e3, adm } = await world();
+  const add = (b) => j(env, e2, 'POST', '/api/work-log', b);
+  await add({ kind: 'done', date: '2026-10-20', title: 'إعداد  كشف الحضور', status: 'قيد التنفيذ' });
+  await add({ kind: 'done', date: '2026-10-28', title: 'إعداد كشف الحضور', status: 'تم الإنجاز' });
+  await add({ kind: 'done', date: '2026-10-28', title: 'إعداد كشف الحضور', status: 'قيد التنفيذ' });
+  await add({ kind: 'meeting', date: '2026-10-29', title: 'اجتماع الإدارة', place: 'القاعة', details: 'ملخص لا يُقترح' });
+  await add({ kind: 'todo', date: '2026-11-10', title: 'خطة الربع', importance: 'مهم جداً' });
+  await db.prepare("INSERT INTO work_log (employee_id, date, kind, title) VALUES (2, '2026-01-05', 'done', 'أقدم من 120 يوماً')").run();
+  await db.prepare("INSERT INTO monthly_reports (employee_id, month, status, body) VALUES (2, '2026-09', 'submitted', ?)")
+    .bind(JSON.stringify({ tasks: [{ title: 'إعداد كشف الحضور', status: 'تم' }, { title: 'مهمة من تقرير أيلول', status: 'تم الإنجاز' }], meetings: [{ title: 'ورشة التخطيط', place: 'رام الله' }], next: [{ title: 'مهمة قادمة قديمة', importance: 'عادي' }] })).run();
+  const r = await j(env, e2, 'GET', '/api/work-log/suggest');
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  const s = r.body.suggestions;
+  const find = (kind, title) => s.find((x) => x.kind === kind && x.title === title);
+  const att = find('done', 'إعداد كشف الحضور');
+  assert.equal(att.source, 'log');
+  assert.equal(att.count, 2, 'سطرا اليوم نفسه يُجمعان، وشكل العنوان بمسافتين يُدمج معهما');
+  assert.equal(att.last, '2026-10-28');
+  assert.equal(find('meeting', 'اجتماع الإدارة').place, 'القاعة');
+  assert.equal(find('todo', 'خطة الربع').importance, 'مهم جداً');
+  assert.equal(find('done', 'مهمة من تقرير أيلول').source, 'report');
+  assert.equal(find('meeting', 'ورشة التخطيط').place, 'رام الله');
+  assert.equal(find('todo', 'مهمة قادمة قديمة').source, 'report');
+  assert.equal(s.filter((x) => x.kind === 'done' && x.title === 'إعداد كشف الحضور').length, 1, 'لا تكرار بين السجل والتقرير');
+  assert.ok(!s.some((x) => x.title.includes('أقدم من 120')));
+  assert.ok(!JSON.stringify(s).includes('ملخص لا يُقترح'));
+  assert.deepEqual((await j(env, e3, 'GET', '/api/work-log/suggest')).body.suggestions, []);
+  assert.equal((await j(env, adm, 'GET', '/api/work-log/suggest')).status, 403);
 });

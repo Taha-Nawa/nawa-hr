@@ -43,3 +43,73 @@ export function appendUnique(existing, incoming, key = (t) => normText(t.title))
 }
 
 export const meetingKey = (m) => `${normText(m.title)}|${m.date || ''}`;
+
+// ---------------------------------------------------------------------------------------------------------------
+// فحص اكتمال التقرير قبل التقديم. نقي: يأخذ حالة المحرّر ويُرجع قائمة ملاحظات { id, level, text }.
+//   must   : يمنع التقديم (الخادم يرفضه أصلاً)         should: يستحق المراجعة لكن لا يمنع       tip: تلميح فقط
+// أسطر فارغة تماماً تُتجاهل (يحذفها الخادم عند الحفظ).
+const has = (v) => String(v ?? '').trim() !== '';
+const filled = (o) => Object.values(o).some(has);
+
+export function reportChecks({ tasks = [], meetings = [], next = [] }, { month, employee = {}, logTasks = [], logMeets = [] } = {}) {
+  const out = [];
+  const add = (id, level, text) => out.push({ id, level, text });
+  const T = tasks.filter(filled);
+  const M = meetings.filter(filled);
+  const N = next.filter(filled);
+  const count = (list, fn) => list.filter(fn).length;
+
+  // المهام الرئيسية
+  if (!T.length) add('tasks-none', 'must', 'أضف مهمة رئيسية واحدة على الأقل (شرط التقديم)');
+  const tNoTitle = count(T, (t) => !has(t.title));
+  if (tNoTitle) add('tasks-untitled', 'must', `${tNoTitle} سطر في المهام الرئيسية بلا عنوان`);
+  const tNoStatus = count(T, (t) => has(t.title) && !has(t.status));
+  if (tNoStatus) add('tasks-status', 'should', `${tNoStatus} مهمة بلا حالة (تم الإنجاز، قيد التنفيذ…)`);
+  const open = T.filter((t) => has(t.title) && has(t.status) && !isDone(t.status));
+  const noWhy = count(open, (t) => !has(t.challenges));
+  if (noWhy) add('tasks-why', 'should', `${noWhy} مهمة غير منجزة بلا ذكر للتحديات أو سبب عدم الإنجاز`);
+
+  // الاجتماعات والنشاطات
+  const mNoTitle = count(M, (m) => !has(m.title));
+  if (mNoTitle) add('meet-untitled', 'must', `${mNoTitle} سطر في الاجتماعات والنشاطات بلا عنوان`);
+  if (month) {
+    const { from, to } = monthBounds(month);
+    const out_ = count(M, (m) => has(m.date) && (m.date < from || m.date > to));
+    if (out_) add('meet-range', 'must', `${out_} اجتماع بتاريخ خارج شهر التقرير`);
+  }
+  const mNoDate = count(M, (m) => has(m.title) && !has(m.date));
+  if (mNoDate) add('meet-date', 'should', `${mNoDate} اجتماع أو نشاط بلا تاريخ`);
+  const mNoPlace = count(M, (m) => has(m.title) && !has(m.place));
+  if (mNoPlace) add('meet-place', 'tip', `${mNoPlace} اجتماع أو نشاط بلا مكان`);
+  if (!M.length) add('meet-none', 'tip', 'لا اجتماعات ولا نشاطات خارجية مسجّلة؛ تجاهل هذا إن لم يكن لديك شيء في هذا الشهر');
+
+  // مهام الشهر اللاحق
+  if (!N.length) add('next-none', 'should', 'لم تكتب المهام الرئيسية للشهر القادم');
+  const nNoTitle = count(N, (n) => !has(n.title));
+  if (nNoTitle) add('next-untitled', 'must', `${nNoTitle} سطر في مهام الشهر القادم بلا عنوان`);
+  const nBadRange = count(N, (n) => has(n.start) && has(n.end) && n.end < n.start);
+  if (nBadRange) add('next-range', 'must', `${nBadRange} مهمة قادمة تاريخ انتهائها قبل تاريخ بدئها`);
+  const nNoDates = count(N, (n) => has(n.title) && (!has(n.start) || !has(n.end)));
+  if (nNoDates) add('next-dates', 'should', `${nNoDates} مهمة قادمة بلا تاريخ بدء أو انتهاء`);
+  const nNoImp = count(N, (n) => has(n.title) && !has(n.importance));
+  if (nNoImp) add('next-importance', 'tip', `${nNoImp} مهمة قادمة بلا درجة أهمية`);
+
+  // الترحيل: المهام غير المنجزة يُتوقع أن تظهر في اللاحقة
+  const nextTitles = new Set(N.map((n) => normText(n.title)));
+  const notCarried = open.filter((t) => !nextTitles.has(normText(t.title))).length;
+  if (notCarried) add('carry', 'should', `${notCarried} مهمة غير منجزة لم تُرحَّل إلى مهام الشهر القادم (زر «ترحيل غير المنجز»)`);
+
+  // سجل صاحب التقرير اليومي
+  const haveTasks = new Set(T.map((t) => normText(t.title)));
+  const missTasks = logTasks.filter((t) => !haveTasks.has(normText(t.title))).length;
+  if (missTasks) add('log-tasks', 'should', `في سجلك اليومي ${missTasks} إنجاز لم يُستورد إلى المهام الرئيسية بعد`);
+  const haveMeets = new Set(M.map(meetingKey));
+  const missMeets = logMeets.filter((m) => !haveMeets.has(meetingKey(m))).length;
+  if (missMeets) add('log-meets', 'should', `في سجلك اليومي ${missMeets} اجتماع أو نشاط لم يُستورد بعد`);
+
+  // رأس النموذج المطبوع
+  if (!has(employee.jobTitle) || !has(employee.department)) add('header', 'should', 'الوظيفة أو الإدارة فارغة في بطاقتك فتظهر خانتها فارغة في النموذج المطبوع (اطلب من الموارد البشرية استكمالها)');
+  return out;
+}
+
+export const checkCounts = (checks) => ({ must: checks.filter((c) => c.level === 'must').length, should: checks.filter((c) => c.level === 'should').length, tip: checks.filter((c) => c.level === 'tip').length });

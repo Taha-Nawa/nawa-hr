@@ -51,3 +51,31 @@ test('الاستيراد بلا تكرار: مهام بالعنوان، واجت
   const merged = appendUnique(meets, [{ title: 'اجتماع', date: '2026-11-01' }, { title: 'اجتماع', date: '2026-11-08' }], meetingKey);
   assert.deepEqual(merged.map((m) => m.date), ['2026-11-01', '2026-11-08']);
 });
+
+import { suggestFor, applySuggestion, repeatToday } from '../public/js/work-log-lib.js';
+
+const S = (o) => ({ kind: 'done', title: 'x', status: '', place: '', importance: '', ...o });
+
+test('ترشيح الاقتراحات: النوع، ثم البداية قبل الاحتواء، بلا المطابق تماماً وبحد', () => {
+  const list = [
+    S({ title: 'إعداد كشف الحضور' }), S({ title: 'مراجعة كشف الرواتب' }), S({ title: 'كشف العهدة' }),
+    S({ kind: 'meeting', title: 'كشف اجتماع' }), S({ title: 'تحضير ورشة' }),
+  ];
+  assert.deepEqual(suggestFor(list, 'done', '').map((s) => s.title), ['إعداد كشف الحضور', 'مراجعة كشف الرواتب', 'كشف العهدة', 'تحضير ورشة']);
+  assert.deepEqual(suggestFor(list, 'done', 'كشف').map((s) => s.title), ['كشف العهدة', 'إعداد كشف الحضور', 'مراجعة كشف الرواتب']);
+  assert.deepEqual(suggestFor(list, 'done', '  كشف   العهدة ').map((s) => s.title), [], 'المطابق تماماً لا يُقترح');
+  assert.equal(suggestFor(list, 'done', '', 2).length, 2);
+  assert.deepEqual(suggestFor(list, 'meeting', 'كشف').map((s) => s.title), ['كشف اجتماع']);
+  assert.deepEqual(suggestFor(null, 'done', 'a'), []);
+});
+
+test('تطبيق الاقتراح ينسخ العنوان وما يناسب النوع فقط، ونسخ السطر إلى اليوم', () => {
+  const base = { kind: 'done', date: '2026-11-02', title: 'ك', status: '', details: 'ملاحظتي', place: '', importance: '', endDate: '' };
+  assert.deepEqual(applySuggestion(base, S({ title: 'مهمة', status: 'تم الإنجاز' })), { ...base, title: 'مهمة' });
+  assert.equal(applySuggestion(base, S({ title: 'مهمة', status: 'قيد التنفيذ' })).status, 'قيد التنفيذ');
+  assert.equal(applySuggestion({ ...base, kind: 'meeting' }, S({ kind: 'meeting', title: 'اجتماع', place: 'القاعة', status: 'x' })).place, 'القاعة');
+  assert.equal(applySuggestion({ ...base, kind: 'meeting' }, S({ kind: 'meeting', title: 'اجتماع', place: 'القاعة' })).status, '');
+  assert.equal(applySuggestion({ ...base, kind: 'todo' }, S({ kind: 'todo', title: 'ق', importance: 'مهم جداً' })).importance, 'مهم جداً');
+  assert.deepEqual(repeatToday({ kind: 'done', date: '2026-10-01', title: 'ت', status: 'تم الإنجاز', details: 'د', place: null }, '2026-11-02'),
+    { kind: 'done', date: '2026-11-02', title: 'ت', status: 'تم الإنجاز', details: 'د', place: '' });
+});

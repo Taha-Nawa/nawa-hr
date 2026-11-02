@@ -4,6 +4,9 @@ import { json } from './util.js';
 import { closeDay, purgeAuth } from './close.js';
 import { alertGates, GATE_CRON } from './gates.js';
 import { backupReminder } from './backup.js';
+import { reportReminders } from './report-reminders.js';
+
+const REMINDER_HOUR_UTC = 5;
 
 export default {
   async fetch(request, env, ctx) {
@@ -28,6 +31,13 @@ export default {
   // الإقفال الليلي (cron في wrangler.jsonc): يحسب «أمس» لكل الموظفين فيظهر الغياب والعطل.
   async scheduled(controller, env, ctx) {
     if (controller?.cron === GATE_CRON) {
+      // تذكيرات التقرير الشهري تأخذ تشغيل 05:00 UTC (07:00/08:00 محلياً) وحدها كي لا تزاحم مراقبة البوابات في حدود الاستعلامات؛
+      // فيفوت فحص بوابات واحد في اليوم (يعوّضه الذي يليه بعد نصف ساعة).
+      const t = new Date(controller.scheduledTime ?? Date.now());
+      if (t.getUTCHours() === REMINDER_HOUR_UTC && t.getUTCMinutes() === 0) {
+        ctx.waitUntil(reportReminders(env).catch((e) => console.error('report reminders failed', e?.stack || e)));
+        return;
+      }
       ctx.waitUntil(alertGates(env).catch((e) => console.error('gate alert failed', e?.stack || e)));
       return;
     }

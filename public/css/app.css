@@ -740,6 +740,9 @@ table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; w
 .wl-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 14px; align-items: start; }
 .wl-fields .wl-title, .wl-fields .wl-wide { grid-column: 1 / -1; }
 .wl-fields input { width: 100%; }
+.wl-fields .wl-sugg { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: -4px; }
+.wl-sugg[hidden] { display: none; }
+.wl-chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wl-submit { display: flex; justify-content: flex-end; }
 .wl-kinds { align-self: stretch; flex-wrap: wrap; overflow-x: visible; }
 .wl-kinds .seg-tab { flex: 1 1 auto; justify-content: center; }
@@ -754,6 +757,15 @@ table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; w
 .wl-text { margin: 0; overflow-wrap: anywhere; white-space: pre-line; }
 .wl-meta { margin: 2px 0 0; overflow-wrap: anywhere; display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: center; }
 .wl-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.mr-checks { display: flex; flex-direction: column; gap: 8px; }
+.mr-ok { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--olive); font-weight: 600; }
+.mr-chk-list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; }
+.mr-chk { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.mr-chk-tag { font-size: 0.78rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.mr-chk-must .mr-chk-tag { background: var(--red-soft); color: var(--red-d); }
+.mr-chk-should .mr-chk-tag { background: var(--gold-soft); color: #4a3600; }
+.mr-chk-tip .mr-chk-tag { background: #ebe6e0; color: var(--ink-2); }
+.mr-chk-tip { color: var(--muted); }
 .mr-import { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
 @media (max-width: 640px) {
   .wl-item { grid-template-columns: minmax(0, 1fr); }

@@ -1,6 +1,7 @@
 import { h, clear, todayLocal, addDays, longDate, hrs, dash } from '../dom.js';
 import { get } from '../api.js';
 import { fmt12 } from '../time12.js';
+import { monthLabel } from '../monthly-report-lib.js';
 
 // تصنيف الحالة القادمة من المحرك إلى مجموعة للعرض واللون.
 const GROUPS = [
@@ -48,6 +49,7 @@ export default async function render({ user }) {
 
   let gates = [];
   let backup = null;
+  let due = [];
   async function go(d) {
     date = d;
     dateInput.value = d;
@@ -85,6 +87,16 @@ export default async function render({ user }) {
       notice.append(h('div', { class: 'notice notice-warn', role: 'status' },
         backup.last ? `مضى ${backup.daysSince} يوماً على آخر نسخة احتياطية. ` : 'لم تُؤخذ نسخة احتياطية من البيانات بعد. ',
         h('a', { href: '#/backup' }, 'نزّل نسخة الآن')));
+    }
+    if (date === today) {
+      for (const d of due) {
+        const mine = `#/monthly-report/${user.employeeId}/${d.month}`;
+        notice.append(h('div', { class: 'notice notice-warn', role: 'status' },
+          d.phase === 'soon' ? `اقترب نهاية الشهر: تقرير شهر ${monthLabel(d.month)} لم يُقدَّم بعد. ` : `تقرير شهر ${monthLabel(d.month)} لم يُقدَّم بعد. `,
+          d.status === 'draft' ? 'عندك مسودة محفوظة. ' : '',
+          h('a', { href: mine }, d.status === 'draft' ? 'أكمله وقدّمه' : 'ابدأ تقريرك'),
+          ' · ', h('a', { href: `#/work-log/${d.month}` }, 'سجلي اليومي')));
+      }
     }
     if (settings && settings.work === null) {
       notice.append(h('div', { class: 'notice notice-warn' },
@@ -141,6 +153,7 @@ export default async function render({ user }) {
 
   // حالة البوابات (لمن يملك الصلاحية): لا تعطّل اللوحة إن تعذّرت
   try { gates = (await get('/api/gates/status')).problems || []; draw(); } catch { /* غير متاح */ }
+  if (user.employeeId != null) { try { due = (await get('/api/monthly-reports/due')).items; draw(); } catch { /* غير متاح */ } }
   if (user.role === 'admin') { try { backup = await get('/api/backup/status'); draw(); } catch { /* غير متاح */ } }
   await go(date);
   return root;
