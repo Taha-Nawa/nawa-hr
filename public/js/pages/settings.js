@@ -1,6 +1,6 @@
 import { h, clear, field, toast, AR_DAYS, todayLocal, addDays } from '../dom.js';
 import { get, put, post } from '../api.js';
-import { requestRulesPanel, timesheetPanel, emergencyPanel } from './settings-extra.js';
+import { requestRulesPanel, timesheetPanel, emergencyPanel, mailPanel } from './settings-extra.js';
 import { timeField } from '../time12.js';
 
 export default async function render({ user }) {
@@ -86,7 +86,7 @@ export default async function render({ user }) {
       return h('div', { class: 'notice notice-err' }, ex.message);
     }
   };
-  page.append(await safe(() => emergencyPanel({ work })), workForm, await safe(() => timesheetPanel()), await safe(() => requestRulesPanel()));
+  page.append(await safe(() => emergencyPanel({ work })), workForm, await safe(() => timesheetPanel()), await safe(() => requestRulesPanel()), await safe(() => mailPanel()));
 
   // ------------------------------------------------------------ العطل الرسمية
   let year = new Date().getFullYear();

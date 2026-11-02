@@ -640,3 +640,5 @@ table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; w
   .plan-day .dec { width: 100%; }
   .plan-day .dec label { flex: 1 1 0; justify-content: center; }
 }
+.notice-ok { background: var(--olive-soft); border-color: #bccfa6; color: #2c4017; }
+.page-actions { display: flex; flex-wrap: wrap; gap: 8px; }

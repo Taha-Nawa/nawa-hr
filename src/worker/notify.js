@@ -6,7 +6,7 @@
  * تعمل فقط إن كان إرسال البريد مضبوطاً (docs/EMAIL-SETUP.md) وكان rules.notify.enabled غير مُوقَف.
  * الإرسال لا يعطّل الطلب ولا يُفشله أبداً: يجري بعد الرد (ctx.defer) وأي خطأ يُسجَّل ويُتجاوز.
  */
-import { mailerFor } from './mail.js';
+import { mailerFor, logMailFailure } from './mail.js';
 import { fmt12 } from './util.js';
 import { mergeRules, needsMedical, KINDS, PURPOSES } from '../engine/requests.js';
 
@@ -132,13 +132,16 @@ export function notifyRequest(ctx, event, requestId, { actor = null, note = null
       const to = await recipientsOf(ctx.db, event, r, rules, actor);
       if (!to.length) return;
       const m = message(event, r, origin, note ?? r.decision_note, extra);
+      let failed = null;
       for (const addr of to) {
         try {
           await mailer.send({ to: addr, ...m });
         } catch (e) {
+          failed ||= e;
           console.warn('notify: send failed', event, e?.message);
         }
       }
+      if (failed) await logMailFailure(ctx.db, `request.${event}`, requestId, failed);
     } catch (e) {
       console.warn('notify: failed', event, e?.message);
     }
@@ -225,13 +228,16 @@ export function notifyPlan(ctx, event, planId, { actor = null } = {}) {
       const to = dedupe(list, actor);
       if (!to.length) return;
       const m = planMessage(event, p, days, origin);
+      let failed = null;
       for (const addr of to) {
         try {
           await mailer.send({ to: addr, ...m });
         } catch (e) {
+          failed ||= e;
           console.warn('notify: plan send failed', event, e?.message);
         }
       }
+      if (failed) await logMailFailure(ctx.db, `plan.${event}`, planId, failed);
     } catch (e) {
       console.warn('notify: plan failed', event, e?.message);
     }

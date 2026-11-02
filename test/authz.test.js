@@ -86,6 +86,11 @@ const WRITE = {
   cancelEmergency: (e, c) => call(e, 'POST', '/api/emergencies/999/cancel', { cookie: c }),
   listEmergencies: (e, c) => call(e, 'GET', '/api/emergencies', { cookie: c }),
   manualAttendance: (e, c) => call(e, 'POST', '/api/attendance/manual', { cookie: c, body: {} }),
+  gatesStatus: (e, c) => call(e, 'GET', '/api/gates/status', { cookie: c }),
+  userCandidates: (e, c) => call(e, 'GET', '/api/users/candidates', { cookie: c }),
+  bulkUsers: (e, c) => call(e, 'POST', '/api/users/bulk', { cookie: c, body: { items: [] } }),
+  mailStatus: (e, c) => call(e, 'GET', '/api/settings/mail', { cookie: c }),
+  mailTest: (e, c) => call(e, 'POST', '/api/settings/mail/test', { cookie: c, body: {} }),
   putLinks: (e, c) => call(e, 'PUT', '/api/links', { cookie: c, body: { links: [{ title: 'اختبار', url: 'https://example.org/x', audience: 'staff' }] } }),
 };
 
@@ -110,6 +115,11 @@ const MATRIX = {
   importMovements: [403, 403, 200, 403, 200],
   recompute: [403, 403, 200, 403, 200],
   putLinks: [403, 403, 403, 403, 200],
+  gatesStatus: [403, 403, 200, 200, 200],
+  userCandidates: [403, 403, 403, 403, 200],
+  bulkUsers: [403, 403, 403, 403, 400],
+  mailStatus: [403, 403, 403, 403, 200],
+  mailTest: [403, 403, 403, 403, 400], // بلا بريد مُعدّ في الاختبار: المسؤول يصل إلى التحقق فيُرفض بـ400
   setBalances: [403, 403, 200, 403, 200],
   copyBalances: [403, 403, 200, 403, 200],
   declareEmergency: [403, 403, 400, 403, 400],
@@ -128,7 +138,7 @@ for (const [action, expected] of Object.entries(MATRIX)) {
 }
 
 test('المصفوفة تغطي كل إجراءات authz.ACTIONS الفعلية (لا إجراء بلا اختبار)', () => {
-  const covered = new Set(['employee.create', 'employee.update', 'badge.manage', 'center.manage', 'settings.read', 'settings.write', 'device.manage', 'user.manage', 'audit.read', 'holiday.write', 'import.run', 'recompute.run', 'links.manage', 'balance.manage', 'emergency.manage', 'day.correct']);
+  const covered = new Set(['gates.read', 'employee.create', 'employee.update', 'badge.manage', 'center.manage', 'settings.read', 'settings.write', 'device.manage', 'user.manage', 'audit.read', 'holiday.write', 'import.run', 'recompute.run', 'links.manage', 'balance.manage', 'emergency.manage', 'day.correct']);
   const uncovered = Object.keys(ACTIONS).filter((a) => !covered.has(a));
   assert.deepEqual(uncovered.sort(), []);
 });

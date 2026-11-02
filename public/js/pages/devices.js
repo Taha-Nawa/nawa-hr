@@ -1,5 +1,11 @@
 import { h, clear, dialog, field, select, toast, confirmBox, copyText, dash } from '../dom.js';
 import { get, post } from '../api.js';
+import { fmtStamp } from '../time12.js';
+
+const STATE = {
+  ok: ['متصلة', 'chip-present'], silent: ['منقطعة', 'chip-absent'], quiet: ['هادئة: لا حركة اليوم', 'chip-late'],
+  off: ['خارج الدوام', ''], never: ['لم تتصل بعد', ''], emergency: ['طارئ معلَن', ''],
+};
 
 const when = (s) => {
   if (!s) return 'لم يتصل بعد';
@@ -8,7 +14,7 @@ const when = (s) => {
   if (mins < 1) return 'الآن';
   if (mins < 60) return `قبل ${mins} دقيقة`;
   if (mins < 1440) return `قبل ${Math.round(mins / 60)} ساعة`;
-  return t.toLocaleDateString('ar-EG-u-nu-latn');
+  return fmtStamp(s);
 };
 
 function showToken(deviceId, token) {
@@ -30,7 +36,8 @@ export default async function render() {
   const body = h('div', { class: 'table-wrap' });
 
   async function load() {
-    const { devices } = await get('/api/devices');
+    const [{ devices }, st] = await Promise.all([get('/api/devices'), get('/api/gates/status').catch(() => ({ devices: [] }))]);
+    const state = new Map((st.devices || []).map((d) => [d.id, d.state]));
     clear(body);
     if (!devices.length) {
       body.append(h('p', { class: 'empty' }, 'لا أجهزة بعد. أنشئ جهازاً لكل بوابة؛ يحصل على رمزه الخاص.'));
@@ -41,8 +48,11 @@ export default async function render() {
       h('tbody', null, devices.map((d) => h('tr', { class: d.active ? '' : 'row-off' },
         h('td', null, h('strong', { dir: 'ltr' }, d.id), d.name ? h('div', { class: 'muted small' }, d.name) : null),
         h('td', { class: 'muted' }, dash(d.center)),
-        h('td', { class: 'muted' }, when(d.lastSeen)),
-        h('td', null, h('span', { class: `chip ${d.active ? 'chip-present' : 'chip-absent'}` }, d.active ? 'فعّال' : 'موقوف')),
+        h('td', { class: 'muted' }, when([d.lastPing, d.lastSeen].filter(Boolean).sort().pop() || null),
+          d.lastSeen ? h('div', { class: 'small' }, `آخر حركة: ${when(d.lastSeen)}`) : null),
+        h('td', null, d.active && state.get(d.id) && STATE[state.get(d.id)]
+          ? h('span', { class: `chip ${STATE[state.get(d.id)][1]}` }, STATE[state.get(d.id)][0])
+          : h('span', { class: `chip ${d.active ? 'chip-present' : 'chip-absent'}` }, d.active ? 'فعّال' : 'موقوف')),
         h('td', { class: 'row-actions' },
           h('button', { type: 'button', class: 'btn btn-sm', onclick: async () => {
             if (!(await confirmBox(`إنشاء رمز جديد للجهاز ${d.id}؟ سيتوقف الرمز الحالي فوراً حتى تُدخل الجديد في الجهاز.`, 'رمز جديد'))) return;

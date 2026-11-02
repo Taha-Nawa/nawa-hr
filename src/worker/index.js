@@ -2,6 +2,7 @@ import { handleGate } from './gate.js';
 import { handleApi } from './api.js';
 import { json } from './util.js';
 import { closeDay, purgeAuth } from './close.js';
+import { alertGates, GATE_CRON } from './gates.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -24,7 +25,11 @@ export default {
   },
 
   // الإقفال الليلي (cron في wrangler.jsonc): يحسب «أمس» لكل الموظفين فيظهر الغياب والعطل.
-  async scheduled(_controller, env, ctx) {
+  async scheduled(controller, env, ctx) {
+    if (controller?.cron === GATE_CRON) {
+      ctx.waitUntil(alertGates(env).catch((e) => console.error('gate alert failed', e?.stack || e)));
+      return;
+    }
     ctx.waitUntil(closeDay(env).catch((e) => console.error('close-day failed', e?.stack || e)));
     ctx.waitUntil(purgeAuth(env.DB).catch((e) => console.error('purge failed', e?.stack || e)));
   },

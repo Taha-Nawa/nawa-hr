@@ -79,7 +79,11 @@ async function route(request, env, execCtx) {
 
   if (request.method === 'GET') {
     const action = url.searchParams.get('action');
-    if (action === 'ping') return json({ ok: true, msg: 'الخدمة تعمل', device: device.id });
+    if (action === 'ping') {
+      // نبض البوابة: يُسجَّل (بحد أقصى مرة كل 4 دقائق) فتعرف لوحة اليوم أن الجهاز متصل
+      await env.DB.prepare("UPDATE devices SET last_ping = datetime('now') WHERE id = ? AND (last_ping IS NULL OR last_ping < datetime('now', '-4 minutes'))").bind(device.id).run();
+      return json({ ok: true, msg: 'الخدمة تعمل', device: device.id });
+    }
     if (action === 'badges') return badges(env.DB);
     return json({ ok: false, error: 'إجراء غير معروف' }, 400);
   }

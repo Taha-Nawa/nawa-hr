@@ -1,7 +1,7 @@
 // بطاقات إضافية في صفحة الإعدادات: قواعد الطلبات والأرصدة الافتراضية، ساعات التايم شيت لكل فترة، وطوارئ الدوام.
 import { h, clear, field, select, toast, confirmBox, todayLocal } from '../dom.js';
 import { get, put, post } from '../api.js';
-import { timeField, fmt12, nowHM as clockNow } from '../time12.js';
+import { timeField, fmt12, fmtStamp, nowHM as clockNow } from '../time12.js';
 
 const num = (value, attrs = {}) => h('input', { type: 'number', inputmode: 'decimal', value: value ?? '', ...attrs });
 const val = (el) => (el.value === '' ? null : Number(el.value));
@@ -224,4 +224,56 @@ export async function emergencyPanel({ work }) {
   }
   draw();
   return box;
+}
+
+// ---------------------------------------------------------------- حالة البريد (مسؤول النظام)
+const MAIL_VAR_HELP = { MAIL_CLIENT_ID: 'معرّف التطبيق', MAIL_CLIENT_SECRET: 'سرّ التطبيق', MAIL_FROM: 'عنوان الإرسال' };
+
+export async function mailPanel() {
+  let st;
+  try {
+    st = await get('/api/settings/mail');
+  } catch (ex) {
+    if (ex.status === 403) return null; // لغير المسؤول لا تظهر البطاقة
+    throw ex;
+  }
+  const result = h('div', { hidden: true, role: 'status' });
+  const testBtn = h('button', { type: 'button', class: 'btn', disabled: !st.configured, onclick: async () => {
+    testBtn.disabled = true;
+    result.hidden = false;
+    result.className = 'notice';
+    result.textContent = 'جارٍ الإرسال…';
+    try {
+      const r = await post('/api/settings/mail/test', {});
+      result.className = 'notice notice-ok';
+      result.textContent = `أُرسلت رسالة تجريبية إلى ${r.to}. افتح بريدك (وراجع مجلد غير الهام).`;
+    } catch (ex) {
+      result.className = 'notice notice-err';
+      result.textContent = ex.message;
+    } finally {
+      setTimeout(() => { testBtn.disabled = !st.configured; }, 30000);
+    }
+  } }, 'أرسل رسالة تجريبية لي');
+
+  const state = st.configured
+    ? h('div', { class: 'notice notice-ok' }, `إرسال البريد مُفعَّل (${st.provider === 'graph' ? 'Microsoft 365' : st.provider === 'resend' ? 'Resend' : st.provider}) من ${st.from}.`)
+    : h('div', { class: 'notice notice-warn' },
+      st.partial ? 'الإعداد ناقص. المتغيرات التي لم تُضف بعد في Cloudflare:' : 'إرسال البريد غير مُفعَّل، فلا تصل إشعارات الطلبات ولا يظهر «رمز بالبريد» في شاشة الدخول. المتغيرات المطلوبة في Cloudflare:',
+      h('ul', { class: 'plain small' }, st.missing.map((k) => h('li', null, h('code', { dir: 'ltr' }, k), ` — ${MAIL_VAR_HELP[k] || ''}`))));
+
+  return h('section', { class: 'panel' },
+    h('h2', null, 'حالة البريد'),
+    state,
+    st.authSecret ? null : h('p', { class: 'field-hint' }, 'ننصح بإضافة AUTH_SECRET (نص عشوائي طويل) لتقوية حفظ أرقام PIN؛ اضبطه مرة واحدة ولا تغيّره.'),
+    st.failures.length
+      ? h('div', null, h('h3', null, 'آخر أعطال الإرسال'), h('ul', { class: 'plain small' }, st.failures.map((f) => h('li', null, `${fmtStamp(f.at)} — ${f.what}${f.id ? ` #${f.id}` : ''}: ${f.hint}`))))
+      : null,
+    h('div', { class: 'dlg-actions' }, testBtn),
+    result,
+    h('details', null,
+      h('summary', null, 'كيف أُفعّل البريد؟'),
+      h('ol', { class: 'small' },
+        h('li', null, 'مسؤول Microsoft 365 يشغّل سكربت tools/setup-mail.ps1 (في Azure Cloud Shell أو PowerShell) فيُنشئ صندوق الإرسال والتطبيق ويحصره بالصندوق، ثم يطبع القيم الثلاث.'),
+        h('li', null, 'ضع القيم في Cloudflare: Workers & Pages ← nawa-hr ← Settings ← Variables and Secrets، ونوع كل منها Secret.'),
+        h('li', null, 'ارجع إلى هذه الصفحة وأعد تحميلها ثم اضغط «أرسل رسالة تجريبية لي». الخطوات التفصيلية في docs/EMAIL-SETUP.md.'))));
 }

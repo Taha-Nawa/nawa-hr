@@ -18,6 +18,9 @@ import { registerRequestRoutes } from './requests.js';
 import { registerBalanceRoutes } from './balances.js';
 import { registerEmergencyRoutes } from './emergency.js';
 import { registerTimesheetSettings } from './timesheet-settings.js';
+import { registerMailStatus } from './mail-status.js';
+import { registerUserBulk } from './users-bulk.js';
+import { registerGateRoutes } from './gates.js';
 import { registerManualRoutes } from './manual.js';
 import { registerPlanRoutes } from './plans.js';
 import { registerLoginRoutes, resetLoginStatements, DEVICE_COOKIE, clearDeviceCookie } from './login.js';
@@ -63,6 +66,9 @@ registerRequestRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 registerBalanceRoutes(add, { bad, forbidden, readJson, auditStmt });
 registerEmergencyRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 registerTimesheetSettings(add, { bad, forbidden, readJson, auditStmt });
+registerMailStatus(add, { forbidden, auditStmt });
+registerUserBulk(add, { bad, forbidden, readJson, auditStmt });
+registerGateRoutes(add, { forbidden });
 registerManualRoutes(add, { bad, forbidden, readJson, auditStmt });
 registerPlanRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 const { establish } = registerLoginRoutes(add, { bad, readJson, auditStmt });
@@ -447,7 +453,7 @@ add('PUT', '/api/links', async ({ request, db, user }) => {
 // ---------------------------------------------------------------- الأجهزة
 add('GET', '/api/devices', async ({ db, user }) => {
   if (!can(user, 'device.manage')) return forbidden();
-  const r = await db.prepare('SELECT d.id, d.name, d.center_id AS centerId, c.name AS center, d.active, d.last_seen AS lastSeen FROM devices d LEFT JOIN centers c ON c.id = d.center_id ORDER BY d.id').all();
+  const r = await db.prepare('SELECT d.id, d.name, d.center_id AS centerId, c.name AS center, d.active, d.last_seen AS lastSeen, d.last_ping AS lastPing FROM devices d LEFT JOIN centers c ON c.id = d.center_id ORDER BY d.id').all();
   return json({ ok: true, devices: r.results });
 });
 

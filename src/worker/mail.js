@@ -12,6 +12,8 @@
  */
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** متغيرات Graph المطلوبة (لعرض الناقص منها للمسؤول؛ أسماء فقط، لا قيم). */
+export const MAIL_VARS = ['MAIL_CLIENT_ID', 'MAIL_CLIENT_SECRET', 'MAIL_FROM'];
 const graphToken = { value: null, exp: 0, key: '' };
 
 function graphConfig(env) {
@@ -68,6 +70,15 @@ export function mailerFor(env) {
 }
 
 export const mailConfigured = (env) => !!mailerFor(env);
+
+/** يسجّل فشل إرسال إشعار في سجل التدقيق ليراه المسؤول (مرة واحدة لكل إشعار، بلا عناوين المستلمين). */
+export async function logMailFailure(db, what, id, err) {
+  try {
+    await db.prepare("INSERT INTO audit_log (actor, action, entity, entity_id, detail) VALUES ('system', 'mail.failed', ?, ?, ?)")
+      .bind(String(what).slice(0, 40), id === null || id === undefined ? null : String(id), JSON.stringify({ error: String(err?.message || err).slice(0, 200) }))
+      .run();
+  } catch { /* السجل لا يعطّل شيئاً */ }
+}
 
 /** رسالة الرمز: عنوانها يحمل الرمز كي يظهر في إشعار الهاتف دون فتح الرسالة. */
 export function codeMessage(code, minutes) {

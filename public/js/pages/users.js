@@ -17,7 +17,10 @@ export default async function render({ user }) {
 
   async function load() {
     const { users } = await get('/api/users');
-    clear(body).append(h('table', { class: 'tbl' },
+    const admins = users.filter((u) => u.role === 'admin' && u.active).length;
+    clear(body).append(
+      admins < 2 ? h('div', { class: 'notice notice-warn' }, `يوجد ${admins === 1 ? 'مسؤول نظام فعّال واحد' : 'لا مسؤول نظام فعّال'} فقط. أضف مسؤولاً ثانياً (زر «مستخدم جديد» ثم الدور «مسؤول النظام») حتى لا يتوقف النظام إن فُقد هذا الحساب.`) : null,
+      h('table', { class: 'tbl' },
       h('thead', null, h('tr', null, ['الحساب', 'الدور', 'مرتبط بالموظف', 'الحالة', ''].map((t) => h('th', null, t)))),
       h('tbody', null, users.map((u) => h('tr', { class: u.active ? '' : 'row-off' },
         h('td', { dir: 'ltr', class: 'ltr-cell' }, u.email),
@@ -25,6 +28,56 @@ export default async function render({ user }) {
         h('td', { class: 'muted' }, dash(empName.get(u.employeeId))),
         h('td', null, h('span', { class: `chip ${u.active ? 'chip-present' : 'chip-absent'}` }, u.active ? 'فعّال' : 'موقوف')),
         h('td', { class: 'row-actions' }, h('button', { type: 'button', class: 'btn btn-sm', onclick: () => form(u) }, 'تعديل')))))));
+  }
+
+  // إنشاء حسابات لعدد من الموظفين دفعة واحدة (الدور: موظف أو مدير مباشر؛ البريد من بطاقة الموظف)
+  async function bulkDialog() {
+    const { candidates } = await get('/api/users/candidates');
+    if (!candidates.length) { toast('كل الموظفين الفعّالين لهم حسابات'); return; }
+    const WHY = { no_email: 'لا بريد في بطاقته', bad_email: 'بريده غير صالح', email_taken: 'بريده مستعمل في حساب آخر' };
+    const rows = candidates.map((c) => {
+      const box = h('input', { type: 'checkbox', checked: !c.blocked, disabled: !!c.blocked, 'aria-label': c.name });
+      const role = select([['employee', 'موظف'], ['manager', 'مدير مباشر']], c.suggestedRole, { disabled: !!c.blocked, 'aria-label': `دور ${c.name}` });
+      return { c, box, role, tr: h('tr', { class: c.blocked ? 'row-off' : '' },
+        h('td', null, box), h('td', null, c.name, h('span', { class: 'muted' }, ` · ${c.code}`)),
+        h('td', { class: 'muted' }, dash(c.center)),
+        h('td', { dir: 'ltr', class: 'ltr-cell' }, c.email || h('span', { class: 'muted' }, WHY.no_email)),
+        h('td', null, c.blocked ? h('span', { class: 'chip chip-absent' }, WHY[c.blocked]) : role)) };
+    });
+    const ready = rows.filter((r) => !r.c.blocked);
+    const all = h('input', { type: 'checkbox', checked: true, 'aria-label': 'تحديد الكل', onchange: (e) => { ready.forEach((r) => { r.box.checked = e.target.checked; }); count(); } });
+    const countEl = h('b', null);
+    const count = () => { countEl.textContent = String(ready.filter((r) => r.box.checked).length); };
+    ready.forEach((r) => r.box.addEventListener('change', count));
+    count();
+    const err = h('div', { class: 'notice notice-err', hidden: true, role: 'alert' });
+    const dlg = dialog({
+      title: 'إنشاء حسابات للموظفين',
+      content: h('div', null,
+        h('p', { class: 'muted small' }, 'تُنشأ الحسابات بالبريد المسجّل في بطاقة كل موظف، فيدخل بحساب Microsoft نفسه. يُرشَّح «مدير مباشر» لمن له مرؤوسون. الأدوار الأعلى (موارد بشرية، مدير عام، مسؤول) تُمنح فردياً من «مستخدم جديد».'),
+        h('div', { class: 'table-wrap' }, h('table', { class: 'tbl' },
+          h('thead', null, h('tr', null, h('th', null, all), ['الموظف', 'المركز', 'البريد', 'الدور'].map((t) => h('th', null, t)))),
+          h('tbody', null, rows.map((r) => r.tr)))),
+        err,
+        h('div', { class: 'dlg-actions' },
+          h('span', { class: 'muted' }, 'المحدَّد: ', countEl),
+          h('button', { type: 'button', class: 'btn', onclick: () => dlg.close() }, 'إلغاء'),
+          h('button', { type: 'button', class: 'btn btn-primary', onclick: async (e) => {
+            const items = ready.filter((r) => r.box.checked).map((r) => ({ employeeId: r.c.id, role: r.role.value }));
+            if (!items.length) { err.textContent = 'اختر موظفاً واحداً على الأقل'; err.hidden = false; return; }
+            e.target.disabled = true;
+            try {
+              const res = await post('/api/users/bulk', { items });
+              toast(`أُنشئ ${res.created} حساباً${res.skipped.length ? ` وتُخطّي ${res.skipped.length}` : ''}`);
+              dlg.close();
+              load();
+            } catch (ex) {
+              err.textContent = ex.message;
+              err.hidden = false;
+              e.target.disabled = false;
+            }
+          } }, 'إنشاء الحسابات المحدَّدة'))),
+    });
   }
 
   function form(u) {
@@ -79,7 +132,9 @@ export default async function render({ user }) {
   const page = h('div', { class: 'page' },
     h('header', { class: 'page-head' },
       h('div', null, h('h1', null, 'المستخدمون'), h('p', { class: 'sub' }, `مسجّل دخولك: ${user.email}. لا يدخل النظام إلا من أُضيف هنا، حتى لو كان له حساب على Microsoft.`)),
-      h('button', { type: 'button', class: 'btn btn-primary', onclick: () => form(null) }, 'مستخدم جديد')),
+      h('div', { class: 'page-actions' },
+        h('button', { type: 'button', class: 'btn', onclick: () => bulkDialog().catch((ex) => toast(ex.message, 'err')) }, 'حسابات للموظفين (دفعة)'),
+        h('button', { type: 'button', class: 'btn btn-primary', onclick: () => form(null) }, 'مستخدم جديد'))),
     body);
   await load();
   return page;

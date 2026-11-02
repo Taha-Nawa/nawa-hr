@@ -483,6 +483,15 @@ function sync2(){
     });
   }catch(e){syncing2=false}
 }
+/* نبض الاتصال بالنظام الجديد كل 5 دقائق: يتيح للنظام تنبيه المسؤول إن انقطعت البوابة أثناء الدوام */
+function heartbeat(){
+  try{
+    if(!navigator.onLine||!cfg)return;
+    var u=on2()?cfg.url2:(cfg.url&&cfg.url.indexOf("/api/gate")>-1?cfg.url:""), t=on2()?cfg.token2:cfg.token;
+    if(!u||!t)return;
+    fetch(u+"?action=ping&token="+encodeURIComponent(t)).catch(function(){});
+  }catch(e){}
+}
 function refreshBadges(){
   if(!navigator.onLine||!cfg||!cfg.url)return;
   fetch(cfg.url+"?action=badges&token="+encodeURIComponent(cfg.token))
@@ -515,7 +524,9 @@ setInterval(function(){render();sync();sync2()},20000);
 setInterval(updateWarn,60000);
 setInterval(clockTick,5000);
 setInterval(refreshBadges,900000);
-window.addEventListener("online",function(){render();sync();sync2();refreshBadges()});
+setInterval(heartbeat,300000);
+setTimeout(heartbeat,3000);
+window.addEventListener("online",function(){render();sync();sync2();refreshBadges();heartbeat()});
 window.addEventListener("offline",render);
 document.addEventListener("visibilitychange",function(){
   if(document.hidden)stopCam();
