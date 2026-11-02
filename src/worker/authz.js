@@ -51,3 +51,22 @@ export function employeeScope(user, alias = 'e') {
   if (user.role === 'manager') return { sql: `(${alias}.id = ? OR ${alias}.manager_id = ?)`, params: [user.employeeId, user.employeeId] };
   return { sql: `${alias}.id = ?`, params: [user.employeeId] };
 }
+
+// ---------------------------------------------------------------- الطلبات (إجازة / مغادرة / تأخير)
+
+/** target: { id, manager_id } — من يُدخل الطلب نيابة عن موظف ويعتمده: الموارد البشرية والمدير العام والمسؤول للجميع، والمدير المباشر لمرؤوسيه. */
+export function canManageRequests(user, target) {
+  if (!user || !target) return false;
+  if (READ_ALL.has(user.role)) return true;
+  return user.role === 'manager' && user.employeeId != null && target.manager_id === user.employeeId;
+}
+
+/** الاعتماد والرفض: الصلاحية نفسها لكن لا أحد يقرّر طلبه بنفسه (يقرّره من فوقه). */
+export function canDecideRequest(user, target) {
+  return canManageRequests(user, target) && !(user.employeeId != null && user.employeeId === target.id);
+}
+
+/** إلغاء طلب معتمد بعد اعتماده: الموارد البشرية والمدير العام والمسؤول فقط، وليس لطلبهم هم. */
+export function canRevokeRequest(user, target) {
+  return !!user && READ_ALL.has(user.role) && !(user.employeeId != null && user.employeeId === target.id);
+}

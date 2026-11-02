@@ -1,4 +1,4 @@
-import { h, clear, dialog, field, select, toast, dash } from '../dom.js';
+import { h, clear, dialog, field, select, toast, dash, confirmBox } from '../dom.js';
 import { get, post, patch } from '../api.js';
 
 const ROLES = [
@@ -55,6 +55,15 @@ export default async function render({ user }) {
       field('الموظف المرتبط', emp, 'يحدد «نفسه» و«فريقه» في الصلاحيات'),
       isNew ? null : field('الحالة', active, 'إيقاف الحساب ينهي جلساته فوراً'),
       h('div', { class: 'span-all' }, err),
+      isNew ? null : h('div', { class: 'span-all' }, h('button', { type: 'button', class: 'btn btn-danger-ghost', onclick: async () => {
+        if (!(await confirmBox(`سيُحذف رقم PIN والأجهزة المتذكَّرة وتُنهى جلسات ${u.email}. يدخل بعدها بحساب Microsoft أو رمز البريد. استعمله إن نسي الموظف PIN أو فقد هاتفه.`, 'إعادة الضبط', true))) return;
+        try {
+          await post(`/api/users/${u.id}/reset-login`);
+          toast('أُعيد ضبط دخول المستخدم');
+        } catch (ex) {
+          toast(ex.message, 'err');
+        }
+      } }, 'إعادة ضبط الدخول (PIN والأجهزة)')),
       h('div', { class: 'dlg-actions span-all' }, h('button', { type: 'button', class: 'btn', onclick: () => dlg.close() }, 'إلغاء'), h('button', { type: 'submit', class: 'btn btn-primary' }, 'حفظ'))),
     });
   }

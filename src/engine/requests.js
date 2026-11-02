@@ -1,0 +1,140 @@
+/**
+ * قواعد الطلبات (إجازة / إذن مغادرة / إذن تأخير) — دوال نقيّة بلا قاعدة بيانات ولا ساعة نظام.
+ *
+ * مصدر القواعد: النماذج الورقية المعتمدة + توجيهات الإدارة:
+ *  - الإجازة الاعتيادية (السنوية) تُقدَّم قبل موعدها.
+ *  - المرضية والطارئة وغيرها تُقدَّم في اليوم نفسه أو في يوم لاحق (بعد وقوع الحالة) ضمن مهلة.
+ *  - الأذونات (مغادرة/تأخير) تتبع القاعدة نفسها بحسب غرضها.
+ * الأرقام هنا (مهلة يوم، مدد التقديم المتأخر) قيم افتراضية تُستبدل بما يُحفظ في settings['requests']
+ * متى صدرت لائحة الموارد البشرية، ولا يتغير شيء آخر في الكود.
+ */
+import { dayTypeOf, DAY_WORK, toMin } from './attendance.js';
+import { addDays, daysBetween, isDate, isTime, clip } from '../worker/util.js';
+
+export const KINDS = { leave: 'طلب إجازة', exit: 'إذن مغادرة', late: 'إذن تأخير' };
+export const PURPOSES = { annual: 'اعتيادي (سنوي)', emergency: 'طارئ (اضطراري)', sick: 'مرضي', other: 'أخرى' };
+
+export const DEFAULT_RULES = {
+  // الاعتيادية: لا تُقبل قبل الموعد بأقل من minNoticeDays يوماً (إجازة) أو بعد بدء وقت الإذن (أذونات)
+  annual: { minNoticeDays: 1 },
+  // بقية الأغراض: يجوز التقديم يوم الحالة أو بعدها بما لا يزيد عن maxBackdateDays يوماً
+  emergency: { maxBackdateDays: 7 },
+  sick: { maxBackdateDays: 14 },
+  other: { maxBackdateDays: 7 },
+  maxSpanDays: 100, // أطول مدة إجازة في طلب واحد (أيام تقويمية)
+  maxAheadDays: 366, // أبعد موعد يُقبل
+  entitlement: {}, // اختياري: { annual: 21 } يُعرض الرصيد المتبقي إن وُجد
+};
+
+/** يدمج ما حفظه المسؤول (إن وُجد) فوق الافتراضي، ويتجاهل أي قيمة غير صالحة. */
+export function mergeRules(stored) {
+  const r = structuredClone(DEFAULT_RULES);
+  if (!stored || typeof stored !== 'object') return r;
+  const int = (v, min, max) => (Number.isInteger(v) && v >= min && v <= max ? v : undefined);
+  const a = int(stored.annual?.minNoticeDays, 0, 60);
+  if (a !== undefined) r.annual.minNoticeDays = a;
+  for (const p of ['emergency', 'sick', 'other']) {
+    const v = int(stored[p]?.maxBackdateDays, 0, 365);
+    if (v !== undefined) r[p].maxBackdateDays = v;
+  }
+  const span = int(stored.maxSpanDays, 1, 366);
+  if (span !== undefined) r.maxSpanDays = span;
+  if (stored.entitlement && typeof stored.entitlement === 'object') {
+    for (const p of Object.keys(PURPOSES)) {
+      const v = stored.entitlement[p];
+      if (Number.isFinite(v) && v >= 0 && v <= 366) r.entitlement[p] = v;
+    }
+  }
+  return r;
+}
+
+/** أيام العمل الفعلية بين تاريخين (تُستثنى العطلة الأسبوعية والعطل الرسمية). */
+export function workingDates(from, to, settings, holidays = new Set()) {
+  const out = [];
+  for (let d = from; d <= to; d = addDays(d, 1)) if (dayTypeOf(d, settings, holidays) === DAY_WORK) out.push(d);
+  return out;
+}
+
+const bad = (error) => ({ ok: false, error });
+
+/**
+ * يتحقق من طلب ويحسب مدّته.
+ * @param {object} input     ما يرسله العميل (kind, purpose, purposeOther, reason, fromDate, toDate, fromTime, toTime)
+ * @param {object} ctx       { today, nowTime, rules, settings (قد تكون null), holidays:Set, enforceTiming:boolean }
+ *   enforceTiming=false عند الإدخال نيابة عن موظف من قِبل مسؤول، وعند تعديل المعتمِد للتواريخ.
+ */
+export function validateRequest(input, ctx) {
+  const { today, nowTime, rules, settings, holidays, enforceTiming } = ctx;
+  const kind = input.kind;
+  if (!KINDS[kind]) return bad('نوع الطلب غير صالح');
+  const purpose = input.purpose;
+  if (!PURPOSES[purpose]) return bad('اختر نوع الإجازة أو الغرض');
+  const purposeOther = purpose === 'other' ? clip(input.purposeOther, 80) : null;
+  if (purpose === 'other' && !purposeOther) return bad('حدّد الغرض في خانة «أخرى»');
+  const reason = clip(input.reason, 300);
+  // الغرض مطلوب في الأذونات وفي «أخرى»؛ الإجازة السنوية والمرضية يكفيها نوعها
+  if (!reason && (kind !== 'leave' || purpose === 'other' || purpose === 'emergency')) return bad('اكتب الغرض من الطلب');
+
+  const fromDate = input.fromDate;
+  if (!isDate(fromDate)) return bad('تاريخ البداية غير صالح');
+  const toDate = kind === 'leave' ? input.toDate : fromDate;
+  if (!isDate(toDate)) return bad('تاريخ النهاية غير صالح');
+  if (toDate < fromDate) return bad('تاريخ النهاية قبل البداية');
+  if (kind === 'leave' && daysBetween(fromDate, toDate) + 1 > rules.maxSpanDays) return bad(`أطول مدة في الطلب الواحد ${rules.maxSpanDays} يوماً`);
+  if (fromDate > addDays(today, rules.maxAheadDays)) return bad('الموعد بعيد جداً');
+
+  let fromTime = null;
+  let toTime = null;
+  let minutes = 0;
+  let days = 0;
+  if (kind === 'leave') {
+    if (!settings) return { ok: false, error: 'أدخل إعدادات الدوام أولاً', status: 409 };
+    days = workingDates(fromDate, toDate, settings, holidays).length;
+    if (days === 0) return bad('الفترة المختارة كلها عطلة (لا أيام عمل فيها)');
+  } else {
+    if (!isTime(input.fromTime) || !isTime(input.toTime)) return bad('حدّد الوقت من/إلى');
+    fromTime = input.fromTime;
+    toTime = input.toTime;
+    minutes = toMin(toTime) - toMin(fromTime);
+    if (minutes <= 0) return bad('وقت النهاية يجب أن يكون بعد البداية');
+  }
+
+  if (enforceTiming) {
+    if (purpose === 'annual') {
+      if (kind === 'leave') {
+        if (fromDate < addDays(today, rules.annual.minNoticeDays)) {
+          return bad(rules.annual.minNoticeDays === 1
+            ? 'الإجازة الاعتيادية (السنوية) تُقدَّم قبل موعدها بيوم على الأقل'
+            : `الإجازة الاعتيادية (السنوية) تُقدَّم قبل موعدها بـ ${rules.annual.minNoticeDays} أيام على الأقل`);
+        }
+      } else if (fromDate < today || (fromDate === today && toMin(fromTime) <= toMin(nowTime))) {
+        return bad('الإذن الاعتيادي (السنوي) يُقدَّم قبل وقته، أما بعد وقوع الحالة فاختر «طارئ» أو «مرضي»');
+      }
+    } else {
+      const back = rules[purpose].maxBackdateDays;
+      if (fromDate < addDays(today, -back)) {
+        return bad(back === 0 ? 'لا يُقبل هذا الطلب بعد وقوع الحالة' : `انتهت مهلة التقديم بعد وقوع الحالة (${back} يوماً)، راجع الموارد البشرية`);
+      }
+    }
+  }
+
+  return { ok: true, value: { kind, purpose, purposeOther, reason, fromDate, toDate, fromTime, toTime, days, minutes } };
+}
+
+const LEAVE_KEYWORD = { annual: 'سنوي', sick: 'مرض', emergency: 'طارئ' };
+
+/** نوع الإجازة الافتراضي في إعدادات المحرك بحسب غرض الطلب (اقتراح فقط؛ يؤكده المعتمِد). */
+export function suggestLeaveType(purpose, leaveTypes) {
+  const word = LEAVE_KEYWORD[purpose];
+  if (!word) return null;
+  return Object.keys(leaveTypes).find((n) => n.includes(word)) || null;
+}
+
+/** «2026-11» لتاريخ */
+export const monthOf = (date) => date.slice(0, 7);
+
+/** أول وآخر يوم في شهر YYYY-MM */
+export function monthBounds(ym) {
+  const [y, m] = ym.split('-').map(Number);
+  return { from: `${ym}-01`, to: `${ym}-${String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, '0')}` };
+}

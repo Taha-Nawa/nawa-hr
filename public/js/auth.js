@@ -1,17 +1,17 @@
 // الدخول بحساب Microsoft: Authorization Code + PKCE من المتصفح (تطبيق SPA بلا سرّ).
 // الخادم هو من يتحقق من توقيع الرمز ويقرر الصلاحيات؛ المتصفح هنا ينقل الرمز فقط.
-import { post } from './api.js';
+import { get, post } from './api.js';
 
 const KEY = 'nawa-login';
 const b64url = (bytes) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const rand = (n) => b64url(crypto.getRandomValues(new Uint8Array(n)));
 
-export async function startLogin() {
+export async function startLogin({ remember = false } = {}) {
   const cfg = await post('/api/auth/start');
   const verifier = rand(48);
   const state = rand(24);
   const challenge = b64url(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))));
-  const saved = JSON.stringify({ verifier, state, tenant: cfg.tenant, clientId: cfg.clientId, at: Date.now() });
+  const saved = JSON.stringify({ verifier, state, tenant: cfg.tenant, clientId: cfg.clientId, remember, at: Date.now() });
   sessionStorage.setItem(KEY, saved);
   // نسخة احتياطية قصيرة العمر: على الآيفون قد تُفتح صفحة Microsoft في نافذة منفصلة داخل التطبيق المثبّت فلا تصل إليها sessionStorage.
   try { localStorage.setItem(KEY, saved); } catch { /* التخزين غير متاح */ }
@@ -73,17 +73,26 @@ export async function finishLogin() {
   if (!tokens.id_token) return { error: 'لم تُرجع Microsoft رمز الدخول، حاول مرة أخرى.' };
 
   try {
-    await post('/api/auth/session', { idToken: tokens.id_token });
+    await post('/api/auth/session', { idToken: tokens.id_token, remember: saved.remember === true });
   } catch (e) {
     return { error: e.body?.code === 'not_registered' ? e.message : e.message || 'تعذّر الدخول.' };
   }
   return { ok: true };
 }
 
-export async function logout() {
+/** forget: ينسى هذا الجهاز أيضاً (وإلا يبقى متذكَّراً ويعرض «متابعة» في المرة القادمة). */
+export async function logout({ forget = false } = {}) {
   try {
-    await post('/api/auth/logout');
+    await post('/api/auth/logout', { forget });
   } catch {
     /* الكوكي ينتهي بكل الأحوال */
   }
 }
+
+// ---- طرق الدخول الأخرى (كلها تُنشئ الجلسة في الخادم؛ المتصفح لا يحتفظ بأي سرّ سوى كوكي HttpOnly)
+export const authConfig = () => get('/api/auth/config').catch(() => ({ sso: true, pin: true, code: false, rememberDays: 30 }));
+export const deviceInfo = () => get('/api/auth/device').catch(() => ({ known: false }));
+export const resumeDevice = (pin) => post('/api/auth/resume', pin ? { pin } : {});
+export const requestCode = (email) => post('/api/auth/code/request', { email });
+export const verifyCode = (email, code, remember) => post('/api/auth/code/verify', { email, code, remember });
+export const loginWithPin = (email, pin, remember) => post('/api/auth/pin', { email, pin, remember });

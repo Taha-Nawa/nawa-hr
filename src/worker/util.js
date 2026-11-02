@@ -49,3 +49,13 @@ export function addDays(date, n) {
 export function daysBetween(from, to) {
   return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86400000);
 }
+
+/** الآن (للاختبارات فقط يمكن تثبيته بـ env.__NOW؛ لا يوجد هذا المتغيّر في النشر الحقيقي). */
+export function nowOf(env) {
+  return env?.__NOW ? new Date(env.__NOW) : new Date();
+}
+
+/** الوقت الحالي HH:MM بتوقيت المنطقة. */
+export function localTime(tz = 'Asia/Hebron', now = new Date()) {
+  return new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(now);
+}

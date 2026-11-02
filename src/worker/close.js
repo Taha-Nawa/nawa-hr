@@ -17,6 +17,16 @@ export function eligible(emp, date) {
   return (!emp.start_date || emp.start_date <= date) && (!emp.end_date || emp.end_date >= date);
 }
 
+/** تنظيف ليلي لما انتهت صلاحيته (جلسات، nonce، أجهزة متذكَّرة، رموز بريد قديمة) كي لا تكبر الجداول. */
+export async function purgeAuth(db) {
+  await db.batch([
+    db.prepare("DELETE FROM sessions WHERE expires_at < datetime('now')"),
+    db.prepare("DELETE FROM auth_nonces WHERE expires_at < datetime('now')"),
+    db.prepare("DELETE FROM trusted_devices WHERE expires_at < datetime('now')"),
+    db.prepare("DELETE FROM email_codes WHERE created_at < datetime('now', '-1 day')"),
+  ]);
+}
+
 export async function closeDay(env, date) {
   const d = date || addDays(localDate(tzOf(env)), -1);
   const settings = await loadWorkSettings(env.DB);

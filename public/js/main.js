@@ -1,6 +1,7 @@
 import { h, $, clear, toast, icon, dialog } from './dom.js';
 import { get, setUnauthorizedHandler } from './api.js';
-import { startLogin, hasCallback, finishLogin, logout } from './auth.js';
+import { hasCallback, finishLogin, logout, authConfig, deviceInfo, resumeDevice } from './auth.js';
+import { showLogin as renderLogin } from './login-ui.js';
 import './pwa.js';
 
 const ROLE_LABEL = { employee: 'موظف', manager: 'مدير مباشر', hr: 'موارد بشرية', director: 'مدير عام', admin: 'مسؤول النظام' };
@@ -9,15 +10,18 @@ const ALL = ['employee', 'manager', 'hr', 'director', 'admin'];
 // tab: تظهر في شريط الأزرار السفلي على الجوال؛ الباقي في ورقة «المزيد».
 const PAGES = [
   { path: 'today', title: 'لوحة اليوم', short: 'اليوم', icon: 'today', tab: true, roles: ALL, load: () => import('./pages/today.js') },
+  { path: 'requests', title: 'الطلبات', short: 'الطلبات', icon: 'inbox', tab: true, roles: ALL, load: () => import('./pages/requests.js') },
+  { path: 'requests/:id/print', title: 'طباعة النموذج', roles: ALL, nav: 'requests', load: () => import('./pages/request-print.js') },
   { path: 'employees', title: 'الموظفون', short: 'الموظفون', icon: 'users', tab: true, roles: ALL, load: () => import('./pages/employees.js') },
   { path: 'employees/:id', title: 'الموظف', roles: ALL, nav: 'employees', load: () => import('./pages/employee.js') },
   { path: 'reports', title: 'التقارير', short: 'التقارير', icon: 'report', tab: true, roles: ALL, load: () => import('./pages/reports.js') },
-  { path: 'links', title: 'الروابط', short: 'الروابط', icon: 'link', tab: true, roles: ALL, load: () => import('./pages/links.js') },
+  { path: 'links', title: 'الروابط', icon: 'link', roles: ALL, load: () => import('./pages/links.js') },
   { path: 'settings', title: 'الإعدادات والعطل', icon: 'sliders', roles: ['hr', 'director', 'admin'], load: () => import('./pages/settings.js') },
   { path: 'import', title: 'الاستيراد من إكسل', icon: 'upload', roles: ['hr', 'admin'], load: () => import('./pages/import.js') },
   { path: 'devices', title: 'أجهزة البوابة', icon: 'tablet', roles: ['admin'], load: () => import('./pages/devices.js') },
   { path: 'users', title: 'المستخدمون', icon: 'shield', roles: ['admin'], load: () => import('./pages/users.js') },
   { path: 'audit', title: 'سجل التدقيق', icon: 'audit', roles: ['hr', 'director', 'admin'], load: () => import('./pages/audit.js') },
+  { path: 'account', title: 'حسابي والأمان', icon: 'key', roles: ALL, load: () => import('./pages/account.js') },
 ];
 
 const root = document.getElementById('app');
@@ -34,28 +38,10 @@ function match(path) {
 }
 
 // ---------------------------------------------------------------- شاشة الدخول
-function showLogin(message) {
+async function showLogin(message, known) {
   me = null;
-  document.title = 'الدخول — نظام الحضور والطلبات';
-  const btn = h('button', { type: 'button', class: 'btn btn-ms', onclick: async () => {
-    btn.disabled = true;
-    try {
-      await startLogin();
-    } catch (e) {
-      btn.disabled = false;
-      toast(e.message, 'err');
-    }
-  } },
-  h('span', { class: 'ms-logo', 'aria-hidden': 'true' }, h('i'), h('i'), h('i'), h('i')), 'الدخول بحساب Microsoft');
-  clear(root).append(
-    h('main', { class: 'login' },
-      h('section', { class: 'arch' },
-        h('img', { src: '/logo.png', alt: 'جمعية نوى للثقافة والفنون', class: 'arch-logo' }),
-        h('h1', null, 'الحضور والطلبات'),
-        h('p', { class: 'arch-sub' }, 'ادخل بحسابك المؤسسي على nawaculture.org'),
-        message ? h('p', { class: 'login-msg', role: 'alert' }, message) : null,
-        btn)),
-  );
+  const [config, device] = await Promise.all([authConfig(), known ?? deviceInfo()]);
+  renderLogin({ root, message, config, device, onDone: startApp });
 }
 
 // ---------------------------------------------------------------- الإطار
@@ -65,6 +51,21 @@ const initial = () => ((me.employeeName || me.email || '؟').trim()[0] || '؟').
 async function signOut() {
   await logout();
   showLogin();
+}
+
+// تلميح لمرة واحدة بعد دخول قوي: أنشئ PIN لدخول أسرع. يُخفى بالإغلاق ويبقى مخفياً على هذا الجهاز.
+const TIP_KEY = 'nawa-pin-tip';
+function maybeTip(view) {
+  let dismissed = false;
+  try { dismissed = localStorage.getItem(TIP_KEY) === '1'; } catch { /* غير متاح */ }
+  if (dismissed || me.pin || !['microsoft', 'code'].includes(me.via)) return;
+  const hide = () => { try { localStorage.setItem(TIP_KEY, '1'); } catch { /* غير متاح */ } tip.remove(); };
+  const tip = h('div', { class: 'tip', role: 'note' },
+    icon('key'),
+    h('span', null, 'ادخل أسرع المرة القادمة: أنشئ رقم PIN من 6 أرقام وتذكّر هذا الجهاز.'),
+    h('a', { class: 'btn btn-sm btn-primary', href: '#/account', onclick: hide }, 'إنشاء PIN'),
+    h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'إخفاء التلميح', onclick: hide }, '✕'));
+  view.prepend(tip);
 }
 
 function openMore() {
@@ -103,6 +104,20 @@ function showShell() {
         h('button', { type: 'button', class: 'tab', id: 'tabMore', onclick: openMore }, h('span', { class: 'pill' }, icon('more')), h('span', null, 'المزيد')))),
   );
   watchTables($('#view'));
+  refreshPending();
+}
+
+// عدّاد «بانتظار قراري» بجانب الطلبات في القائمة الجانبية والشريط السفلي
+async function refreshPending() {
+  if (!me) return;
+  let n = 0;
+  try {
+    n = (await get('/api/requests/meta')).pending || 0;
+  } catch { /* العدّاد تحسين؛ لا يعطّل شيئاً */ }
+  document.querySelectorAll('[data-path="requests"]').forEach((a) => {
+    a.querySelector('.count')?.remove();
+    if (n > 0) (a.querySelector('.pill') || a).append(h('b', { class: 'count', 'aria-label': `${n} طلب بانتظار قرارك` }, n));
+  });
 }
 
 // على الجوال تتحول الجداول إلى بطاقات: نكتب عنوان العمود على كل خلية (data-label) كلما رُسم جدول جديد.
@@ -148,6 +163,7 @@ async function route() {
     const node = await mod.default({ user: me, params: found.params });
     if (location.hash.replace(/^#\/?/, '').split('?')[0] === path) {
       clear(view).append(node);
+      if (found.page.path === 'today') maybeTip(view);
       view.focus({ preventScroll: true });
       window.scrollTo(0, 0);
     }
@@ -158,10 +174,41 @@ async function route() {
 }
 
 // ---------------------------------------------------------------- الإقلاع
+async function startApp() {
+  try {
+    me = (await get('/api/me')).user;
+  } catch {
+    me = null;
+  }
+  if (!me) return showLogin();
+  showShell();
+  route();
+}
+
+// انتهت الجلسة أثناء الاستعمال: نحاول الاستئناف الصامت من الجهاز المتذكَّر قبل أن نُظهر شاشة الدخول.
+let recovering = false;
+async function recover() {
+  if (!me || recovering) return;
+  recovering = true;
+  try {
+    const dev = await deviceInfo();
+    if (dev.known && dev.auto) {
+      await resumeDevice();
+      location.reload();
+      return;
+    }
+    showLogin('انتهت جلسة العمل، سجّل الدخول من جديد.', dev);
+  } catch {
+    showLogin('انتهت جلسة العمل، سجّل الدخول من جديد.');
+  } finally {
+    recovering = false;
+  }
+}
+
 async function boot() {
-  setUnauthorizedHandler(() => {
-    if (me) showLogin('انتهت جلسة العمل، سجّل الدخول من جديد.');
-  });
+  setUnauthorizedHandler(recover);
+  window.addEventListener('hashchange', route);
+  window.addEventListener('requests:changed', refreshPending);
 
   let loginError = null;
   if (hasCallback()) {
@@ -170,15 +217,21 @@ async function boot() {
     else location.hash = '#/today';
   }
 
+  let user = null;
   try {
-    me = (await get('/api/me')).user;
-  } catch {
-    me = null;
+    user = (await get('/api/me')).user;
+  } catch { /* لا جلسة */ }
+  if (user) return startApp();
+
+  // بلا جلسة: جهاز متذكَّر يدخل تلقائياً، وإلا نعرض شاشة الدخول (مع «متابعة كـ…» إن عُرف الجهاز).
+  const dev = await deviceInfo();
+  if (dev.known && dev.auto && !loginError) {
+    try {
+      await resumeDevice();
+      return startApp();
+    } catch { /* انتهى الجهاز أو أُوقف: شاشة الدخول */ }
   }
-  if (!me) return showLogin(loginError);
-  showShell();
-  window.addEventListener('hashchange', route);
-  route();
+  showLogin(loginError, dev);
 }
 
 boot();

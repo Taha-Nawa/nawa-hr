@@ -109,10 +109,11 @@ export async function consumeNonce(db, nonce) {
 }
 
 // ---- الجلسات ----
-export async function createSession(db, userId) {
+/** via: كيف بدأت الجلسة (microsoft | code | pin | device) — يحدد قوتها عند تعيين PIN جديد. */
+export async function createSession(db, userId, via = 'microsoft', now = new Date()) {
   const token = randomToken(32);
-  const exp = new Date(Date.now() + SESSION_HOURS * 3600_000).toISOString().replace('T', ' ').slice(0, 19);
-  await db.prepare('INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)').bind(await sha256hex(token), userId, exp).run();
+  const exp = new Date(now.getTime() + SESSION_HOURS * 3600_000).toISOString().replace('T', ' ').slice(0, 19);
+  await db.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, via) VALUES (?, ?, ?, ?)').bind(await sha256hex(token), userId, exp, via).run();
   return { token, maxAge: SESSION_HOURS * 3600 };
 }
 
@@ -135,9 +136,10 @@ export async function currentUser(db, request) {
   if (!token || token.length < 32 || token.length > 200) return null;
   const row = await db
     .prepare(
-      `SELECT u.id, u.email, u.role, u.employee_id AS employeeId, e.name AS employeeName
+      `SELECT u.id, u.email, u.role, u.employee_id AS employeeId, e.name AS employeeName, s.via AS via, (p.user_id IS NOT NULL) AS hasPin
        FROM sessions s JOIN users u ON u.id = s.user_id AND u.active = 1
        LEFT JOIN employees e ON e.id = u.employee_id
+       LEFT JOIN user_pins p ON p.user_id = u.id
        WHERE s.token_hash = ? AND s.expires_at >= datetime('now')`,
     )
     .bind(await sha256hex(token))

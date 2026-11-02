@@ -69,6 +69,49 @@ a { color: var(--red); text-underline-offset: 3px; }
 .ms-logo i:nth-child(1) { background: #f25022; } .ms-logo i:nth-child(2) { background: #7fba00; }
 .ms-logo i:nth-child(3) { background: #00a4ef; } .ms-logo i:nth-child(4) { background: #ffb900; }
 
+/* شاشة الدخول: ثلاث طرق (حساب Microsoft، رمز البريد، PIN) وبطاقة «مرحباً بعودتك» */
+.login-card { gap: 10px; padding: 60px 32px 30px; }
+.login-card h1 { font-size: 1.45rem; }
+.login-card .arch-sub { max-width: none; margin-top: -8px; font-size: 0.9rem; color: var(--muted); }
+.login-card .login-msg { align-self: stretch; text-align: start; }
+.login-tabs { align-self: stretch; display: flex; gap: 4px; padding: 4px; background: #ece4d8; border-radius: 12px; margin-top: 8px; }
+.login-tab { flex: 1 1 0; min-width: 0; border: 0; background: transparent; font: inherit; font-size: 0.78rem; font-weight: 600; color: var(--ink-2); padding: 7px 2px; border-radius: 9px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; line-height: 1.35; touch-action: manipulation; }
+.login-tab .ic { width: 1.2rem; height: 1.2rem; }
+.login-tab.on { background: var(--surface); color: var(--red-d); box-shadow: 0 1px 3px rgba(42, 20, 16, 0.18); font-weight: 800; }
+.login-panel { align-self: stretch; display: flex; flex-direction: column; gap: 12px; text-align: start; margin-top: 4px; }
+.login-hint { color: var(--ink-2); font-size: 0.88rem; text-align: center; }
+.login-form { display: flex; flex-direction: column; gap: 12px; align-self: stretch; text-align: start; }
+.login-form .field > input { height: 46px; font-size: 1rem; }
+.btn-wide { width: 100%; height: 48px; font-size: 1rem; margin-top: 0; }
+.code-input { text-align: center; font-size: 1.6rem; letter-spacing: 0.5em; padding-inline-start: 0.5em; font-weight: 700; font-variant-numeric: tabular-nums; height: 54px; }
+.code-input::placeholder { letter-spacing: 0.3em; color: #c9bfb6; }
+.code-input-sm { font-size: 1.3rem; height: 46px; }
+.login-remember { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: var(--radius-sm); cursor: pointer; background: #fcf9f4; }
+.login-remember input { margin-top: 4px; }
+.login-remember b { display: block; font-size: 0.9rem; }
+.login-remember small { display: block; color: var(--muted); font-size: 0.76rem; line-height: 1.5; }
+.login-row { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.login-fine { color: var(--muted); font-size: 0.76rem; text-align: center; }
+.login-alt { align-self: center; margin-top: 4px; }
+.welcome { display: flex; align-items: center; gap: 14px; text-align: start; align-self: stretch; background: var(--red-soft); border-radius: var(--radius); padding: 12px 16px; margin-top: 8px; }
+.avatar-lg { width: 54px; height: 54px; font-size: 1.4rem; }
+.welcome-hi { font-size: 0.8rem; color: var(--muted); }
+.welcome-name { font-weight: 800; font-size: 1.1rem; line-height: 1.35; }
+.welcome-mail { color: var(--ink-2); font-size: 0.82rem; unicode-bidi: plaintext; text-align: start; }
+
+/* حسابي والأمان + تلميح PIN */
+.acct { display: flex; flex-direction: column; gap: 12px; }
+.acct .req-info { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.acct-head { display: flex; align-items: center; gap: 10px; }
+.acct-head .ic { color: var(--red); width: 1.4rem; height: 1.4rem; }
+.acct-head h2 { flex: 1; }
+.dev-list { display: flex; flex-direction: column; }
+.dev-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line-2); }
+.dev-name { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-weight: 700; }
+.tip { display: flex; align-items: center; gap: 12px; padding: 10px 14px; margin-bottom: 14px; background: var(--gold-soft); border: 1px solid #ecd98b; border-radius: var(--radius); }
+.tip .ic { color: var(--gold-d); flex: none; width: 1.4rem; height: 1.4rem; }
+.tip span { flex: 1; min-width: 0; }
+
 /* ------------------------------------------------------------ الإطار (حاسوب: شريط جانبي) */
 .shell { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; }
 .side { background: var(--surface); border-inline-end: 1px solid var(--line); padding: 18px 12px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
@@ -260,6 +303,64 @@ textarea { width: 100%; resize: vertical; }
 .sheet-link .ic { color: var(--red); width: 1.35rem; height: 1.35rem; }
 .sheet-link:last-child { border-bottom: 0; }
 
+/* ------------------------------------------------------------ الطلبات */
+.new-req { display: flex; flex-wrap: wrap; gap: 8px; }
+.seg-tabs { display: inline-flex; gap: 4px; padding: 4px; background: #ece4d8; border-radius: 12px; align-self: flex-start; max-width: 100%; overflow-x: auto; }
+.seg-tab { border: 0; background: transparent; font: inherit; font-weight: 600; color: var(--ink-2); padding: 7px 16px; border-radius: 9px; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; white-space: nowrap; touch-action: manipulation; }
+.seg-tab.on { background: var(--surface); color: var(--red-d); box-shadow: 0 1px 3px rgba(42, 20, 16, 0.18); }
+.count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--red); color: #fff; font-size: 0.75rem; font-weight: 800; display: inline-grid; place-items: center; font-variant-numeric: tabular-nums; line-height: 1; }
+.nav-link .count { margin-inline-start: auto; }
+.kind-tag { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; white-space: nowrap; }
+.kind-tag .ic { color: var(--red); }
+.req-row { cursor: pointer; }
+.req-row:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
+.req-detail { display: flex; flex-direction: column; gap: 14px; }
+.req-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.req-kind { font-weight: 800; font-size: 1.1rem; }
+.req-actions { margin-top: 0; }
+.req-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; margin: 0; }
+.req-info .kv { min-width: 0; }
+.req-info .kv.wide { grid-column: 1 / -1; }
+.req-info dt { color: var(--muted); font-size: 0.82rem; }
+.req-info dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.choice-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.choice { position: relative; display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; background: #fff; font-weight: 600; min-height: 42px; touch-action: manipulation; }
+.choice input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.choice:has(input:checked) { background: var(--red-soft); border-color: var(--red); color: var(--red-d); box-shadow: inset 0 0 0 1px var(--red); }
+.choice:has(input:focus-visible) { outline: 3px solid var(--ink); outline-offset: 2px; }
+.calc { background: #fbf7f0; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
+.calc-title { font-size: 0.9rem; color: var(--ink-2); }
+.calc-row { display: flex; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; }
+.calc-row span { color: var(--muted); }
+.calc-row b { font-variant-numeric: tabular-nums; }
+.calc-slot:empty { display: none; }
+.request-form { display: flex; flex-direction: column; gap: 14px; }
+.decide { border-top: 1px dashed var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.decide h3 { font-size: 1rem; }
+
+/* ------------------------------------------------------------ نموذج الطباعة (يطابق النماذج الورقية) */
+.paper-frame { container-type: inline-size; width: min(100%, 210mm); margin-inline: auto; }
+.paper { background: #fff; color: #161110; border: 1px solid var(--line); box-shadow: var(--shadow); aspect-ratio: 210 / 297; padding: 6cqw 8cqw 5cqw; font-size: 1.85cqw; line-height: 1.6; display: flex; flex-direction: column; gap: 1.1cqw; }
+.phead { text-align: center; }
+.phead img { width: 15cqw; height: auto; display: block; margin: 0 auto; }
+.phead h2 { font-size: 2.7cqw; font-weight: 800; margin: 0.6cqw 0 1.4cqw; }
+.pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6cqw 4cqw; }
+.pf { display: flex; align-items: flex-end; gap: 1cqw; min-width: 0; }
+.pl { white-space: nowrap; font-weight: 600; }
+.pv { flex: 1; min-width: 0; min-height: 3.6cqw; border-bottom: 0.18cqw solid #333; padding-inline: 1cqw; font-weight: 700; overflow-wrap: anywhere; }
+.pf.wide { grid-column: 1 / -1; }
+.pf.tall { align-items: flex-start; }
+.pf.tall .pv { border-bottom: 0; line-height: 4.4cqw; min-height: 8.8cqw; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 4.2cqw, #444 4.2cqw, #444 4.4cqw); }
+.pband { background: #f2dcdc; font-weight: 800; padding: 0.3cqw 1.4cqw; margin-top: 1.2cqw; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.pchecks { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8cqw 4cqw; padding-inline: 1cqw; }
+.pchecks.one { grid-template-columns: 1fr; }
+.pcb { display: flex; align-items: center; gap: 1.2cqw; min-width: 0; }
+.pcb .pline { flex: 1; min-height: 3.2cqw; border-bottom: 0.18cqw solid #333; font-weight: 700; padding-inline: 1cqw; }
+.box { flex: none; width: 2cqw; height: 2cqw; border: 0.24cqw solid #222; display: inline-block; }
+.box.on { background: linear-gradient(45deg, transparent 43%, #222 43% 57%, transparent 57%), linear-gradient(-45deg, transparent 43%, #222 43% 57%, transparent 57%); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.psign { display: grid; grid-template-columns: 1fr 1fr; gap: 0 4cqw; margin-top: 3cqw; }
+.pfoot { margin-top: auto; display: flex; justify-content: space-between; gap: 2cqw; font-size: 1.4cqw; color: #6b5f5a; border-top: 0.12cqw solid #c9bfb6; padding-top: 1cqw; }
+
 /* ------------------------------------------------------------ تابلت (آيباد أفقي/عمودي) */
 @media (max-width: 1100px) {
   .shell { grid-template-columns: 200px minmax(0, 1fr); }
@@ -295,6 +396,8 @@ textarea { width: 100%; resize: vertical; }
   .panel { padding: 16px; }
   .weekdays { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .arch { padding-top: 56px; border-radius: 160px 160px 14px 14px; }
+  .login-card { padding: 54px 22px 26px; }
+  .tip { flex-wrap: wrap; }
   .toasts { inset-block-end: calc(var(--tab-h) + 14px + env(safe-area-inset-bottom)); inset-inline: 12px; max-width: none; }
 
   /* لمس مريح: حقول وأزرار لا تقل عن 44px، وخط الحقول 16px كي لا يكبّر آيفون الصفحة عند التركيز */
@@ -336,6 +439,8 @@ textarea { width: 100%; resize: vertical; }
   .tbl.stack td.row-actions .btn { flex: 1 1 auto; margin: 0; }
   .tbl.stack td.num { text-align: start; }
   .tbl.stack td.blank { display: none; }
+  .tbl.stack td.wide { grid-column: 1 / -1; }
+  .tbl.stack td.w2 { grid-column: span 2; }
   .tbl.stack tr.has-alert { border-inline-start: 4px solid var(--gold); }
   .tbl.stack tr.has-alert td:first-child { box-shadow: none; }
   .tbl.stack tr.row-off { opacity: 0.75; }
@@ -353,4 +458,26 @@ textarea { width: 100%; resize: vertical; }
     .dlg[open] { animation: sheet-up 0.24s var(--ease); }
   }
   @keyframes sheet-up { from { transform: translateY(40px); opacity: 0.4; } to { transform: none; opacity: 1; } }
+}
+
+/* الطلبات على الجوال */
+@media (max-width: 860px) {
+  .new-req { width: 100%; }
+  .new-req .btn { flex: 1 1 auto; }
+  .seg-tabs { width: 100%; }
+  .seg-tab { flex: 1 1 auto; justify-content: center; }
+  .tab .pill { position: relative; }
+  .tab .count { position: absolute; top: -4px; inset-inline-end: 2px; min-width: 18px; height: 18px; font-size: 0.7rem; }
+  .choice { flex: 1 1 calc(50% - 8px); justify-content: center; }
+}
+
+@page { size: A4; margin: 0; }
+@media print {
+  html, body { background: #fff !important; }
+  .side, .topbar, .tabbar, .no-print, .toasts { display: none !important; }
+  .shell { display: block; }
+  .main { padding: 0 !important; max-width: none; }
+  .page { gap: 0; }
+  .paper-frame { width: 210mm; margin: 0; }
+  .paper { border: 0; box-shadow: none; height: 296mm; aspect-ratio: auto; }
 }
