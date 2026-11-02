@@ -12,6 +12,7 @@ const PAGES = [
   { path: 'today', title: 'لوحة اليوم', short: 'اليوم', icon: 'today', tab: true, roles: ALL, load: () => import('./pages/today.js') },
   { path: 'requests', title: 'الطلبات', short: 'الطلبات', icon: 'inbox', tab: true, roles: ALL, load: () => import('./pages/requests.js') },
   { path: 'requests/:id/print', title: 'طباعة النموذج', roles: ALL, nav: 'requests', load: () => import('./pages/request-print.js') },
+  { path: 'plans', title: 'الإجازات المتوقعة', icon: 'calendar', roles: ALL, load: () => import('./pages/plans.js') },
   { path: 'balances', title: 'أرصدة الإجازات', icon: 'calendar', roles: ['manager', 'hr', 'director', 'admin'], load: () => import('./pages/balances.js') },
   { path: 'manual', title: 'الحضور اليدوي', icon: 'clock', roles: ['hr', 'admin'], load: () => import('./pages/manual.js') },
   { path: 'employees', title: 'الموظفون', short: 'الموظفون', icon: 'users', tab: true, roles: ALL, load: () => import('./pages/employees.js') },
@@ -109,17 +110,23 @@ function showShell() {
   refreshPending();
 }
 
-// عدّاد «بانتظار قراري» بجانب الطلبات في القائمة الجانبية والشريط السفلي
+// عدّاد «بانتظار قراري» بجانب الطلبات والإجازات المتوقعة في القائمة الجانبية والشريط السفلي
 async function refreshPending() {
   if (!me) return;
-  let n = 0;
-  try {
-    n = (await get('/api/requests/meta')).pending || 0;
-  } catch { /* العدّاد تحسين؛ لا يعطّل شيئاً */ }
-  document.querySelectorAll('[data-path="requests"]').forEach((a) => {
-    a.querySelector('.count')?.remove();
-    if (n > 0) (a.querySelector('.pill') || a).append(h('b', { class: 'count', 'aria-label': `${n} طلب بانتظار قرارك` }, n));
-  });
+  const count = async (path) => {
+    try {
+      return (await get(path)).pending || 0;
+    } catch {
+      return 0; // العدّاد تحسين؛ لا يعطّل شيئاً
+    }
+  };
+  const [reqs, plans] = await Promise.all([count('/api/requests/meta'), ['manager', 'hr', 'director', 'admin'].includes(me.role) ? count('/api/plans/meta') : 0]);
+  for (const [path, n, what] of [['requests', reqs, 'طلب'], ['plans', plans, 'خطة إجازات']]) {
+    document.querySelectorAll(`[data-path="${path}"]`).forEach((a) => {
+      a.querySelector('.count')?.remove();
+      if (n > 0) (a.querySelector('.pill') || a).append(h('b', { class: 'count', 'aria-label': `${n} ${what} بانتظار قرارك` }, n));
+    });
+  }
 }
 
 // على الجوال تتحول الجداول إلى بطاقات: نكتب عنوان العمود على كل خلية (data-label) كلما رُسم جدول جديد.

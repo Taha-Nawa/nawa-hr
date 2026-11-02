@@ -19,6 +19,7 @@ import { registerBalanceRoutes } from './balances.js';
 import { registerEmergencyRoutes } from './emergency.js';
 import { registerTimesheetSettings } from './timesheet-settings.js';
 import { registerManualRoutes } from './manual.js';
+import { registerPlanRoutes } from './plans.js';
 import { registerLoginRoutes, resetLoginStatements, DEVICE_COOKIE, clearDeviceCookie } from './login.js';
 
 const MAX_BODY = 64 * 1024;
@@ -63,6 +64,7 @@ registerBalanceRoutes(add, { bad, forbidden, readJson, auditStmt });
 registerEmergencyRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 registerTimesheetSettings(add, { bad, forbidden, readJson, auditStmt });
 registerManualRoutes(add, { bad, forbidden, readJson, auditStmt });
+registerPlanRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 const { establish } = registerLoginRoutes(add, { bad, readJson, auditStmt });
 
 /** يُرجع Response أو null إن لم يطابق أي مسار. */

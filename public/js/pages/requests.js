@@ -26,6 +26,8 @@ export default async function render({ user }) {
       onclick: () => openRequestForm({ kind: k, meta, user, onSaved: () => { window.dispatchEvent(new CustomEvent('requests:changed')); load(); } }),
     }, icon(KIND[k].icon), KIND[k].label))
     : [];
+  // الاختصار إلى التخطيط المسبق: الإجازات المتوقعة بتقويم شهري
+  if (meta.linked) newButtons.push(h('a', { class: 'btn btn-ghost', href: '#/plans' }, icon('calendar'), 'خطّط إجازاتك القادمة'));
 
   function drawTabs() {
     clear(tabBar).append(...shown.map((t) => h('button', {

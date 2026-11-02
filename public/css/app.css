@@ -533,3 +533,103 @@ textarea { width: 100%; resize: vertical; }
   .paper-sheet { zoom: 1; margin: 0; }
   .paper { border: 0; box-shadow: none; }
 }
+
+/* ------------------------------------------------------------ الإجازات المتوقعة: التقويم الشهري وجدول الفريق */
+.ic.flip { transform: scaleX(-1); }
+.page-section { display: flex; flex-direction: column; gap: 14px; }
+.section-title { margin-top: 6px; }
+.cal-wrap { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; }
+.cal-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; }
+.cal-nav { display: flex; align-items: center; gap: 10px; }
+.cal-nav h2 { min-width: 9.5ch; text-align: center; font-size: 1.15rem; }
+.cal-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--ink-2); font-size: 0.82rem; }
+.cal-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.cal-legend .sw { width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--line); background: #fff; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.cal-dow { text-align: center; font-weight: 700; color: var(--muted); font-size: 0.8rem; padding: 2px 0; }
+.cal-dow.end { opacity: 0.6; }
+.cal-dow .short { display: none; }
+.plan-pill { display: none; }
+.cal-day {
+  position: relative; min-height: 66px; padding: 6px 2px 5px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px;
+  border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); font: inherit; cursor: pointer; touch-action: manipulation;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.cal-day .n { font-weight: 700; font-size: 1.02rem; font-variant-numeric: tabular-nums; line-height: 1.4; }
+.cal-day .t { font-size: 0.68rem; line-height: 1.25; text-align: center; min-height: 1.25em; }
+.cal-day.empty { visibility: hidden; border: 0; }
+.cal-day:hover:not(:disabled):not(.sel) { border-color: var(--ink-2); }
+.cal-day.today .n { box-shadow: 0 2px 0 var(--red); }
+.cal-day.off { background: #ebe6e0; color: var(--muted); border-color: #ebe6e0; cursor: default; }
+.cal-day.locked { opacity: 0.4; cursor: not-allowed; }
+.cal-approved { background: var(--olive-soft); border-color: #b9cf9e; color: var(--olive); }
+.cal-planned { background: var(--gold-soft); border-color: #ecd68a; color: var(--gold-d); }
+.cal-rejected { background: var(--red-soft); border-color: #e7b4af; color: var(--red-d); }
+.cal-draft { background: var(--leave-soft); border: 1px dashed var(--leave); color: var(--leave); }
+/* اليوم المحدد يأخذ شكل القوس: العنصر المميز في هوية نوى */
+.cal-day.sel { background: var(--red); border-color: var(--red-d); color: #fff; border-radius: 999px 999px 10px 10px; }
+.cal-legend .sw.sel { background: var(--red); border-color: var(--red-d); border-radius: 7px 7px 3px 3px; }
+.cal-legend .sw.cal-approved { background: var(--olive-soft); border-color: #b9cf9e; }
+.cal-legend .sw.cal-planned { background: var(--gold-soft); border-color: #ecd68a; }
+.cal-legend .sw.cal-rejected { background: var(--red-soft); border-color: #e7b4af; }
+.cal-legend .sw.cal-draft { background: var(--leave-soft); border: 1px dashed var(--leave); }
+
+.plan-bar { display: flex; flex-direction: column; gap: 10px; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.plan-sel { display: flex; flex-direction: column; }
+.plan-fields { display: grid; grid-template-columns: minmax(160px, 220px) 1fr; gap: 10px 14px; }
+.plan-bal { display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; }
+.bal-warn { color: var(--red-d); font-weight: 700; }
+.cal-bar .tools input[type=search] { width: 200px; }
+.sum-warn { border-color: #e7b4af; background: var(--red-soft); }
+
+.plan-days { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 8px; }
+.plan-day { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: #fff; }
+.plan-day.dim { opacity: 0.55; }
+.pd-date { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; flex: 1 1 220px; min-width: 0; }
+.pd-warn { color: var(--red-d); font-size: 0.82rem; font-weight: 700; }
+.pd-team { color: var(--muted); font-size: 0.8rem; }
+.pd-req { font-size: 0.82rem; }
+.dec { display: inline-flex; gap: 6px; }
+.dec label { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; font-weight: 600; font-size: 0.88rem; min-height: 34px; }
+.dec label:has(input:checked).dec-ok { background: var(--olive-soft); border-color: #b9cf9e; color: var(--olive); }
+.dec label:has(input:checked).dec-no { background: var(--red-soft); border-color: #e7b4af; color: var(--red-d); }
+.plan-decide { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--line); padding-top: 12px; }
+
+/* جدول الفريق (شكل ملف الإكسل المعتمد) */
+.team-wrap { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: auto; max-height: 72vh; box-shadow: var(--shadow); }
+.team-wrap:focus-visible { outline-offset: -3px; }
+table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; width: max-content; min-width: 100%; }
+.team th, .team td { border-bottom: 1px solid var(--line-2); border-inline-start: 1px solid var(--line-2); text-align: center; padding: 0; min-width: 44px; height: 34px; font-weight: 600; }
+.team thead th { position: sticky; top: 0; background: #f3ece1; z-index: 2; height: 28px; color: var(--ink-2); font-size: 0.66rem; }
+.team thead tr + tr th { top: 28px; }
+.team .who { position: sticky; inset-inline-start: 0; z-index: 3; background: #fff; text-align: start; min-width: 168px; max-width: 200px; padding: 4px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-inline-start: 0; }
+.team thead .who { background: #f3ece1; z-index: 4; }
+.team .who .emp-name { display: block; font-weight: 700; font-size: 0.82rem; }
+.team .who .code { display: block; color: var(--muted); font-size: 0.7rem; font-weight: 500; }
+.team .off { background: #ebe6e0; }
+.team thead th.today { box-shadow: inset 0 -3px 0 var(--red); }
+.team td .cell { all: unset; box-sizing: border-box; display: block; width: 100%; height: 100%; min-height: 33px; line-height: 33px; font: inherit; font-size: 0.68rem; font-weight: 700; cursor: pointer; }
+.team td .cell:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
+.team td.cal-approved, .team td.cal-planned, .team td.cal-rejected, .team td.cal-draft { border-radius: 0; }
+.team tfoot th, .team tfoot td { position: sticky; bottom: 0; background: #f3ece1; z-index: 2; }
+.team tfoot .who { z-index: 4; }
+
+@media (max-width: 640px) {
+  .cal-wrap { padding: 10px; }
+  .cal-grid { gap: 4px; }
+  .cal-day { min-height: 54px; border-radius: 8px; }
+  .cal-day .n { font-size: 0.95rem; }
+  .cal-day .t { font-size: 0.6rem; }
+  .cal-nav h2 { font-size: 1.02rem; min-width: 8.5ch; }
+  .cal-dow .full { display: none; }
+  .cal-dow .short { display: inline; font-size: 0.74rem; }
+  .plan-pill:not([hidden]) {
+    display: block; position: sticky; bottom: calc(var(--tab-h) + 10px + env(safe-area-inset-bottom)); z-index: 6; align-self: stretch;
+    padding: 10px 14px; border: 0; border-radius: 999px; background: var(--ink); color: #fff; font: inherit; font-weight: 700; box-shadow: 0 8px 22px -8px rgba(42, 20, 16, 0.55); cursor: pointer;
+  }
+  .plan-fields { grid-template-columns: 1fr; }
+  .team .who { min-width: 118px; max-width: 130px; }
+  .team th, .team td { min-width: 40px; }
+  .plan-day .dec { width: 100%; }
+  .plan-day .dec label { flex: 1 1 0; justify-content: center; }
+}

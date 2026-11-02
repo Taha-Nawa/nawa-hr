@@ -50,17 +50,39 @@ export function message(event, r, origin, note, extra = null) {
   return { subject, text, html };
 }
 
+const emailsOf = async (db, sql, ...p) => (await db.prepare(sql).bind(...p).all()).results.map((x) => x.email);
+
+/** المعتمِد العادي: المدير المباشر إن كان له حساب بدور يعتمد، وإلا الموارد البشرية، وإلا المدير العام/المسؤول. */
+async function approverEmails(db, managerId) {
+  let list = managerId != null ? await emailsOf(db, "SELECT email FROM users WHERE active = 1 AND employee_id = ? AND role IN ('manager', 'hr', 'director', 'admin')", managerId) : [];
+  if (!list.length) list = await emailsOf(db, "SELECT email FROM users WHERE active = 1 AND role = 'hr'");
+  if (!list.length) list = await emailsOf(db, "SELECT email FROM users WHERE active = 1 AND role IN ('director', 'admin')");
+  return list;
+}
+
+/** حسابات الموظف نفسه، وإلا بريده المسجَّل في سجل الموظف. */
+async function ownerEmails(db, employeeId, fallback) {
+  const list = await emailsOf(db, 'SELECT email FROM users WHERE active = 1 AND employee_id = ?', employeeId);
+  return list.length || !fallback ? list : [fallback];
+}
+
+function dedupe(list, actorEmail) {
+  const seen = new Set();
+  return list
+    .filter((e) => EMAIL_RE.test(e || '') && e.toLowerCase() !== (actorEmail || '').toLowerCase())
+    .filter((e) => (seen.has(e.toLowerCase()) ? false : (seen.add(e.toLowerCase()), true)))
+    .slice(0, MAX_RECIPIENTS);
+}
+
 /** عناوين من يستقبل الإشعار (بلا المُشغِّل نفسه، بلا تكرار، بحدّ أقصى). */
 async function recipientsOf(db, event, r, rules, actorEmail) {
-  const emails = async (sql, ...p) => (await db.prepare(sql).bind(...p).all()).results.map((x) => x.email);
+  const emails = (sql, ...p) => emailsOf(db, sql, ...p);
   let list;
   if (event === 'submitted') {
     if (needsMedical(r, rules)) {
       list = await emails("SELECT email FROM users WHERE active = 1 AND (role IN ('hr', 'director', 'admin') OR medical = 1)");
     } else {
-      list = r.manager_id != null ? await emails("SELECT email FROM users WHERE active = 1 AND employee_id = ? AND role IN ('manager', 'hr', 'director', 'admin')", r.manager_id) : [];
-      if (!list.length) list = await emails("SELECT email FROM users WHERE active = 1 AND role = 'hr'");
-      if (!list.length) list = await emails("SELECT email FROM users WHERE active = 1 AND role IN ('director', 'admin')");
+      list = await approverEmails(db, r.manager_id);
     }
     // لا يُشعَر صاحب الطلب بطلبه هو، ولا أحد يعتمد طلب نفسه
     const own = await emails('SELECT email FROM users WHERE employee_id = ?', r.employee_id);
@@ -77,11 +99,7 @@ async function recipientsOf(db, event, r, rules, actorEmail) {
     list = await emails('SELECT email FROM users WHERE active = 1 AND employee_id = ?', r.employee_id);
     if (!list.length && r.employeeEmail) list = [r.employeeEmail];
   }
-  const seen = new Set();
-  return list
-    .filter((e) => EMAIL_RE.test(e || '') && e.toLowerCase() !== (actorEmail || '').toLowerCase())
-    .filter((e) => (seen.has(e.toLowerCase()) ? false : (seen.add(e.toLowerCase()), true)))
-    .slice(0, MAX_RECIPIENTS);
+  return dedupe(list, actorEmail);
 }
 
 /**
@@ -132,4 +150,90 @@ export function notifyRelease(ctx, list) {
   // سقف 4 إشعارات للدفعة الواحدة: كل إشعار يستهلك استعلامات من حدّ الطلب الواحد (50)؛ والباقي مسجَّل في التدقيق
   const jobs = list.slice(0, MAX_RELEASE_MAILS).map((x) => notifyRequest(ctx, 'released', x.requestId, { extra: x }));
   return Promise.all(jobs); // بلا waitUntil (الاختبارات) كل وعد مُنتظَر؛ ومعه تكون القيم undefined فتنتهي فوراً
+}
+
+// ------------------------------------------------------------ الإجازات المتوقعة (الخطط)
+const PLAN_TITLE = {
+  plan_submitted: (p) => `خطة إجازات متوقعة من ${p.employeeName} بانتظار قرارك`,
+  plan_decided: (p) => (p.status === 'approved' ? 'قرار مسؤولك على إجازاتك المتوقعة' : 'رُفضت إجازاتك المتوقعة'),
+};
+
+/** نص قصير لفترات الخطة: «2026-12-01 → 2026-12-03 (3 أيام)، 2026-12-08». */
+const spanText = (days) => {
+  const out = [];
+  for (const d of days) {
+    const last = out[out.length - 1];
+    const next = last && new Date(Date.parse(`${last.to}T00:00:00Z`) + 86400000).toISOString().slice(0, 10);
+    if (last && d === next) { last.to = d; last.n += 1; } else out.push({ from: d, to: d, n: 1 });
+  }
+  return out.map((x) => (x.n === 1 ? x.from : `${x.from} → ${x.to} (${x.n} أيام)`)).join('، ');
+};
+
+export function planMessage(event, p, days, origin) {
+  const subject = PLAN_TITLE[event](p);
+  const by = (st) => days.filter((d) => d.status === st).map((d) => d.date);
+  const rows = [['الموظف', p.employeeName], ['النوع', `إجازة ${p.purpose === 'annual' ? 'اعتيادية' : 'أخرى'}${p.note ? ` — ${p.note}` : ''}`]];
+  if (event === 'plan_submitted') {
+    rows.push(['عدد الأيام', String(days.length)], ['الأيام', spanText(days.map((d) => d.date))]);
+  } else {
+    if (by('approved').length) rows.push(['الأيام المعتمدة', spanText(by('approved'))]);
+    if (by('rejected').length) rows.push(['الأيام المرفوضة', spanText(by('rejected'))]);
+    if (p.decision_note) rows.push(['ملاحظة المسؤول', p.decision_note]);
+  }
+  const link = `${origin}/#/plans?open=${p.id}`;
+  const text = `${subject}\n\n${rows.map(([k, v]) => `${k}: ${v}`).join('\n')}\n\nافتح الخطة: ${link}\n— نظام الحضور والطلبات، جمعية نوى للثقافة والفنون`;
+  const html = `<div dir="rtl" lang="ar" style="font-family:Segoe UI,Tahoma,Arial,sans-serif;max-width:480px;margin:auto;padding:22px;border:1px solid #e6dccf;border-radius:14px;color:#2a1410">
+<p style="margin:0 0 12px;font-weight:700;font-size:16px">${esc(subject)}</p>
+<table style="border-collapse:collapse;width:100%;margin:0 0 16px">${rows.map(([k, v]) => `<tr><td style="padding:5px 0;color:#7d6f68;width:34%;vertical-align:top">${esc(k)}</td><td style="padding:5px 0">${esc(v)}</td></tr>`).join('')}</table>
+<p style="margin:0 0 16px"><a href="${esc(link)}" style="display:inline-block;background:#a21008;color:#fff;text-decoration:none;padding:9px 18px;border-radius:9px;font-weight:700">فتح الخطة</a></p>
+<p style="margin:0;color:#7d6f68;font-size:12px">نظام الحضور والطلبات — جمعية نوى للثقافة والفنون</p></div>`;
+  return { subject, text, html };
+}
+
+/** plan_submitted → المعتمِد؛ plan_decided → الموظف. نفس ضوابط notifyRequest: لا يعطّل شيئاً، ويحترم rules.notify.enabled. */
+export function notifyPlan(ctx, event, planId, { actor = null } = {}) {
+  const mailer = mailerFor(ctx.env);
+  if (!mailer) return undefined;
+  const origin = new URL(ctx.url).origin;
+  const job = (async () => {
+    try {
+      const stored = await ctx.db.prepare("SELECT value FROM settings WHERE key = 'requests'").first();
+      let rules;
+      try {
+        rules = mergeRules(stored ? JSON.parse(stored.value) : null);
+      } catch {
+        rules = mergeRules(null);
+      }
+      if (!rules.notify.enabled) return;
+      const p = await ctx.db
+        .prepare(
+          `SELECT p.*, e.name AS employeeName, e.manager_id, e.email AS employeeEmail
+           FROM leave_plans p JOIN employees e ON e.id = p.employee_id WHERE p.id = ?`,
+        )
+        .bind(planId)
+        .first();
+      if (!p) return;
+      const days = (await ctx.db.prepare('SELECT date, status FROM leave_plan_days WHERE plan_id = ? ORDER BY date').bind(planId).all()).results;
+      let list;
+      if (event === 'plan_submitted') {
+        const own = await emailsOf(ctx.db, 'SELECT email FROM users WHERE employee_id = ?', p.employee_id);
+        list = (await approverEmails(ctx.db, p.manager_id)).filter((e) => !own.includes(e));
+      } else {
+        list = await ownerEmails(ctx.db, p.employee_id, p.employeeEmail);
+      }
+      const to = dedupe(list, actor);
+      if (!to.length) return;
+      const m = planMessage(event, p, days, origin);
+      for (const addr of to) {
+        try {
+          await mailer.send({ to: addr, ...m });
+        } catch (e) {
+          console.warn('notify: plan send failed', event, e?.message);
+        }
+      }
+    } catch (e) {
+      console.warn('notify: plan failed', event, e?.message);
+    }
+  })();
+  return ctx.defer ? ctx.defer(job) : job;
 }

@@ -14,8 +14,17 @@ const FONTS = [
   '<font><b/><sz val="14"/><name val="Georgia"/></font>', // 3 عنوان كبير
   '<font><b/><sz val="11"/><name val="Arial"/></font>', // 4 عناوين عربية
   '<font><b/><sz val="14"/><name val="Arial"/></font>', // 5 عنوان عربي كبير
+  '<font><b/><sz val="9"/><color rgb="FF006100"/><name val="Arial"/></font>', // 6 معتمد
+  '<font><b/><sz val="9"/><color rgb="FF9C5700"/><name val="Arial"/></font>', // 7 متوقع
+  '<font><b/><sz val="9"/><color rgb="FF9C0006"/><name val="Arial"/></font>', // 8 مرفوض
+  '<font><sz val="9"/><name val="Arial"/></font>', // 9 صغير
 ];
-const FILLS = ['<fill><patternFill patternType="none"/></fill>', '<fill><patternFill patternType="gray125"/></fill>', '<fill><patternFill patternType="solid"><fgColor rgb="FFF2DCDB"/><bgColor indexed="64"/></patternFill></fill>'];
+const FILLS = ['<fill><patternFill patternType="none"/></fill>', '<fill><patternFill patternType="gray125"/></fill>', '<fill><patternFill patternType="solid"><fgColor rgb="FFF2DCDB"/><bgColor indexed="64"/></patternFill></fill>',
+  '<fill><patternFill patternType="solid"><fgColor rgb="FFC6EFCE"/><bgColor indexed="64"/></patternFill></fill>', // 3 أخضر
+  '<fill><patternFill patternType="solid"><fgColor rgb="FFFFEB9C"/><bgColor indexed="64"/></patternFill></fill>', // 4 أصفر
+  '<fill><patternFill patternType="solid"><fgColor rgb="FFFFC7CE"/><bgColor indexed="64"/></patternFill></fill>', // 5 أحمر
+  '<fill><patternFill patternType="solid"><fgColor rgb="FFD9D9D9"/><bgColor indexed="64"/></patternFill></fill>', // 6 رمادي
+];
 const THIN = '<left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/>';
 const BORDERS = ['<border><left/><right/><top/><bottom/><diagonal/></border>', `<border>${THIN}</border>`, '<border><left/><right/><top/><bottom style="thin"><color auto="1"/></bottom><diagonal/></border>'];
 const NUMFMTS = { 164: '0.0#', 165: '0%' };
@@ -45,6 +54,13 @@ const STYLES = {
   cellNum: [0, 0, 1, 0, 'center', false],
   sumTxt: [4, 2, 1, 0, 'right', true],
   sumNum: [4, 2, 1, 0, 'center', false],
+  // تقويم الإجازات: معتمد (أخضر) / متوقع بانتظار القرار (أصفر) / مرفوض (أحمر) / عطلة (رمادي)
+  calApproved: [6, 3, 1, 0, 'center', false],
+  calPlanned: [7, 4, 1, 0, 'center', false],
+  calRejected: [8, 5, 1, 0, 'center', false],
+  calOff: [9, 6, 1, 0, 'center', false],
+  calCell: [9, 0, 1, 0, 'center', false],
+  calHead: [9, 2, 1, 0, 'center', true],
 };
 const STYLE_IDS = Object.keys(STYLES);
 const styleId = (name) => {
