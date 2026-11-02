@@ -30,6 +30,16 @@ export function isTime(s) {
   return h <= 23 && m <= 59;
 }
 
+/** عرض وقت HH:MM بنظام 12 ساعة (ص/م) للرسائل والبريد؛ التخزين يبقى 24 ساعة. (نسخة مطابقة لـ public/js/time12.js) */
+export function fmt12(hhmm) {
+  if (hhmm === null || hhmm === undefined || hhmm === '') return '';
+  const m = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(String(hhmm));
+  if (!m) return String(hhmm);
+  const hr = Number(m[1]);
+  if (hr > 23 || Number(m[2]) > 59) return String(hhmm);
+  return `${hr % 12 === 0 ? 12 : hr % 12}:${m[2]} ${hr < 12 ? 'ص' : 'م'}`;
+}
+
 /** قصّ نص إلى طول أقصى (أو null) */
 export function clip(v, max) {
   if (v === null || v === undefined) return null;

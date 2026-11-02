@@ -1,6 +1,7 @@
 // بطاقات إضافية في صفحة الإعدادات: قواعد الطلبات والأرصدة الافتراضية، ساعات التايم شيت لكل فترة، وطوارئ الدوام.
 import { h, clear, field, select, toast, confirmBox, todayLocal } from '../dom.js';
 import { get, put, post } from '../api.js';
+import { timeField, fmt12, nowHM as clockNow } from '../time12.js';
 
 const num = (value, attrs = {}) => h('input', { type: 'number', inputmode: 'decimal', value: value ?? '', ...attrs });
 const val = (el) => (el.value === '' ? null : Number(el.value));
@@ -143,7 +144,7 @@ export async function emergencyPanel({ work }) {
   const [{ emergencies, canManage }, { centers }] = await Promise.all([get('/api/emergencies'), get('/api/centers').catch(() => ({ centers: [] }))]);
   const box = h('section', { class: 'panel' });
   const today = todayLocal();
-  const nowHM = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Hebron', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
+  const nowHM = clockNow();
   const types = work ? Object.entries(work.leaveTypes) : [];
   const countedTypes = types.filter(([, counted]) => counted).map(([n]) => n);
   const preferred = countedTypes.find((n) => n.includes('طارئ')) || countedTypes[0] || types[0]?.[0] || '';
@@ -151,7 +152,7 @@ export async function emergencyPanel({ work }) {
   const date = h('input', { type: 'date', value: today, max: today, required: true });
   const scope = select([['', 'كل المراكز'], ...centers.map((c) => [String(c.id), c.name])], '');
   const dismiss = h('input', { type: 'checkbox', checked: true });
-  const time = h('input', { type: 'time', value: work && nowHM > work.start && nowHM < work.end ? nowHM : work?.start || '', required: true });
+  const time = timeField({ label: 'وقت الإخلاء', value: work && nowHM > work.start && nowHM < work.end ? nowHM : work?.start || '', required: true });
   const full = h('input', { type: 'checkbox' });
   const kind = select(types.map(([n, counted]) => [n, `${n}${counted ? '' : ' (لا تُحتسب كدوام)'}`]), preferred, { disabled: true });
   const note = h('input', { maxlength: '300', placeholder: 'مثال: حريق في المبنى المجاور' });
@@ -161,7 +162,7 @@ export async function emergencyPanel({ work }) {
 
   function drawList() {
     const items = emergencies.map((e) => {
-      const what = [e.dismissTime ? `إخلاء فوري عند ${e.dismissTime}` : 'إغلاق اليوم', e.leaveType ? `اليوم كاملاً: ${e.leaveType}` : 'بلا احتساب كامل'].join(' · ');
+      const what = [e.dismissTime ? `إخلاء فوري عند ${fmt12(e.dismissTime)}` : 'إغلاق اليوم', e.leaveType ? `اليوم كاملاً: ${e.leaveType}` : 'بلا احتساب كامل'].join(' · ');
       return h('div', { class: `emg-item${e.status === 'active' ? '' : ' off'}` },
         h('div', { class: 'emg-what' }, h('b', null, `${e.date} — ${e.center || 'كل المراكز'}`), h('span', { class: 'muted' }, what), e.note ? h('div', { class: 'muted small' }, e.note) : null),
         h('span', { class: `chip ${e.status === 'active' ? 'chip-late' : 'chip-off'}` }, e.status === 'active' ? 'نشط' : 'ملغى'),
@@ -188,7 +189,7 @@ export async function emergencyPanel({ work }) {
       return;
     }
     const where = scope.value ? scope.selectedOptions[0].textContent : 'كل المراكز';
-    const lines = [`${date.value} — ${where}`, dismiss.checked ? `إخلاء فوري عند ${time.value}: ينتهي الدوام الفعلي عندها فلا عجز ولا انصراف مبكر لمن كان حاضراً.` : null, full.checked ? `احتساب اليوم كاملاً بنوع «${kind.value}» لكل موظف فعّال في النطاق (لا يُستبدل ما عليه إجازة معتمدة).` : null].filter(Boolean);
+    const lines = [`${date.value} — ${where}`, dismiss.checked ? `إخلاء فوري عند ${fmt12(time.value)}: ينتهي الدوام الفعلي عندها فلا عجز ولا انصراف مبكر لمن كان حاضراً.` : null, full.checked ? `احتساب اليوم كاملاً بنوع «${kind.value}» لكل موظف فعّال في النطاق (لا يُستبدل ما عليه إجازة معتمدة).` : null].filter(Boolean);
     if (!(await confirmBox(`${lines[0]}: ${lines.slice(1).join(' ')}`, 'إعلان الطارئ'))) return;
     try {
       const r = await post('/api/emergencies', { date: date.value, centerId: scope.value || null, dismissTime: dismiss.checked ? time.value : null, leaveType: full.checked ? kind.value : null, note: note.value });

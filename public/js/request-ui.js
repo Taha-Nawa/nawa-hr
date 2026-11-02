@@ -2,6 +2,7 @@
 import { h, clear, dialog, confirmBox, field, select, toast, addDays, dash, icon } from './dom.js';
 import { get, post } from './api.js';
 import { KIND, purposeLabels, purposeText, statusChip, fmtDate, fmtPeriod, fmtLength, calcLines } from './requests-lib.js';
+import { timeField } from './time12.js';
 
 const PURPOSE_ORDER = ['annual', 'emergency', 'sick', 'other'];
 
@@ -57,8 +58,8 @@ export async function openRequestForm({ kind, meta, user, onSaved }) {
   const reason = h('textarea', { rows: '2', maxlength: '300', placeholder: isLeave ? 'مثال: زيارة عائلية' : 'مثال: مراجعة طبيب', oninput: refresh });
   const dFrom = h('input', { type: 'date', required: true, onchange: refresh });
   const dTo = h('input', { type: 'date', required: true, onchange: () => refresh() });
-  const tFrom = h('input', { type: 'time', required: true, value: kind === 'late' ? meta.work?.start || '' : '', onchange: refresh });
-  const tTo = h('input', { type: 'time', required: true, onchange: refresh });
+  const tFrom = timeField({ label: 'من الساعة', required: true, value: kind === 'late' ? meta.work?.start || '' : '', onchange: refresh });
+  const tTo = timeField({ label: 'إلى الساعة', required: true, onchange: refresh });
 
   // ---- اعتماد مباشر
   const approveNow = h('input', { type: 'checkbox', onchange: sync });
@@ -252,8 +253,8 @@ export async function openRequestDetail({ id, meta, onChanged }) {
       const isLeave = r.kind === 'leave';
       const dFrom = h('input', { type: 'date', value: r.fromDate });
       const dTo = h('input', { type: 'date', value: r.toDate, min: r.fromDate });
-      const tFrom = h('input', { type: 'time', value: r.fromTime || '' });
-      const tTo = h('input', { type: 'time', value: r.toTime || '' });
+      const tFrom = timeField({ label: 'من الساعة', value: r.fromTime || '' });
+      const tTo = timeField({ label: 'إلى الساعة', value: r.toTime || '' });
       const leaveSel = isLeave ? select(data.leaveTypes.map((t) => [t, t]), data.suggestedLeaveType || '') : null;
       if (leaveSel && !data.suggestedLeaveType) leaveSel.prepend(h('option', { value: '', selected: true }, '— اختر نوع الإجازة —'));
       const note = h('textarea', { rows: '2', maxlength: '300', placeholder: 'ملاحظة (اختيارية عند الاعتماد، مطلوبة عند الرفض)' });

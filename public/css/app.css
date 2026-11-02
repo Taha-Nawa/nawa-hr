@@ -159,6 +159,13 @@ input, select, textarea { font: inherit; color: var(--ink); background: #fff; bo
 input[type="checkbox"] { min-height: 0; width: 18px; height: 18px; accent-color: var(--red); }
 input:disabled, select:disabled { background: var(--canvas); color: var(--ink-2); }
 input[type="search"] { min-width: min(300px, 100%); }
+/* حقل الوقت بنظام 12 ساعة (ساعة : دقيقة ص/م) */
+.t12 { display: inline-flex; align-items: center; gap: 4px; direction: ltr; }
+.t12 select { width: auto; min-width: 0; padding-inline: 8px; }
+.t12 .t12-h, .t12 .t12-m { min-width: 58px; text-align: center; }
+.t12 .t12-ap { min-width: 62px; }
+.t12-sep { font-weight: 700; color: var(--ink-2); }
+.field > .t12 { width: 100%; justify-content: flex-end; }
 .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .field > input, .field > select { width: 100%; }
 .field-label { font-weight: 600; font-size: 0.9rem; }

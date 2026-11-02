@@ -1,6 +1,7 @@
 import { h, clear, field, toast, AR_DAYS, todayLocal, addDays } from '../dom.js';
 import { get, put, post } from '../api.js';
 import { requestRulesPanel, timesheetPanel, emergencyPanel } from './settings-extra.js';
+import { timeField } from '../time12.js';
 
 export default async function render({ user }) {
   const canWorkEdit = user.role === 'admin';
@@ -17,8 +18,8 @@ export default async function render({ user }) {
   const weekdays = [...cur.weekdays];
   const leaveTypes = Object.entries(cur.leaveTypes).map(([name, counted]) => ({ name, counted }));
 
-  const startIn = h('input', { type: 'time', value: cur.start, required: true, disabled: !canWorkEdit });
-  const endIn = h('input', { type: 'time', value: cur.end, required: true, disabled: !canWorkEdit });
+  const startIn = timeField({ label: 'بداية الدوام', value: cur.start, required: true, disabled: !canWorkEdit });
+  const endIn = timeField({ label: 'نهاية الدوام', value: cur.end, required: true, disabled: !canWorkEdit });
   const tolIn = h('input', { type: 'number', min: '0', max: '240', step: '1', value: cur.toleranceMinutes, required: true, disabled: !canWorkEdit });
   const daysBox = h('div', { class: 'weekdays', role: 'group', 'aria-label': 'أيام الأسبوع' });
   const leaveBox = h('div', { class: 'leave-list' });

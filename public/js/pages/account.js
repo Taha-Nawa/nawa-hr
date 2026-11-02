@@ -1,6 +1,7 @@
 // حسابي والأمان: رقم PIN، الأجهزة المتذكَّرة، وإنهاء الجلسات الأخرى.
 import { h, clear, icon, field, dialog, confirmBox, toast, AR_MONTHS } from '../dom.js';
 import { get, post } from '../api.js';
+import { fmt12 } from '../time12.js';
 
 const ROLE_LABEL = { employee: 'موظف', manager: 'مدير مباشر', hr: 'موارد بشرية', director: 'مدير عام', admin: 'مسؤول النظام' };
 const VIA = { microsoft: 'حساب Microsoft', code: 'رمز البريد', pin: 'رقم PIN', device: 'جهاز متذكَّر' };
@@ -8,7 +9,7 @@ const VIA = { microsoft: 'حساب Microsoft', code: 'رمز البريد', pin:
 function stamp(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
-  const t = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const t = fmt12(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`);
   return `${d.getDate()} ${AR_MONTHS[d.getMonth()]} ${d.getFullYear()} · ${t}`;
 }
 

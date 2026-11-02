@@ -2,6 +2,7 @@
 import { h, clear, dialog, confirmBox, field, select, toast, icon } from './dom.js';
 import { get, post } from './api.js';
 import { PLAN_STATUS, PLAN_PURPOSE, fmtLong, fmtShort, runsText, fmtN } from './plans-lib.js';
+import { fmtStamp } from './time12.js';
 
 const DAY_CHIP = {
   planned: ['بانتظار القرار', 'chip-late'],
@@ -9,7 +10,7 @@ const DAY_CHIP = {
   rejected: ['مرفوض', 'chip-absent'],
   withdrawn: ['مسحوب', 'chip-off'],
 };
-const stamp = (s) => (s ? s.slice(0, 16).replace('T', ' ') : '');
+const stamp = (s) => (s ? fmtStamp(s) : '');
 
 /**
  * يفتح الخطة ويعرض ما يحق للمستخدم عمله فيها: القرار (للمعتمِد)، الإرسال/السحب/الإلغاء (لصاحبها).

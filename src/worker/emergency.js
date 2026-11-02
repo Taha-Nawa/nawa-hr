@@ -7,7 +7,7 @@
 import { loadWorkSettings } from './settings.js';
 import { recomputePairs } from './recompute.js';
 import { tzOf } from './close.js';
-import { json, isDate, isTime, clip, localDate, addDays } from './util.js';
+import { json, isDate, isTime, clip, localDate, addDays, fmt12 } from './util.js';
 import { can } from './authz.js';
 import { dayTypeOf, DAY_WORK, toMin } from '../engine/attendance.js';
 
@@ -64,7 +64,7 @@ export function registerEmergencyRoutes(add, kit) {
 
     const dismissTime = body.dismissTime ? String(body.dismissTime) : null;
     if (dismissTime !== null && (!isTime(dismissTime) || toMin(dismissTime) <= toMin(settings.start) || toMin(dismissTime) >= toMin(settings.end))) {
-      return bad(`وقت الإخلاء يجب أن يقع بين بداية الدوام (${settings.start}) ونهايته (${settings.end})`);
+      return bad(`وقت الإخلاء يجب أن يقع بين بداية الدوام (${fmt12(settings.start)}) ونهايته (${fmt12(settings.end)})`);
     }
     const leaveType = body.leaveType ? String(body.leaveType) : null;
     if (leaveType !== null && !(leaveType in settings.leaveTypes)) return bad('اختر نوع الإجازة كما في إعدادات الدوام');

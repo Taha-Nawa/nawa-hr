@@ -7,6 +7,7 @@
  * الإرسال لا يعطّل الطلب ولا يُفشله أبداً: يجري بعد الرد (ctx.defer) وأي خطأ يُسجَّل ويُتجاوز.
  */
 import { mailerFor } from './mail.js';
+import { fmt12 } from './util.js';
 import { mergeRules, needsMedical, KINDS, PURPOSES } from '../engine/requests.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -27,7 +28,7 @@ function lines(r) {
   if (r.kind === 'leave') {
     out.push(['الفترة', r.from_date === r.to_date ? r.from_date : `من ${r.from_date} إلى ${r.to_date}`], ['أيام العمل', String(r.days)]);
   } else {
-    out.push(['اليوم', r.from_date], ['الوقت', `${r.from_time} – ${r.to_time}`]);
+    out.push(['اليوم', r.from_date], ['الوقت', `${fmt12(r.from_time)} – ${fmt12(r.to_time)}`]);
   }
   if (r.reason) out.push(['السبب', r.reason]);
   return out;

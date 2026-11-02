@@ -4,6 +4,7 @@ import { allocationCheck, MAX_CONCURRENT } from '../allocations-lib.js';
 import { statusChip, groupOf } from './today.js';
 import { employeeForm } from './employees.js';
 import { openManualDialog } from './manual.js';
+import { fmt12 } from '../time12.js';
 
 const monthRange = (ym) => {
   const [y, m] = ym.split('-').map(Number);
@@ -82,7 +83,7 @@ export default async function render({ user, params }) {
       h('tbody', null, days.map((d) => h('tr', { class: d.dayType === 'عمل' ? '' : 'row-off' },
         h('td', null, d.date.slice(8), ' ', h('span', { class: 'muted' }, dayName(d.date))),
         h('td', null, statusChip(d.status), d.alert ? h('div', { class: 'alert-text' }, d.alert) : null),
-        h('td', { class: 'num' }, dash(d.checkIn)), h('td', { class: 'num' }, dash(d.exitFirst)), h('td', { class: 'num' }, dash(d.returnLast)), h('td', { class: 'num' }, dash(d.departure)),
+        h('td', { class: 'num' }, dash(fmt12(d.checkIn))), h('td', { class: 'num' }, dash(fmt12(d.exitFirst))), h('td', { class: 'num' }, dash(fmt12(d.returnLast))), h('td', { class: 'num' }, dash(fmt12(d.departure))),
         h('td', { class: 'num' }, d.netHours ? hrs(d.netHours) : '—'), h('td', { class: 'num' }, d.requiredHours ? hrs(d.requiredHours) : '—'),
         h('td', { class: 'num' }, d.lateMinutes ? `${d.lateMinutes} د` : '—'), h('td', { class: 'num' }, d.deficitHours ? hrs(d.deficitHours) : '—'), h('td', { class: 'num' }, d.overtimeHours ? hrs(d.overtimeHours) : '—'),
         canEdit ? h('td', { class: 'row-actions' }, d.date <= todayLocal() ? h('button', { type: 'button', class: 'btn btn-sm', onclick: () => editDay(d.date) }, 'تعديل') : null) : null)))));

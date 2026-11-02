@@ -1,5 +1,6 @@
 // تسميات الطلبات وتنسيقها (مشتركة بين صفحة الطلبات ونافذة التفاصيل وصفحة الطباعة).
 import { h, AR_MONTHS } from './dom.js';
+import { fmtRange12 } from './time12.js';
 
 export const KIND = {
   leave: { label: 'طلب إجازة', short: 'إجازة', icon: 'calendar' },
@@ -48,7 +49,7 @@ export const fmtDays = (n) => (n === 1 ? 'يوم عمل واحد' : n === 2 ? '�
 /** الفترة كما تُعرض في القوائم */
 export function fmtPeriod(r) {
   if (r.kind === 'leave') return r.fromDate === r.toDate ? fmtDate(r.fromDate) : `${fmtDate(r.fromDate)} ← ${fmtDate(r.toDate)}`;
-  return `${fmtDate(r.fromDate)} · ${r.fromTime} – ${r.toTime}`;
+  return `${fmtDate(r.fromDate)} · ${fmtRange12(r.fromTime, r.toTime)}`;
 }
 
 export const fmtLength = (r) => (r.kind === 'leave' ? fmtDays(r.days) : fmtMinutes(r.minutes));

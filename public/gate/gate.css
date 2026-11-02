@@ -55,6 +55,7 @@ button{font-family:inherit}
 .cdot{width:.5rem;height:.5rem;border-radius:50%;background:currentColor}
 .clockbox{text-align:end;line-height:1.1;flex:none}
 .clock{font-size:1.3rem;font-weight:800;direction:ltr;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.clock .ap{font-size:.6em;font-weight:700;margin-inline-start:.25em;opacity:.85}
 .date{font-size:.7rem;color:var(--muted);font-weight:600;white-space:nowrap}
 .cog{flex:none;width:2.6rem;height:2.6rem;display:grid;place-items:center;border:2px solid var(--line);border-radius:.8rem;background:#fff;color:var(--red);cursor:pointer;transition:border-color .15s,background-color .15s}
 .cog:hover{border-color:var(--red);background:var(--red-soft)}
@@ -175,7 +176,7 @@ button{font-family:inherit}
 .row .nmx{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;unicode-bidi:isolate;text-align:start}
 .row .what{font-size:.78rem;font-weight:800;padding:.1rem .6rem;border-radius:99px;background:var(--c-soft);color:var(--c-text,var(--c));white-space:nowrap}
 .row.no .what{background:var(--red-soft);color:var(--red)}
-.row .t{direction:ltr;color:var(--ink-2);font-variant-numeric:tabular-nums;font-size:.88rem;min-width:2.9rem;text-align:end}
+.row .t{direction:ltr;color:var(--ink-2);font-variant-numeric:tabular-nums;font-size:.88rem;min-width:4.4rem;text-align:end;white-space:nowrap}
 .row.no .dot{background:var(--red-soft);color:var(--red)}
 .row.no .nmx{color:var(--red)}
 .row.fresh{animation:fresh 1.8s ease-out}

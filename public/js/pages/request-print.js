@@ -3,6 +3,7 @@
 import { h, icon } from '../dom.js';
 import { get } from '../api.js';
 import { KIND, purposeLabels, fmtDate, fmtDays, fmtMinutes } from '../requests-lib.js';
+import { fmt12 } from '../time12.js';
 
 const pf = (label, value, cls = '') => h('div', { class: `pf ${cls}`.trim() }, h('span', { class: 'pl' }, label), h('span', { class: 'pv' }, value || ''));
 const band = (text) => h('div', { class: 'pband' }, text);
@@ -45,11 +46,11 @@ export default async function render({ params }) {
 
   const period = isLeave
     ? [pf('تاريخ بدء الاجازة:', fmtDate(r.fromDate)), pf('تاريخ انتهاء الاجازة:', fmtDate(r.toDate)), pf('مدة الاجازة:', fmtDays(r.days))]
-    : [pf('التاريخ:', fmtDate(r.fromDate)), pf('من الساعة:', r.fromTime), pf('حتى الساعة:', r.toTime), pf(`مدة ${word}:`, fmtMinutes(r.minutes))];
+    : [pf('التاريخ:', fmtDate(r.fromDate)), pf('من الساعة:', fmt12(r.fromTime)), pf('حتى الساعة:', fmt12(r.toTime)), pf(`مدة ${word}:`, fmtMinutes(r.minutes))];
 
   const grantText = isLeave ? 'أوافق على منحه الاجازة ابتداء من تاريخ' : `أوافق على منحه مدة ${word === 'المغادرة' ? 'للمغادرة' : 'للتأخير'} ابتداء من الساعة`;
   const denyText = isLeave ? 'لا أوافق على منحه الاجازة' : `لا أوافق على منحه مدة ${word === 'المغادرة' ? 'للمغادرة' : 'للتأخير'}`;
-  const from = isLeave ? fmtDate(r.fromDate) : r.fromTime;
+  const from = isLeave ? fmtDate(r.fromDate) : fmt12(r.fromTime);
 
   const paper = h('article', { class: 'paper' },
     h('header', { class: 'phead' }, h('img', { src: '/logo.png', alt: 'جمعية نوى للثقافة والفنون' }), h('h2', null, KIND[r.kind].label)),

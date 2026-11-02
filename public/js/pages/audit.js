@@ -1,5 +1,6 @@
 import { h, dash } from '../dom.js';
 import { get } from '../api.js';
+import { fmtStamp } from '../time12.js';
 
 const LABELS = {
   login: 'تسجيل دخول', 'employee.create': 'إضافة موظف', 'employee.update': 'تعديل موظف', 'badge.add': 'إضافة بطاقة', 'badge.revoke': 'إلغاء بطاقة',
@@ -14,9 +15,9 @@ export default async function render() {
     h('header', { class: 'page-head' }, h('div', null, h('h1', null, 'سجل التدقيق'), h('p', { class: 'sub' }, 'آخر 200 عملية على النظام. لا يمكن تعديله أو حذفه من الواجهة.'))),
     h('div', { class: 'table-wrap' }, entries.length
       ? h('table', { class: 'tbl' },
-        h('thead', null, h('tr', null, ['الوقت (UTC)', 'من', 'العملية', 'العنصر', 'التفاصيل'].map((t) => h('th', null, t)))),
+        h('thead', null, h('tr', null, ['الوقت', 'من', 'العملية', 'العنصر', 'التفاصيل'].map((t) => h('th', null, t)))),
         h('tbody', null, entries.map((e) => h('tr', null,
-          h('td', { class: 'num muted', dir: 'ltr' }, e.at),
+          h('td', { class: 'num muted', dir: 'ltr' }, fmtStamp(e.at)),
           h('td', { dir: 'ltr', class: 'ltr-cell' }, e.actor),
           h('td', null, LABELS[e.action] || e.action),
           h('td', { class: 'muted', dir: 'ltr' }, dash(e.entityId)),

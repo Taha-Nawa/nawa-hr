@@ -2,6 +2,7 @@ import { h, clear, toast } from '../dom.js';
 import { post, put } from '../api.js';
 import { readWorkbook } from '../xlsx.js';
 import { extractCurrent, batchByEmployee } from '../import-current.js';
+import { fmtRange12 } from '../time12.js';
 
 const BATCH = 100;
 
@@ -188,7 +189,7 @@ export default async function render() {
     const to = dates.length && dates[dates.length - 1] > today ? dates[dates.length - 1] : today;
     results.append(
       h('p', { class: 'muted' }, 'تخطيط ملف الإدارة 2026. استورد بالترتيب من الأعلى إلى الأسفل؛ كل خطوة آمنة التكرار.'),
-      step({ title: '١. قواعد الدوام (مسؤول النظام)', count: cur.settings ? 1 : 0, found: !!cur.settings, note: cur.settings ? `${cur.settings.start}–${cur.settings.end} · سماحية ${cur.settings.toleranceMinutes} د · ${cur.settings.weekdays.filter((w) => w === 'عمل').length} أيام عمل` : null, sample: cur.settings ? [cur.settings] : [],
+      step({ title: '١. قواعد الدوام (مسؤول النظام)', count: cur.settings ? 1 : 0, found: !!cur.settings, note: cur.settings ? `${fmtRange12(cur.settings.start, cur.settings.end)} · سماحية ${cur.settings.toleranceMinutes} د · ${cur.settings.weekdays.filter((w) => w === 'عمل').length} أيام عمل` : null, sample: cur.settings ? [cur.settings] : [],
         run: async () => { await put('/api/settings/work', cur.settings); return { imported: 1, saved: 0, skipped: 0, rejected: [] }; } }),
       step({ title: '٢. العطل الرسمية', count: Object.values(data.holidays || {}).flat().length, found: !!data.holidays, note: 'تستبدل عطل كل سنة موجودة في الملف', sample: Object.values(data.holidays || {}).flat(),
         run: async () => {

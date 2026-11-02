@@ -1,5 +1,6 @@
 import { h, clear, todayLocal, addDays, longDate, hrs, dash } from '../dom.js';
 import { get } from '../api.js';
+import { fmt12 } from '../time12.js';
 
 // تصنيف الحالة القادمة من المحرك إلى مجموعة للعرض واللون.
 const GROUPS = [
@@ -116,10 +117,10 @@ export default async function render({ user }) {
       h('tbody', null, list.map((r) => h('tr', { class: r.alert ? 'has-alert' : '' },
         h('td', null, h('a', { href: `#/employees/${r.id}`, class: 'emp-link' }, r.name), h('div', { class: 'code' }, r.code)),
         h('td', { class: 'muted' }, dash(r.center)),
-        h('td', { class: 'num' }, dash(r.checkIn)),
-        h('td', { class: 'num' }, dash(r.exitFirst)),
-        h('td', { class: 'num' }, dash(r.returnLast)),
-        h('td', { class: 'num' }, dash(r.departure)),
+        h('td', { class: 'num' }, dash(fmt12(r.checkIn))),
+        h('td', { class: 'num' }, dash(fmt12(r.exitFirst))),
+        h('td', { class: 'num' }, dash(fmt12(r.returnLast))),
+        h('td', { class: 'num' }, dash(fmt12(r.departure))),
         h('td', { class: 'num' }, r.netHours ? hrs(r.netHours) : '—'),
         h('td', { class: 'num' }, r.lateMinutes ? `${r.lateMinutes} د` : '—'),
         h('td', null, statusChip(r.status, date === today), r.alert ? h('div', { class: 'alert-text' }, r.alert) : null))))));

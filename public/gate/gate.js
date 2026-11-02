@@ -39,6 +39,8 @@ function on2(){return !!(cfg&&cfg.url2&&cfg.token2&&validUrl2(cfg.url2))}
 function pad(n){return(n<10?"0":"")+n}
 function dstr(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
 function tstr(d){return pad(d.getHours())+":"+pad(d.getMinutes())}
+/* العرض بنظام 12 ساعة (ص/م)؛ المخزَّن والمُرسَل إلى الخادم وجوجل يبقى HH:MM بنظام 24 ساعة */
+function t12(s){var m=/^(\d{1,2}):(\d{2})/.exec(String(s||"")); if(!m||+m[1]>23||+m[2]>59)return s||""; var h=+m[1]; return (h%12||12)+":"+m[2]+" "+(h<12?"ص":"م")}
 /* ---------- الإعدادات ---------- */
 function openSetup(first){
   $("#main").classList.add("hide"); $("#setup").classList.remove("hide");
@@ -296,7 +298,7 @@ function showRes(ok,title,code,b,rec){
   if(code)m.appendChild(el("span","cd",code.length>42?code.slice(0,40)+"…":code));
   if(ok&&rec){
     var ty=TYPE[rec.type]||TYPE["حضور"], tg=el("span","tag t-"+ty.c);
-    tg.innerHTML=ico(ty.i); tg.appendChild(document.createTextNode(lbl(rec.type))); tg.appendChild(el("span","tm",rec.time)); m.appendChild(tg);
+    tg.innerHTML=ico(ty.i); tg.appendChild(document.createTextNode(lbl(rec.type))); tg.appendChild(el("span","tm",t12(rec.time))); m.appendChild(tg);
   }
   w.appendChild(m);
   if(ok){
@@ -345,7 +347,7 @@ function addFeed(x,fresh){
   var dot=el("span","dot"); dot.innerHTML=ico(x.ok?(ty?ty.i:"i-check"):"i-x"); row.appendChild(dot);
   row.appendChild(el("span","nmx",x.name));
   row.appendChild(el("span","what",x.ok?(x.type?lbl(x.type):""):"مرفوضة"));
-  row.appendChild(el("span","t",x.time));
+  row.appendChild(el("span","t",t12(x.time)));
   f.insertBefore(row,f.firstChild);
   while(f.children.length>400)f.removeChild(f.lastChild);
   f.scrollTop=0;
@@ -366,7 +368,8 @@ function esc(s){var d=document.createElement("div");d.textContent=s==null?"":s;r
 /* ---------- العرض ---------- */
 var DAYS=["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
 var MONTHS=["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
-function clockTick(){var d=new Date(); if(feedDay&&feedDay!==dstr(d))rebuildFeed(); $("#clk").textContent=tstr(d); $("#dt").textContent=DAYS[d.getDay()]+" "+d.getDate()+" "+MONTHS[d.getMonth()]+" "+d.getFullYear()}
+function setClock(d){var c=$("#clk"), h=d.getHours(); c.textContent=(h%12||12)+":"+pad(d.getMinutes()); var a=document.createElement("span"); a.className="ap"; a.textContent=h<12?"ص":"م"; c.appendChild(a)}
+function clockTick(){var d=new Date(); if(feedDay&&feedDay!==dstr(d))rebuildFeed(); setClock(d); $("#dt").textContent=DAYS[d.getDay()]+" "+d.getDate()+" "+MONTHS[d.getMonth()]+" "+d.getFullYear()}
 function render(){
   var today=dstr(new Date()), n=0;
   for(var i=0;i<log.length;i++)if(log[i].date===today)n++;

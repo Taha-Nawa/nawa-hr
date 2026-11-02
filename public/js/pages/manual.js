@@ -2,6 +2,7 @@
 import { h, clear, dialog, field, select, toast, confirmBox, todayLocal, addDays, longDate, hrs, dash } from '../dom.js';
 import { get, post } from '../api.js';
 import { statusChip, groupOf } from './today.js';
+import { timeField, fmt12 } from '../time12.js';
 
 const MODES = [
   ['times', 'تسجيل أو تعديل حركات الحضور والانصراف'],
@@ -33,7 +34,7 @@ export function openManualDialog({ employees, date, work, onDone }) {
   const submit = h('button', { type: 'submit', class: 'btn btn-primary' }, 'تنفيذ');
 
   // ---- حقول كل إجراء
-  const t = Object.fromEntries(['in', 'out', 'ret', 'dep'].map((k) => [k, h('input', { type: 'time', 'aria-label': k })]));
+  const t = Object.fromEntries(['in', 'out', 'ret', 'dep'].map((k) => [k, timeField({ label: k })]));
   const touched = new Set();
   for (const k of Object.keys(t)) t[k].addEventListener('input', () => touched.add(k));
   const full = h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { t.in.value = work?.start || ''; t.dep.value = work?.end || ''; t.out.value = ''; t.ret.value = ''; ['in', 'out', 'ret', 'dep'].forEach((k) => touched.add(k)); } }, 'دوام كامل');
@@ -41,8 +42,8 @@ export function openManualDialog({ employees, date, work, onDone }) {
   const purpose = select(PURPOSES, 'annual', { 'aria-label': 'نوع الإجازة' });
   const leaveType = select([['', '— حسب النوع —'], ...types.map((x) => [x, x])], '', { 'aria-label': 'نوع الإجازة في السجل' });
   const permitKind = select([['exit', 'إذن مغادرة'], ['late', 'إذن تأخير']], 'exit', { 'aria-label': 'نوع الإذن' });
-  const pFrom = h('input', { type: 'time', value: '' });
-  const pTo = h('input', { type: 'time', value: '' });
+  const pFrom = timeField({ label: 'من الساعة' });
+  const pTo = timeField({ label: 'إلى الساعة' });
 
   function drawFields() {
     const offBox = h('label', { class: 'check span-all' }, offDays, h('span', null, 'تضمين أيام العطلة (تُتخطّى افتراضياً)'));
@@ -217,7 +218,7 @@ export default async function render() {
       h('tbody', null, list.map((r) => h('tr', { class: r.alert ? 'has-alert' : '' },
         h('td', { class: 'pick' }, h('input', { type: 'checkbox', 'aria-label': `تحديد ${r.name}`, checked: picked.has(r.id), onchange: (e) => { e.target.checked ? picked.add(r.id) : picked.delete(r.id); drawBar(); } })),
         h('td', null, h('a', { href: `#/employees/${r.id}`, class: 'emp-link' }, r.name), h('div', { class: 'code' }, r.code, r.center ? ` · ${r.center}` : '')),
-        h('td', { class: 'num' }, dash(r.checkIn)), h('td', { class: 'num' }, dash(r.exitFirst)), h('td', { class: 'num' }, dash(r.returnLast)), h('td', { class: 'num' }, dash(r.departure)),
+        h('td', { class: 'num' }, dash(fmt12(r.checkIn))), h('td', { class: 'num' }, dash(fmt12(r.exitFirst))), h('td', { class: 'num' }, dash(fmt12(r.returnLast))), h('td', { class: 'num' }, dash(fmt12(r.departure))),
         h('td', { class: 'num' }, r.netHours ? hrs(r.netHours) : '—'),
         h('td', null, statusChip(r.status, date === today), r.alert ? h('div', { class: 'alert-text' }, r.alert) : null),
         h('td', { class: 'row-actions' }, h('button', { type: 'button', class: 'btn btn-sm', onclick: () => open([r]) }, 'تعديل')))))));
