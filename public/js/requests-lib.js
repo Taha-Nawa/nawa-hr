@@ -6,7 +6,10 @@ export const KIND = {
   leave: { label: 'طلب إجازة', short: 'إجازة', icon: 'calendar' },
   exit: { label: 'إذن مغادرة', short: 'مغادرة', icon: 'door' },
   late: { label: 'إذن تأخير', short: 'تأخير', icon: 'clock' },
+  // «مهمة عمل»: تُخزَّن كطلب إجازة بعلامة mission لكنها طلب مستقل في الواجهة (kindOf)
+  mission: { label: 'طلب مهمة عمل', short: 'مهمة عمل', icon: 'briefcase' },
 };
+export const kindOf = (r) => (r.mission ? 'mission' : r.kind);
 
 // الإجازة تحمل أسماء نموذجها الورقي، والإذن أسماءه
 export const PURPOSE = {
@@ -16,6 +19,7 @@ export const PURPOSE = {
 export const purposeLabels = (kind) => (kind === 'leave' ? PURPOSE.leave : PURPOSE.permit);
 
 export function purposeText(r) {
+  if (r.mission) return 'مهمة عمل';
   const base = purposeLabels(r.kind)[r.purpose];
   return r.purpose === 'other' && r.purposeOther ? `أخرى: ${r.purposeOther}` : base;
 }
@@ -57,7 +61,9 @@ export const fmtLength = (r) => (r.kind === 'leave' ? fmtDays(r.days) : fmtMinut
 /** الجمل التي يراها المعتمِد بعد احتساب الخادم */
 export function calcLines(c) {
   const lines = [];
-  if (c.kind === 'leave') {
+  if (c.mission) {
+    lines.push(['المحتسب', fmtDays(c.days) + ' (بعد استثناء العطلة الأسبوعية والعطل الرسمية)'], ['الأثر', 'تُحتسب دواماً كاملاً (لا غياب) ولا تُخصم من رصيد الإجازات']);
+  } else if (c.kind === 'leave') {
     lines.push(['المحتسب', fmtDays(c.days) + ' (بعد استثناء العطلة الأسبوعية والعطل الرسمية)']);
     if (c.usedApproved) {
       const u = c.usedApproved;

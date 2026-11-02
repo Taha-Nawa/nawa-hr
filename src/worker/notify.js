@@ -8,7 +8,7 @@
  */
 import { mailerFor, logMailFailure } from './mail.js';
 import { fmt12 } from './util.js';
-import { mergeRules, needsMedical, KINDS, PURPOSES } from '../engine/requests.js';
+import { mergeRules, needsMedical, KINDS, PURPOSES, kindLabel } from '../engine/requests.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -16,15 +16,15 @@ const MAX_RECIPIENTS = 10;
 const MAX_RELEASE_MAILS = 4;
 
 const TITLE = {
-  submitted: (r) => `${KINDS[r.kind]} جديد من ${r.employeeName} بانتظار قرارك`,
-  approved: (r) => `اعتُمد ${KINDS[r.kind]} الخاص بك`,
-  rejected: (r) => `رُفض ${KINDS[r.kind]} الخاص بك`,
-  cancelled: (r) => `أُلغي ${KINDS[r.kind]} الخاص بك`,
+  submitted: (r) => `${kindLabel(r)} جديد من ${r.employeeName} بانتظار قرارك`,
+  approved: (r) => `اعتُمد ${kindLabel(r)} الخاص بك`,
+  rejected: (r) => `رُفض ${kindLabel(r)} الخاص بك`,
+  cancelled: (r) => `أُلغي ${kindLabel(r)} الخاص بك`,
   released: (r) => `أُلغيت إجازة ${r.employeeName} المعتمدة لتسجيله الدخول فعلياً`,
 };
 
 function lines(r) {
-  const out = [['الموظف', r.employeeName], ['النوع', `${KINDS[r.kind]} — ${PURPOSES[r.purpose]}${r.purpose_other ? ` (${r.purpose_other})` : ''}`]];
+  const out = [['الموظف', r.employeeName], ['النوع', r.mission ? kindLabel(r) : `${KINDS[r.kind]} — ${PURPOSES[r.purpose]}${r.purpose_other ? ` (${r.purpose_other})` : ''}`]];
   if (r.kind === 'leave') {
     out.push(['الفترة', r.from_date === r.to_date ? r.from_date : `من ${r.from_date} إلى ${r.to_date}`], ['أيام العمل', String(r.days)]);
   } else {

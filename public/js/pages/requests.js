@@ -1,6 +1,6 @@
 import { h, clear, icon, field, select } from '../dom.js';
 import { get } from '../api.js';
-import { KIND, statusChip, purposeText, fmtPeriod, fmtLength, fmtDate } from '../requests-lib.js';
+import { KIND, kindOf, statusChip, purposeText, fmtPeriod, fmtLength, fmtDate } from '../requests-lib.js';
 import { openRequestForm, openRequestDetail } from '../request-ui.js';
 import { PURPOSES, fmtDays } from '../balances-lib.js';
 
@@ -21,7 +21,7 @@ export default async function render({ user }) {
   const notice = h('div');
 
   const newButtons = (meta.linked || meta.canBehalf)
-    ? ['leave', 'exit', 'late'].map((k, i) => h('button', {
+    ? ['leave', 'exit', 'late', 'mission'].map((k, i) => h('button', {
       type: 'button', class: i === 0 ? 'btn btn-primary' : 'btn',
       onclick: () => openRequestForm({ kind: k, meta, user, onSaved: () => { window.dispatchEvent(new CustomEvent('requests:changed')); load(); } }),
     }, icon(KIND[k].icon), KIND[k].label))
@@ -43,7 +43,7 @@ export default async function render({ user }) {
     tools.append(...[
       tab === 'all' ? qIn : null,
       select([['', 'كل الحالات'], ['pending', 'بانتظار الاعتماد'], ['approved', 'معتمد'], ['rejected', 'مرفوض'], ['cancelled', 'ملغى']], status, { 'aria-label': 'الحالة', onchange: (e) => { status = e.target.value; load(); } }),
-      select([['', 'كل الأنواع'], ['leave', 'الإجازات'], ['exit', 'المغادرات'], ['late', 'التأخير']], kind, { 'aria-label': 'النوع', onchange: (e) => { kind = e.target.value; load(); } }),
+      select([['', 'كل الأنواع'], ['leave', 'الإجازات'], ['exit', 'المغادرات'], ['late', 'التأخير'], ['mission', 'مهام العمل']], kind, { 'aria-label': 'النوع', onchange: (e) => { kind = e.target.value; load(); } }),
     ].filter(Boolean));
   }
 
@@ -58,7 +58,7 @@ export default async function render({ user }) {
     box.append(h('table', { class: 'tbl' },
       h('thead', null, h('tr', null, ['الطلب', showEmp ? 'الموظف' : null, 'الفترة', 'المدة', 'الغرض', 'التقديم', 'الحالة', ''].map((t) => (t === null ? null : h('th', null, t))))),
       h('tbody', null, list.map((r) => h('tr', { class: 'req-row', tabindex: '0', onclick: () => open(r.id), onkeydown: (e) => { if (e.key === 'Enter') open(r.id); } },
-        h('td', null, h('span', { class: 'kind-tag' }, icon(KIND[r.kind].icon), KIND[r.kind].short)),
+        h('td', null, h('span', { class: 'kind-tag' }, icon(KIND[kindOf(r)].icon), KIND[kindOf(r)].short)),
         showEmp ? h('td', { class: 'wide' }, h('span', { class: 'emp-link' }, r.employeeName), h('div', { class: 'code' }, r.employeeCode)) : null,
         h('td', { class: 'wide' }, fmtPeriod(r)),
         h('td', { class: 'num' }, fmtLength(r)),
@@ -102,7 +102,7 @@ export default async function render({ user }) {
 
   const page = h('div', { class: 'page' },
     h('header', { class: 'page-head' },
-      h('div', null, h('h1', null, 'الطلبات'), h('p', { class: 'sub' }, 'الإجازات وأذونات المغادرة والتأخير')),
+      h('div', null, h('h1', null, 'الطلبات'), h('p', { class: 'sub' }, 'الإجازات وأذونات المغادرة والتأخير ومهام العمل')),
       h('div', { class: 'row-actions new-req' }, newButtons)),
     notice,
     balanceStrip,

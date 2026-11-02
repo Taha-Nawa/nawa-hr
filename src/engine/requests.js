@@ -13,6 +13,12 @@ import { addDays, daysBetween, isDate, isTime, clip } from '../worker/util.js';
 
 export const KINDS = { leave: 'طلب إجازة', exit: 'إذن مغادرة', late: 'إذن تأخير' };
 export const PURPOSES = { annual: 'اعتيادي (سنوي)', emergency: 'طارئ (اضطراري)', sick: 'مرضي', other: 'أخرى' };
+// «مهمة عمل» (قرار 2 نوفمبر 2026): طلب بأيام كاملة لموظف خارجي أو صاحب زيارة ميدانية حتى لا يُحسب غائباً.
+// يُخزَّن كطلب إجازة (kind = leave) بعلامة mission = 1 وغرض «أخرى» فيستعمل مسار الاعتماد والأيام نفسه،
+// ويختلف عن الإجازة في: لا يخصم من أي رصيد، ولا يُلغيه الدخول على البوابة، ونوعه محتسب كدوام (ساعات الممولين).
+export const MISSION_LABEL = 'مهمة عمل';
+export const MISSION_KIND = 'طلب مهمة عمل';
+export const kindLabel = (r) => (r?.mission ? MISSION_KIND : KINDS[r?.kind]);
 
 export const DEFAULT_RULES = {
   // الاعتيادية: لا تُقبل قبل الموعد بأقل من minNoticeDays يوماً (إجازة) أو بعد بدء وقت الإذن (أذونات)
@@ -21,6 +27,7 @@ export const DEFAULT_RULES = {
   emergency: { maxBackdateDays: 7 },
   sick: { maxBackdateDays: 14 },
   other: { maxBackdateDays: 7 },
+  mission: { maxBackdateDays: 7 }, // مهمة العمل: تُقدَّم قبل المهمة أو بعدها بهذه المهلة (لا تلزمها مهلة تقديم مسبقة)
   maxSpanDays: 100, // أطول مدة إجازة في طلب واحد (أيام تقويمية)
   maxAheadDays: 366, // أبعد موعد يُقبل
   entitlement: {}, // اختياري: { annual: 21 } يُعرض الرصيد المتبقي إن وُجد
@@ -44,7 +51,7 @@ export function mergeRules(stored) {
   const int = (v, min, max) => (Number.isInteger(v) && v >= min && v <= max ? v : undefined);
   const a = int(stored.annual?.minNoticeDays, 0, 60);
   if (a !== undefined) r.annual.minNoticeDays = a;
-  for (const p of ['emergency', 'sick', 'other']) {
+  for (const p of ['emergency', 'sick', 'other', 'mission']) {
     const v = int(stored[p]?.maxBackdateDays, 0, 365);
     if (v !== undefined) r[p].maxBackdateDays = v;
   }
@@ -84,12 +91,15 @@ export function validateRequest(input, ctx) {
   const { today, nowTime, rules, settings, holidays, enforceTiming } = ctx;
   const kind = input.kind;
   if (!KINDS[kind]) return bad('نوع الطلب غير صالح');
-  const purpose = input.purpose;
+  const mission = input.mission === true;
+  if (mission && kind !== 'leave') return bad('مهمة العمل تُقدَّم بأيام كاملة (طلب إجازة بعلامة المهمة)');
+  const purpose = mission ? 'other' : input.purpose;
   if (!PURPOSES[purpose]) return bad('اختر نوع الإجازة أو الغرض');
-  const purposeOther = purpose === 'other' ? clip(input.purposeOther, 80) : null;
+  const purposeOther = mission ? MISSION_LABEL : purpose === 'other' ? clip(input.purposeOther, 80) : null;
   if (purpose === 'other' && !purposeOther) return bad('حدّد الغرض في خانة «أخرى»');
   const reason = clip(input.reason, 300);
   // الغرض مطلوب في الأذونات وفي «أخرى»؛ الإجازة السنوية والمرضية يكفيها نوعها
+  if (!reason && mission) return bad('اكتب مكان المهمة والغرض منها');
   if (!reason && (kind !== 'leave' || purpose === 'other' || purpose === 'emergency')) return bad('اكتب الغرض من الطلب');
 
   const fromDate = input.fromDate;
@@ -124,7 +134,12 @@ export function validateRequest(input, ctx) {
     if (minutes <= 0) return bad('وقت النهاية يجب أن يكون بعد البداية');
   }
 
-  if (enforceTiming) {
+  if (enforceTiming && mission) {
+    const back = rules.mission.maxBackdateDays;
+    if (fromDate < addDays(today, -back)) {
+      return bad(back === 0 ? 'لا يُقبل طلب المهمة بعد وقوعها' : `انتهت مهلة تقديم المهمة بعد وقوعها (${back} يوماً)، راجع الموارد البشرية`);
+    }
+  } else if (enforceTiming) {
     if (purpose === 'annual') {
       if (kind === 'leave') {
         if (fromDate < addDays(today, rules.annual.minNoticeDays)) {
@@ -143,7 +158,7 @@ export function validateRequest(input, ctx) {
     }
   }
 
-  return { ok: true, value: { kind, purpose, purposeOther, reason, fromDate, toDate, fromTime, toTime, days, minutes, medicalRequired, medicalProof: medicalRequired && input.medicalProof === true } };
+  return { ok: true, value: { kind, purpose, purposeOther, reason, fromDate, toDate, fromTime, toTime, days, minutes, mission, medicalRequired, medicalProof: medicalRequired && input.medicalProof === true } };
 }
 
 /** هل يحتاج هذا الطلب (كما هو مخزَّن) إلى تأكيد ورقة طبية؟ إجازة مرضية تزيد عن المسموح بلا ورقة. */
@@ -152,8 +167,8 @@ export const needsMedical = (row, rules) => row.kind === 'leave' && row.purpose 
 const LEAVE_KEYWORD = { annual: 'سنوي', sick: 'مرض', emergency: 'طارئ' };
 
 /** نوع الإجازة الافتراضي في إعدادات المحرك بحسب غرض الطلب (اقتراح فقط؛ يؤكده المعتمِد). */
-export function suggestLeaveType(purpose, leaveTypes) {
-  const word = LEAVE_KEYWORD[purpose];
+export function suggestLeaveType(purpose, leaveTypes, mission = false) {
+  const word = mission ? 'مهمة' : LEAVE_KEYWORD[purpose];
   if (!word) return null;
   return Object.keys(leaveTypes).find((n) => n.includes(word)) || null;
 }

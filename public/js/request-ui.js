@@ -1,7 +1,7 @@
 // نافذة تقديم الطلب ونافذة تفاصيله/اعتماده. تُستعمل من صفحة الطلبات ومن أي مكان يحتاج «طلباً جديداً».
 import { h, clear, dialog, confirmBox, field, select, toast, addDays, dash, icon } from './dom.js';
 import { get, post } from './api.js';
-import { KIND, purposeLabels, purposeText, statusChip, fmtDate, fmtPeriod, fmtLength, calcLines } from './requests-lib.js';
+import { KIND, kindOf, purposeLabels, purposeText, statusChip, fmtDate, fmtPeriod, fmtLength, calcLines } from './requests-lib.js';
 import { timeField } from './time12.js';
 
 const PURPOSE_ORDER = ['annual', 'emergency', 'sick', 'other'];
@@ -10,6 +10,10 @@ const PURPOSE_ORDER = ['annual', 'emergency', 'sick', 'other'];
 function ruleHint(kind, purpose, meta, behalf) {
   if (behalf) return 'إدخال إداري: لا تُطبَّق مهلة التقديم.';
   const r = meta.rules;
+  if (kind === 'mission') {
+    const b = r.mission?.maxBackdateDays ?? 7;
+    return `تُقدَّم قبل المهمة أو في يومها أو خلال ${b} ${b === 1 ? 'يوم' : 'أيام'} بعدها.`;
+  }
   if (purpose === 'annual') {
     return kind === 'leave'
       ? `تُقدَّم قبل موعدها ${r.annual.minNoticeDays === 1 ? 'بيوم' : `بـ ${r.annual.minNoticeDays} أيام`} على الأقل.`
@@ -20,12 +24,14 @@ function ruleHint(kind, purpose, meta, behalf) {
 }
 
 /**
- * kind: leave | exit | late.  meta: ناتج /api/requests/meta.  user: المستخدم الحالي.
+ * kind: leave | exit | late | mission (مهمة عمل: أيام كاملة تُحتسب دواماً ولا تخصم رصيداً).  meta: ناتج /api/requests/meta.  user: المستخدم الحالي.
  * بعد الحفظ يُستدعى onSaved().
  */
 export async function openRequestForm({ kind, meta, user, onSaved }) {
-  const isLeave = kind === 'leave';
-  const labels = purposeLabels(kind);
+  const mission = kind === 'mission';
+  const isLeave = kind === 'leave' || mission;
+  const apiKind = isLeave ? 'leave' : kind;
+  const labels = purposeLabels(apiKind);
   let employees = [];
   if (meta.canBehalf) {
     try {
@@ -44,7 +50,7 @@ export async function openRequestForm({ kind, meta, user, onSaved }) {
   const radios = PURPOSE_ORDER.map((p) => h('input', { type: 'radio', name: `purpose-${kind}`, value: p, checked: p === (isLeave ? 'annual' : 'annual'), onchange: sync }));
   const purposeRow = h('div', { class: 'choice-row', role: 'radiogroup', 'aria-label': 'الغرض' },
     PURPOSE_ORDER.map((p, i) => h('label', { class: 'choice' }, radios[i], h('span', null, labels[p]))));
-  const purposeVal = () => radios.find((r) => r.checked).value;
+  const purposeVal = () => (mission ? 'other' : radios.find((r) => r.checked).value);
   const otherIn = h('input', { type: 'text', maxlength: '80', placeholder: 'حدّد الغرض', 'aria-label': 'حدّد الغرض', oninput: refresh });
   const otherBox = h('div', { hidden: true }, field('حدّد', otherIn));
   const hint = h('p', { class: 'field-hint' });
@@ -55,7 +61,7 @@ export async function openRequestForm({ kind, meta, user, onSaved }) {
     h('label', { class: 'check' }, medIn, h('span', null, 'توجد ورقة طبية تثبت الإجازة')),
     h('p', { class: 'field-hint' }, `بلا ورقة طبية تُقبل الإجازة المرضية ${free === 1 ? 'يوماً واحداً' : `${free} أيام`} فقط. للمدة الأطول تُسلَّم الورقة للموارد البشرية وتؤكّدها هي قبل الاعتماد.`));
 
-  const reason = h('textarea', { rows: '2', maxlength: '300', placeholder: isLeave ? 'مثال: زيارة عائلية' : 'مثال: مراجعة طبيب', oninput: refresh });
+  const reason = h('textarea', { rows: '2', maxlength: '300', placeholder: mission ? 'مثال: زيارة ميدانية لمدرسة الشاطئ' : isLeave ? 'مثال: زيارة عائلية' : 'مثال: مراجعة طبيب', oninput: refresh });
   const dFrom = h('input', { type: 'date', required: true, onchange: refresh });
   const dTo = h('input', { type: 'date', required: true, onchange: () => refresh() });
   const tFrom = timeField({ label: 'من الساعة', required: true, value: kind === 'late' ? meta.work?.start || '' : '', onchange: refresh });
@@ -74,12 +80,15 @@ export async function openRequestForm({ kind, meta, user, onSaved }) {
 
   const lead = h('div', { class: 'form-grid' },
     empSel ? h('div', { class: 'span-all' }, field('لمن هذا الطلب؟', empSel, 'اختر موظفاً لتُدخل الطلب نيابة عنه أو لتمنحه الإجازة.')) : null,
-    h('div', { class: 'span-all' }, h('span', { class: 'field-label' }, isLeave ? 'نوع الإجازة' : 'الغرض'), purposeRow, hint),
+    mission
+      ? h('div', { class: 'span-all' }, h('div', { class: 'notice' }, 'للموظفين الخارجيين وأصحاب الزيارات الميدانية: تُحتسب أيام المهمة دواماً كاملاً فلا تُسجَّل غياباً، ولا تُخصم من رصيد إجازاتك.'), hint,
+        meta.canDecide && !meta.missionReady ? h('div', { class: 'notice notice-warn' }, 'لا يوجد نوع «مهمة عمل» محتسب كدوام في «الإعدادات والعطل ← أنواع الإجازات». أضفه قبل اعتماد أي مهمة.') : null)
+      : h('div', { class: 'span-all' }, h('span', { class: 'field-label' }, isLeave ? 'نوع الإجازة' : 'الغرض'), purposeRow, hint),
     h('div', { class: 'span-all' }, otherBox),
-    isLeave ? h('div', { class: 'span-all' }, medBox) : null,
-    h('div', { class: 'span-all' }, field(isLeave ? 'الغرض من الإجازة' : `الغرض من ${kind === 'exit' ? 'المغادرة' : 'التأخير'}`, reason)),
+    isLeave && !mission ? h('div', { class: 'span-all' }, medBox) : null,
+    h('div', { class: 'span-all' }, field(mission ? 'مكان المهمة والغرض منها' : isLeave ? 'الغرض من الإجازة' : `الغرض من ${kind === 'exit' ? 'المغادرة' : 'التأخير'}`, reason)),
     isLeave
-      ? [field('تاريخ بدء الإجازة', dFrom), field('تاريخ انتهاء الإجازة', dTo)]
+      ? [field(mission ? 'تاريخ بدء المهمة' : 'تاريخ بدء الإجازة', dFrom), field(mission ? 'تاريخ انتهاء المهمة' : 'تاريخ انتهاء الإجازة', dTo)]
       : [field('التاريخ', dFrom), h('span'), field('من الساعة', tFrom), field('إلى الساعة', tTo)]);
 
   let seq = 0;
@@ -88,8 +97,8 @@ export async function openRequestForm({ kind, meta, user, onSaved }) {
 
   function sync() {
     const p = purposeVal();
-    otherBox.hidden = p !== 'other';
-    medBox.hidden = !(isLeave && p === 'sick');
+    otherBox.hidden = mission || p !== 'other';
+    medBox.hidden = !(isLeave && !mission && p === 'sick');
     hint.textContent = ruleHint(kind, p, meta, behalf());
     const canApprove = meta.canDecide && behalf();
     approveBox.hidden = !canApprove;
@@ -100,7 +109,8 @@ export async function openRequestForm({ kind, meta, user, onSaved }) {
     const today = meta.today;
     let min = '';
     if (!behalf()) {
-      if (p === 'annual') min = isLeave ? addDays(today, meta.rules.annual.minNoticeDays) : today;
+      if (mission) min = addDays(today, -(meta.rules.mission?.maxBackdateDays ?? 7));
+      else if (p === 'annual') min = isLeave ? addDays(today, meta.rules.annual.minNoticeDays) : today;
       else min = addDays(today, -meta.rules[p].maxBackdateDays);
     }
     dFrom.min = min;
@@ -110,10 +120,10 @@ export async function openRequestForm({ kind, meta, user, onSaved }) {
 
   function payload() {
     const p = {
-      kind, purpose: purposeVal(), purposeOther: otherIn.value, reason: reason.value, fromDate: dFrom.value,
+      kind: apiKind, ...(mission ? { mission: true } : {}), purpose: purposeVal(), purposeOther: otherIn.value, reason: reason.value, fromDate: dFrom.value,
       ...(isLeave ? { toDate: dTo.value || dFrom.value } : { fromTime: tFrom.value, toTime: tTo.value }),
     };
-    if (isLeave && p.purpose === 'sick') p.medicalProof = medIn.checked;
+    if (isLeave && !mission && p.purpose === 'sick') p.medicalProof = medIn.checked;
     if (behalf()) p.employeeId = Number(empSel.value);
     return p;
   }
@@ -197,13 +207,13 @@ export async function openRequestDetail({ id, meta, onChanged }) {
     const info = h('dl', { class: 'req-info' },
       row('الموظف', h('a', { href: `#/employees/${r.employeeId}`, onclick: () => d.close() }, `${r.employeeName} (${r.employeeCode})`)),
       row('المسمى', dash(r.jobTitle)), row('مكان العمل', dash(r.center)), row('المدير المباشر', dash(r.managerName)),
-      row('نوع الطلب', KIND[r.kind].label), row('الغرض', purposeText(r)),
+      row('نوع الطلب', KIND[kindOf(r)].label), row('الغرض', purposeText(r)),
       row(r.kind === 'leave' ? 'الفترة' : 'الوقت', fmtPeriod(r)), row('المدة', fmtLength(r)),
       row('تاريخ التقديم', fmtDate(r.requestDate)),
       row('أدخله', r.createdByName || r.createdBy),
       r.needsMedical || r.medicalBy ? row('الورقة الطبية', r.medicalBy ? `مؤكَّدة من ${r.medicalBy}` : r.medicalProof ? 'أفاد مقدّم الطلب بوجودها (لم تُؤكَّد بعد)' : 'غير مُقرّ بها') : null,
       r.reason ? row('التفاصيل', r.reason, true) : null);
-    const head = h('div', { class: 'req-head' }, h('span', { class: 'req-kind' }, KIND[r.kind].label, ' #', r.id), statusChip(r.status));
+    const head = h('div', { class: 'req-head' }, h('span', { class: 'req-kind' }, KIND[kindOf(r)].label, ' #', r.id), statusChip(r.status));
     const parts = [head, info];
 
     // من يعتمد هذا الطلب؟ (يُعرض ما دام معلّقاً كي يعرف الجميع أين وصل)
@@ -266,7 +276,7 @@ export async function openRequestDetail({ id, meta, onChanged }) {
         t = setTimeout(async () => {
           try {
             const { calc } = await post('/api/requests/preview', isLeave
-              ? { kind: r.kind, purpose: r.purpose, purposeOther: r.purposeOther, reason: r.reason || 'x', fromDate: dFrom.value, toDate: dTo.value || dFrom.value, employeeId: r.employeeId, exceptId: r.id, medicalProof: true }
+              ? { kind: r.kind, mission: r.mission || undefined, purpose: r.purpose, purposeOther: r.purposeOther, reason: r.reason || 'x', fromDate: dFrom.value, toDate: dTo.value || dFrom.value, employeeId: r.employeeId, exceptId: r.id, medicalProof: true }
               : { kind: r.kind, purpose: r.purpose, purposeOther: r.purposeOther, reason: r.reason || 'x', fromDate: r.fromDate, fromTime: tFrom.value, toTime: tTo.value, employeeId: r.employeeId, exceptId: r.id });
             showCalc(calc);
           } catch (e) {
@@ -315,7 +325,7 @@ export async function openRequestDetail({ id, meta, onChanged }) {
       parts.push(h('section', { class: 'decide' },
         h('h3', null, 'قرار المسؤول'),
         h('div', { class: 'form-grid' },
-          isLeave ? [field('تاريخ بدء الإجازة', dFrom), field('تاريخ انتهاء الإجازة', dTo), h('div', { class: 'span-all' }, field('نوع الإجازة في السجل (يحدد أثرها في الحضور والتايم شيت)', leaveSel))]
+          isLeave ? [field(r.mission ? 'تاريخ بدء المهمة' : 'تاريخ بدء الإجازة', dFrom), field(r.mission ? 'تاريخ انتهاء المهمة' : 'تاريخ انتهاء الإجازة', dTo), h('div', { class: 'span-all' }, field(r.mission ? 'النوع في السجل (يجب أن يكون محتسباً كدوام)' : 'نوع الإجازة في السجل (يحدد أثرها في الحضور والتايم شيت)', leaveSel))]
             : [field('من الساعة', tFrom), field('إلى الساعة', tTo)],
           medOk ? h('div', { class: 'span-all' }, h('label', { class: 'check' }, medOk, h('span', null, 'استلمتُ الورقة الطبية وهي تثبت مدة الإجازة المرضية'))) : null,
           h('div', { class: 'span-all' }, field('ملاحظة', note))),
@@ -328,7 +338,7 @@ export async function openRequestDetail({ id, meta, onChanged }) {
     if (r.can.cancel) {
       const revoke = r.status === 'approved';
       actions.unshift(h('button', { type: 'button', class: 'btn btn-danger-ghost', onclick: async () => {
-        const ok = await confirmBox(revoke ? 'إلغاء الاعتماد؟ ستُزال أيام هذه الإجازة من سجل الحضور ويُعاد حساب أيامها.' : 'إلغاء هذا الطلب؟', revoke ? 'إلغاء الاعتماد' : 'إلغاء الطلب', true);
+        const ok = await confirmBox(revoke ? `إلغاء الاعتماد؟ ستُزال أيام هذه ${r.mission ? 'المهمة' : 'الإجازة'} من سجل الحضور ويُعاد حساب أيامها.` : 'إلغاء هذا الطلب؟', revoke ? 'إلغاء الاعتماد' : 'إلغاء الطلب', true);
         if (!ok) return;
         try {
           await post(`/api/requests/${r.id}/cancel`, {});

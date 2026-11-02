@@ -25,7 +25,7 @@ const COLS = `r.id, r.employee_id AS employeeId, r.kind, r.purpose, r.purpose_ot
   r.from_date AS fromDate, r.to_date AS toDate, r.from_time AS fromTime, r.to_time AS toTime, r.days, r.minutes,
   r.leave_type AS leaveType, r.status, r.request_date AS requestDate, r.created_by AS createdBy, r.created_at AS createdAt,
   r.decided_by AS decidedBy, r.decided_at AS decidedAt, r.decision_note AS decisionNote, r.original,
-  r.medical_proof AS medicalProof, r.medical_by AS medicalBy, r.medical_at AS medicalAt`;
+  r.medical_proof AS medicalProof, r.medical_by AS medicalBy, r.medical_at AS medicalAt, r.mission`;
 
 const NAME_OF_EMAIL = (col) => `(SELECT ee.name FROM users uu JOIN employees ee ON ee.id = uu.employee_id WHERE uu.email = ${col})`;
 
@@ -38,6 +38,7 @@ const shape = (r) => {
   if (!r) return r;
   const { original, ...rest } = r;
   if ('medicalProof' in rest) rest.medicalProof = !!rest.medicalProof;
+  if ('mission' in rest) rest.mission = !!rest.mission;
   let orig = null;
   try {
     orig = original ? JSON.parse(original) : null;
@@ -148,14 +149,18 @@ export function registerRequestRoutes(add, kit) {
     const out = { kind: v.kind, days: v.days, minutes: v.minutes, warnings: [] };
     const clash = await overlaps(db, v, employeeId, exceptId);
     out.overlaps = clash;
-    if (clash.length) out.warnings.push(v.kind === 'leave' ? 'يتقاطع مع طلب إجازة آخر لنفس الموظف' : 'يتقاطع مع إذن آخر في الوقت نفسه');
+    if (clash.length) out.warnings.push(v.kind === 'leave' ? (v.mission ? 'يتقاطع مع طلب إجازة أو مهمة آخر لنفس الموظف' : 'يتقاطع مع طلب إجازة آخر لنفس الموظف') : 'يتقاطع مع إذن آخر في الوقت نفسه');
+    if (v.mission) {
+      out.mission = true; // لا رصيد ولا استهلاك: المهمة يوم عمل محتسب
+      return out;
+    }
     if (v.kind === 'leave') {
       const year = v.fromDate.slice(0, 4);
       const rows = (
         await db
           .prepare(
             `SELECT purpose, status, SUM(days) AS days FROM requests
-             WHERE employee_id = ? AND kind = 'leave' AND id != ? AND status IN ('approved', 'pending') AND from_date BETWEEN ? AND ?
+             WHERE employee_id = ? AND kind = 'leave' AND mission = 0 AND id != ? AND status IN ('approved', 'pending') AND from_date BETWEEN ? AND ?
              GROUP BY purpose, status`,
           )
           .bind(employeeId, exceptId, `${year}-01-01`, `${year}-12-31`)
@@ -244,7 +249,7 @@ export function registerRequestRoutes(add, kit) {
     const toDate = isLeave ? (isDate(adjust.toDate) ? adjust.toDate : row.to_date) : fromDate;
     const holidays = await holidaysFor(db, fromDate, toDate);
     const merged = {
-      kind: row.kind, purpose: row.purpose, purposeOther: row.purpose_other, reason: row.reason,
+      kind: row.kind, purpose: row.purpose, purposeOther: row.purpose_other, reason: row.reason, mission: !!row.mission,
       fromDate, toDate, fromTime: adjust.fromTime ?? row.from_time, toTime: adjust.toTime ?? row.to_time,
       medicalProof: true, // وجود الورقة يتحقق منه المعتمِد صراحةً أدناه، لا بمجرد إقرار مقدّم الطلب
     };
@@ -256,8 +261,10 @@ export function registerRequestRoutes(add, kit) {
     let leaveType = null;
     let dates = [];
     if (isLeave) {
-      leaveType = clip(adjust.leaveType, 80) || suggestLeaveType(row.purpose, settings.leaveTypes);
-      if (!leaveType || !(leaveType in settings.leaveTypes)) return { error: bad('اختر نوع الإجازة كما في إعدادات الدوام') };
+      leaveType = clip(adjust.leaveType, 80) || suggestLeaveType(row.purpose, settings.leaveTypes, !!row.mission);
+      if (!leaveType || !(leaveType in settings.leaveTypes)) return { error: bad(row.mission ? 'أضف نوعاً باسم «مهمة عمل» في إعدادات الدوام (محتسباً كدوام) ثم اعتمد الطلب' : 'اختر نوع الإجازة كما في إعدادات الدوام') };
+      // المهمة حضور في الميدان: لا يصح أن تُسجَّل بنوع لا يُحتسب كدوام فتبدو إجازة وتخرج من ساعات الممولين
+      if (row.mission && settings.leaveTypes[leaveType] !== true) return { error: bad('نوع «مهمة عمل» يجب أن يكون محتسباً كدوام (عدّله في إعدادات الدوام)') };
       dates = workingDates(val.fromDate, val.toDate, settings, holidays);
       const clash = await overlaps(db, val, row.employee_id, row.id, ['approved']);
       if (clash.length) return { error: bad(`يتقاطع مع إجازة معتمدة أخرى (#${clash[0].id}: ${clash[0].fromDate} → ${clash[0].toDate})`, 409) };
@@ -309,7 +316,9 @@ export function registerRequestRoutes(add, kit) {
       ok: true,
       today: ctx.today,
       balance,
-      rules: { annual: ctx.rules.annual, emergency: ctx.rules.emergency, sick: ctx.rules.sick, other: ctx.rules.other, maxSpanDays: ctx.rules.maxSpanDays, medical: ctx.rules.medical },
+      rules: { annual: ctx.rules.annual, emergency: ctx.rules.emergency, sick: ctx.rules.sick, other: ctx.rules.other, mission: ctx.rules.mission, maxSpanDays: ctx.rules.maxSpanDays, medical: ctx.rules.medical },
+      // نوع «مهمة عمل» المحتسب موجود في الإعدادات؟ إن لم يوجد يُنبَّه المعتمِد (لا يمنع التقديم)
+      missionReady: !!ctx.settings && Object.entries(ctx.settings.leaveTypes).some(([n, counted]) => n.includes('مهمة') && counted === true),
       leaveTypes: ctx.settings ? Object.keys(ctx.settings.leaveTypes) : [],
       work: ctx.settings ? { start: ctx.settings.start, end: ctx.settings.end } : null,
       canBehalf: inboxRoles.includes(user.role),
@@ -348,9 +357,10 @@ export function registerRequestRoutes(add, kit) {
       params.push(status);
     }
     const kind = url.searchParams.get('kind');
-    if (kind && KINDS[kind]) {
-      where.push('r.kind = ?');
-      params.push(kind);
+    if (kind === 'mission') where.push('r.mission = 1');
+    else if (kind && KINDS[kind]) {
+      where.push(kind === 'leave' ? "r.kind = 'leave' AND r.mission = 0" : 'r.kind = ?');
+      if (kind !== 'leave') params.push(kind);
     }
     const emp = Number(url.searchParams.get('employeeId'));
     if (Number.isInteger(emp) && emp > 0) {
@@ -412,11 +422,11 @@ export function registerRequestRoutes(add, kit) {
     const [ins] = await db.batch([
       db
         .prepare(
-          `INSERT INTO requests (employee_id, kind, purpose, purpose_other, reason, from_date, to_date, from_time, to_time, days, minutes, request_date, created_by, medical_proof)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO requests (employee_id, kind, purpose, purpose_other, reason, from_date, to_date, from_time, to_time, days, minutes, request_date, created_by, medical_proof, mission)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
-        .bind(target.id, v.kind, v.purpose, v.purposeOther, v.reason, v.fromDate, v.toDate, v.fromTime, v.toTime, v.days, v.minutes, ctx.today, user.email, v.medicalProof ? 1 : 0),
-      auditStmt(db, user, 'request.create', 'request', null, { employeeId: target.id, kind: v.kind, purpose: v.purpose, from: v.fromDate, to: v.toDate, onBehalf: !p.self }),
+        .bind(target.id, v.kind, v.purpose, v.purposeOther, v.reason, v.fromDate, v.toDate, v.fromTime, v.toTime, v.days, v.minutes, ctx.today, user.email, v.medicalProof ? 1 : 0, v.mission ? 1 : 0),
+      auditStmt(db, user, 'request.create', 'request', null, { employeeId: target.id, kind: v.kind, mission: v.mission || undefined, purpose: v.purpose, from: v.fromDate, to: v.toDate, onBehalf: !p.self }),
     ]);
     const id = ins.meta.last_row_id;
     const send = (event, opts) => notifyRequest({ env, db, url, defer }, event, id, { actor: user.email, ...opts });
@@ -447,7 +457,7 @@ export function registerRequestRoutes(add, kit) {
     if (no) return forbidden();
     const ctx = await context(env, db, row.fromDate, row.toDate);
     const v = validateRequest(
-      { kind: row.kind, purpose: row.purpose, purposeOther: row.purposeOther, reason: row.reason || 'x', fromDate: row.fromDate, toDate: row.toDate, fromTime: row.fromTime, toTime: row.toTime, medicalProof: true },
+      { kind: row.kind, purpose: row.purpose, purposeOther: row.purposeOther, reason: row.reason || 'x', fromDate: row.fromDate, toDate: row.toDate, fromTime: row.fromTime, toTime: row.toTime, medicalProof: true, mission: row.mission },
       { ...ctx, enforceTiming: false },
     );
     // يُحسب من القيم الحالية؛ إن لم تعد صالحة (إعدادات تغيّرت) نعرض المخزّن بلا احتساب
@@ -465,7 +475,7 @@ export function registerRequestRoutes(add, kit) {
     return json({
       ok: true, request: row, calc, managerCanDecide, released,
       leaveTypes: ctx.settings ? Object.keys(ctx.settings.leaveTypes) : [],
-      suggestedLeaveType: ctx.settings ? suggestLeaveType(row.purpose, ctx.settings.leaveTypes) : null,
+      suggestedLeaveType: ctx.settings ? suggestLeaveType(row.purpose, ctx.settings.leaveTypes, row.mission) : null,
     });
   });
 

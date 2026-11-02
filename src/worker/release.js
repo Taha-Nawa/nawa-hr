@@ -23,14 +23,14 @@ export async function loadRules(db) {
   }
 }
 
-/** من أزواج (موظف، يوم) يُرجع التي عليها إجازة معتمدة من طلب: [{e, d, rid}] */
+/** من أزواج (موظف، يوم) يُرجع التي عليها إجازة معتمدة من طلب: [{e, d, rid}]. مهمة العمل لا تُفرَج بالدخول (قد يمرّ الموظف بالمركز ثم يخرج لمهمته). */
 export async function findLeaveDays(db, pairs) {
   if (!pairs.length) return [];
   const key = JSON.stringify(pairs.map((p) => ({ e: p.e, d: p.d })));
   const r = await db
     .prepare(
-      `SELECT o.employee_id AS e, o.date AS d, o.request_id AS rid FROM day_overrides o
-       WHERE o.request_id IS NOT NULL AND o.leave_type IS NOT NULL
+      `SELECT o.employee_id AS e, o.date AS d, o.request_id AS rid FROM day_overrides o JOIN requests q ON q.id = o.request_id
+       WHERE q.mission = 0 AND o.request_id IS NOT NULL AND o.leave_type IS NOT NULL
          AND (o.employee_id, o.date) IN (SELECT json_extract(value,'$.e'), json_extract(value,'$.d') FROM json_each(?))`,
     )
     .bind(key)

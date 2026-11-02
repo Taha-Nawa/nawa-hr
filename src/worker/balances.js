@@ -33,7 +33,7 @@ export async function employeeBalance(db, employeeId, year, rules) {
     db
       .prepare(
         `SELECT purpose, status, SUM(days) AS days FROM requests
-         WHERE employee_id = ? AND kind = 'leave' AND status IN ('approved', 'pending') AND from_date BETWEEN ? AND ?
+         WHERE employee_id = ? AND kind = 'leave' AND mission = 0 AND status IN ('approved', 'pending') AND from_date BETWEEN ? AND ?
          GROUP BY purpose, status`,
       )
       .bind(employeeId, `${year}-01-01`, `${year}-12-31`)
@@ -91,7 +91,7 @@ export function registerBalanceRoutes(add, kit) {
         .prepare(
           `SELECT r.employee_id AS id, r.purpose, r.status, COUNT(*) AS n, SUM(r.days) AS days
            FROM requests r JOIN employees e ON e.id = r.employee_id
-           WHERE r.kind = 'leave' AND r.from_date BETWEEN ?1 AND ?2 AND e.status = 'active' AND ${numbered(scope.sql, 3)}
+           WHERE r.kind = 'leave' AND r.mission = 0 AND r.from_date BETWEEN ?1 AND ?2 AND e.status = 'active' AND ${numbered(scope.sql, 3)}
            GROUP BY r.employee_id, r.purpose, r.status`,
         )
         .bind(`${year}-01-01`, `${year}-12-31`, ...scope.params)

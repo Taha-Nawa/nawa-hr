@@ -20,6 +20,7 @@ export async function requestRulesPanel() {
     emergency: num(rules.emergency.maxBackdateDays, { min: '0', max: '365', step: '1', required: true, disabled: dis }),
     sick: num(rules.sick.maxBackdateDays, { min: '0', max: '365', step: '1', required: true, disabled: dis }),
     other: num(rules.other.maxBackdateDays, { min: '0', max: '365', step: '1', required: true, disabled: dis }),
+    mission: num(rules.mission.maxBackdateDays, { min: '0', max: '365', step: '1', required: true, disabled: dis }),
   };
   const span = num(rules.maxSpanDays, { min: '1', max: '366', step: '1', required: true, disabled: dis });
   const free = num(rules.medical.freeDays, { min: '0', max: '30', step: '1', required: true, disabled: dis });
@@ -39,6 +40,7 @@ export async function requestRulesPanel() {
       emergency: { maxBackdateDays: val(back.emergency) },
       sick: { maxBackdateDays: val(back.sick) },
       other: { maxBackdateDays: val(back.other) },
+      mission: { maxBackdateDays: val(back.mission) },
       maxSpanDays: val(span),
       medical: { freeDays: val(free) },
       permits: { exempt: exempt.checked },
@@ -65,6 +67,7 @@ export async function requestRulesPanel() {
       field('الطارئة: التقديم بعد الحالة خلال', back.emergency),
       field('المرضية: التقديم بعد الحالة خلال', back.sick),
       field('أخرى: التقديم بعد الحالة خلال', back.other),
+      field('مهمة العمل: التقديم بعد المهمة خلال', back.mission, 'تُقدَّم قبل المهمة أو في يومها بلا مهلة مسبقة'),
       field('أطول إجازة في طلب واحد', span))),
   h('fieldset', { class: 'fieldset' }, h('legend', null, 'الإجازة المرضية'),
     h('div', { class: 'form-grid' }, field('أيام تُقبل بلا ورقة طبية', free, 'ما زاد عليها تلزمها ورقة طبية تؤكّدها الموارد البشرية أو المفوَّض'))),
