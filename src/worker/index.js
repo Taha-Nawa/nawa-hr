@@ -3,6 +3,7 @@ import { handleApi } from './api.js';
 import { json } from './util.js';
 import { closeDay, purgeAuth } from './close.js';
 import { alertGates, GATE_CRON } from './gates.js';
+import { backupReminder } from './backup.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -32,5 +33,6 @@ export default {
     }
     ctx.waitUntil(closeDay(env).catch((e) => console.error('close-day failed', e?.stack || e)));
     ctx.waitUntil(purgeAuth(env.DB).catch((e) => console.error('purge failed', e?.stack || e)));
+    ctx.waitUntil(backupReminder(env).catch((e) => console.error('backup reminder failed', e?.stack || e)));
   },
 };

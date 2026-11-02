@@ -704,3 +704,10 @@ table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; w
 }
 .notice-ok { background: var(--olive-soft); border-color: #bccfa6; color: #2c4017; }
 .page-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* النسخ الاحتياطي */
+.bk-progress { width: 100%; height: 12px; accent-color: var(--red); }
+.code-block { margin: 8px 0 0; padding: 10px 12px; overflow-x: auto; background: var(--line-2); border-radius: var(--radius-sm); font-size: 0.85rem; text-align: left; white-space: pre; }
+.bullets { margin: 0; padding-inline-start: 1.3em; display: flex; flex-direction: column; gap: 8px; }
+.bk-link { margin-top: 8px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: center; }
+.panel > p:empty { display: none; }

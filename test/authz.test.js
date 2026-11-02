@@ -90,6 +90,9 @@ const WRITE = {
   createVolunteer: (e, c) => call(e, 'POST', '/api/volunteers', { cookie: c, body: { name: 'متطوع اختبار' } }),
   saveVolunteerMonth: (e, c) => call(e, 'PUT', '/api/volunteers/999/month', { cookie: c, body: { month: '2026-11', days: [] } }),
   gatesStatus: (e, c) => call(e, 'GET', '/api/gates/status', { cookie: c }),
+  backupManifest: (e, c) => call(e, 'GET', '/api/backup/manifest', { cookie: c }),
+  backupTable: (e, c) => call(e, 'GET', '/api/backup/table?name=employees', { cookie: c }),
+  backupDone: (e, c) => call(e, 'POST', '/api/backup/done', { cookie: c, body: { rows: 1, tables: 1 } }),
   userCandidates: (e, c) => call(e, 'GET', '/api/users/candidates', { cookie: c }),
   bulkUsers: (e, c) => call(e, 'POST', '/api/users/bulk', { cookie: c, body: { items: [] } }),
   mailStatus: (e, c) => call(e, 'GET', '/api/settings/mail', { cookie: c }),
@@ -122,6 +125,9 @@ const MATRIX = {
   createVolunteer: [403, 403, 201, 403, 201],
   saveVolunteerMonth: [403, 403, 404, 403, 404],
   gatesStatus: [403, 403, 200, 200, 200],
+  backupManifest: [403, 403, 403, 403, 200],
+  backupTable: [403, 403, 403, 403, 200],
+  backupDone: [403, 403, 403, 403, 200],
   userCandidates: [403, 403, 403, 403, 200],
   bulkUsers: [403, 403, 403, 403, 400],
   mailStatus: [403, 403, 403, 403, 200],
@@ -144,7 +150,7 @@ for (const [action, expected] of Object.entries(MATRIX)) {
 }
 
 test('المصفوفة تغطي كل إجراءات authz.ACTIONS الفعلية (لا إجراء بلا اختبار)', () => {
-  const covered = new Set(['volunteer.manage', 'volunteer.read', 'gates.read', 'employee.create', 'employee.update', 'badge.manage', 'center.manage', 'settings.read', 'settings.write', 'device.manage', 'user.manage', 'audit.read', 'holiday.write', 'import.run', 'recompute.run', 'links.manage', 'balance.manage', 'emergency.manage', 'day.correct']);
+  const covered = new Set(['backup.export', 'volunteer.manage', 'volunteer.read', 'gates.read', 'employee.create', 'employee.update', 'badge.manage', 'center.manage', 'settings.read', 'settings.write', 'device.manage', 'user.manage', 'audit.read', 'holiday.write', 'import.run', 'recompute.run', 'links.manage', 'balance.manage', 'emergency.manage', 'day.correct']);
   const uncovered = Object.keys(ACTIONS).filter((a) => !covered.has(a));
   assert.deepEqual(uncovered.sort(), []);
 });

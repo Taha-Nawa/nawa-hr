@@ -47,6 +47,7 @@ export default async function render({ user }) {
   const dateInput = h('input', { type: 'date', value: date, 'aria-label': 'التاريخ', onchange: (e) => e.target.value && go(e.target.value) });
 
   let gates = [];
+  let backup = null;
   async function go(d) {
     date = d;
     dateInput.value = d;
@@ -79,6 +80,11 @@ export default async function render({ user }) {
         h('b', null, gates.length === 1 ? 'بوابة غير متصلة: ' : 'بوابات غير متصلة: '),
         gates.map((g, i) => h('span', null, i ? '، ' : '', `${g.name || g.id}${g.center ? ` (${g.center})` : ''} — ${g.state === 'silent' ? `منذ ${g.minutesSincePing} دقيقة` : 'لا حركة ولا نبض اليوم'}`)),
         h('div', { class: 'small' }, 'حركات هذه البوابة محفوظة على جهازها وتصل عند عودة الاتصال، لكنها لا تُحتسب قبل ذلك: تأكد من الإنترنت وأن التطبيق مفتوح، أو سجّل الحضور يدوياً.')));
+    }
+    if (date === today && backup?.due) {
+      notice.append(h('div', { class: 'notice notice-warn', role: 'status' },
+        backup.last ? `مضى ${backup.daysSince} يوماً على آخر نسخة احتياطية. ` : 'لم تُؤخذ نسخة احتياطية من البيانات بعد. ',
+        h('a', { href: '#/backup' }, 'نزّل نسخة الآن')));
     }
     if (settings && settings.work === null) {
       notice.append(h('div', { class: 'notice notice-warn' },
@@ -135,6 +141,7 @@ export default async function render({ user }) {
 
   // حالة البوابات (لمن يملك الصلاحية): لا تعطّل اللوحة إن تعذّرت
   try { gates = (await get('/api/gates/status')).problems || []; draw(); } catch { /* غير متاح */ }
+  if (user.role === 'admin') { try { backup = await get('/api/backup/status'); draw(); } catch { /* غير متاح */ } }
   await go(date);
   return root;
 }

@@ -27,6 +27,7 @@ const PAGES = [
   { path: 'import', title: 'الاستيراد من إكسل', icon: 'upload', roles: ['hr', 'admin'], load: () => import('./pages/import.js') },
   { path: 'devices', title: 'أجهزة البوابة', icon: 'tablet', roles: ['admin'], load: () => import('./pages/devices.js') },
   { path: 'users', title: 'المستخدمون', icon: 'shield', roles: ['admin'], load: () => import('./pages/users.js') },
+  { path: 'backup', title: 'النسخ الاحتياطي', icon: 'download', roles: ['admin'], load: () => import('./pages/backup.js') },
   { path: 'audit', title: 'سجل التدقيق', icon: 'audit', roles: ['hr', 'director', 'admin'], load: () => import('./pages/audit.js') },
   { path: 'account', title: 'حسابي والأمان', icon: 'key', roles: ALL, load: () => import('./pages/account.js') },
 ];

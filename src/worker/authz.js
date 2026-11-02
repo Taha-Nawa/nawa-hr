@@ -31,6 +31,7 @@ export const ACTIONS = {
   'volunteer.manage': ['hr', 'admin'], // المتطوعون وحضورهم الشهري
   'volunteer.read': ['hr', 'director', 'admin'],
   'gates.read': ['hr', 'director', 'admin'], // حالة اتصال البوابات (لوحة اليوم)
+  'backup.export': ['admin'], // النسخة الاحتياطية الكاملة (تحوي بيانات شخصية)
   'links.manage': ['admin'],
   'balance.manage': ['hr', 'admin'], // توزيع أرصدة الإجازات على الموظفين
   'emergency.manage': ['hr', 'admin'], // إعلان طارئ أثناء الدوام (إخلاء فوري / احتساب اليوم كاملاً) وإلغاؤه
