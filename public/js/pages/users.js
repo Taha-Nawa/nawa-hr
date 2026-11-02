@@ -21,7 +21,7 @@ export default async function render({ user }) {
       h('thead', null, h('tr', null, ['الحساب', 'الدور', 'مرتبط بالموظف', 'الحالة', ''].map((t) => h('th', null, t)))),
       h('tbody', null, users.map((u) => h('tr', { class: u.active ? '' : 'row-off' },
         h('td', { dir: 'ltr', class: 'ltr-cell' }, u.email),
-        h('td', null, ROLE_NAME[u.role] || u.role),
+        h('td', null, ROLE_NAME[u.role] || u.role, u.medical ? h('span', { class: 'chip chip-present', title: 'يؤكّد الأوراق الطبية' }, 'أوراق طبية') : null),
         h('td', { class: 'muted' }, dash(empName.get(u.employeeId))),
         h('td', null, h('span', { class: `chip ${u.active ? 'chip-present' : 'chip-absent'}` }, u.active ? 'فعّال' : 'موقوف')),
         h('td', { class: 'row-actions' }, h('button', { type: 'button', class: 'btn btn-sm', onclick: () => form(u) }, 'تعديل')))))));
@@ -33,6 +33,7 @@ export default async function render({ user }) {
     const role = select(ROLES, u?.role || 'employee');
     const emp = select([['', 'بلا ربط'], ...employees.map((e) => [e.id, `${e.name} (${e.code})`])], u?.employeeId ?? '');
     const active = select([['1', 'فعّال'], ['0', 'موقوف']], u ? String(u.active) : '1');
+    const medical = h('input', { type: 'checkbox', checked: !!u?.medical });
     const err = h('div', { class: 'notice notice-err', hidden: true, role: 'alert' });
     // مستخدم جديد: اختيار الموظف يملأ بريده المسجّل في بطاقته إن كان الحقل فارغاً (يبقى قابلاً للتعديل)
     if (isNew) {
@@ -45,8 +46,8 @@ export default async function render({ user }) {
         e.preventDefault();
         const employeeId = emp.value === '' ? null : Number(emp.value);
         try {
-          if (isNew) await post('/api/users', { email: email.value, role: role.value, employeeId });
-          else await patch(`/api/users/${u.id}`, { role: role.value, employeeId, active: active.value === '1' });
+          if (isNew) await post('/api/users', { email: email.value, role: role.value, employeeId, medical: medical.checked });
+          else await patch(`/api/users/${u.id}`, { role: role.value, employeeId, active: active.value === '1', medical: medical.checked });
           toast('حُفظ');
           dlg.close();
           load();
@@ -59,6 +60,8 @@ export default async function render({ user }) {
       field('الدور', role),
       field('الموظف المرتبط', emp, 'يحدد «نفسه» و«فريقه» في الصلاحيات'),
       isNew ? null : field('الحالة', active, 'إيقاف الحساب ينهي جلساته فوراً'),
+      h('div', { class: 'span-all' }, h('label', { class: 'check' }, medical, h('span', null, 'يؤكّد الأوراق الطبية للإجازات المرضية'))),
+      h('p', { class: 'field-hint span-all' }, 'الإجازة المرضية بلا ورقة طبية تُقبل يوماً واحداً فقط؛ ما زاد عليه تؤكّد الورقةَ الموارد البشرية والمدير العام والمسؤول دائماً، ومن فُوِّض هنا (مثل مديرة الشؤون الإدارية والمالية) فيرى هذه الطلبات ويقرّرها وإن كان دوره «مدير مباشر» أو «موظف».'),
       h('div', { class: 'span-all' }, err),
       isNew ? null : h('div', { class: 'span-all' }, h('button', { type: 'button', class: 'btn btn-danger-ghost', onclick: async () => {
         if (!(await confirmBox(`سيُحذف رقم PIN والأجهزة المتذكَّرة وتُنهى جلسات ${u.email}. يدخل بعدها بحساب Microsoft أو رمز البريد. استعمله إن نسي الموظف PIN أو فقد هاتفه.`, 'إعادة الضبط', true))) return;

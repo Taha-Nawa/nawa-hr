@@ -27,6 +27,8 @@ export const DEFAULT_RULES = {
   // إجمالي المغادرات الشهري وسقفه: مُعطَّل عمداً (قرار 2 نوفمبر 2026). الكود جاهز ويُفعَّل لاحقاً
   // بحفظ { monthlyCap: { enabled: true } } في إعداد 'requests' مع settings.monthlyExitCapHours.
   monthlyCap: { enabled: false },
+  // الإجازة المرضية: حتى freeDays يوم عمل بلا ورقة طبية، وما فوقها يلزمها ورقة طبية تؤكّدها الموارد البشرية (قرار 2 نوفمبر 2026)
+  medical: { freeDays: 1 },
 };
 
 /** يدمج ما حفظه المسؤول (إن وُجد) فوق الافتراضي، ويتجاهل أي قيمة غير صالحة. */
@@ -43,6 +45,8 @@ export function mergeRules(stored) {
   const span = int(stored.maxSpanDays, 1, 366);
   if (span !== undefined) r.maxSpanDays = span;
   if (stored.monthlyCap?.enabled === true) r.monthlyCap.enabled = true;
+  const free = int(stored.medical?.freeDays, 0, 30);
+  if (free !== undefined) r.medical.freeDays = free;
   if (stored.entitlement && typeof stored.entitlement === 'object') {
     for (const p of Object.keys(PURPOSES)) {
       const v = stored.entitlement[p];
@@ -91,10 +95,18 @@ export function validateRequest(input, ctx) {
   let toTime = null;
   let minutes = 0;
   let days = 0;
+  let medicalRequired = false;
   if (kind === 'leave') {
     if (!settings) return { ok: false, error: 'أدخل إعدادات الدوام أولاً', status: 409 };
     days = workingDates(fromDate, toDate, settings, holidays).length;
     if (days === 0) return bad('الفترة المختارة كلها عطلة (لا أيام عمل فيها)');
+    if (purpose === 'sick' && days > rules.medical.freeDays) {
+      medicalRequired = true;
+      if (input.medicalProof !== true) {
+        const free = rules.medical.freeDays;
+        return bad(`الإجازة المرضية بلا ورقة طبية تُقبل ${free === 1 ? 'ليوم واحد' : free === 0 ? 'بورقة طبية دائماً' : `حتى ${free} أيام`} فقط. إن كانت هناك ورقة طبية فأكّد ذلك، وإلا قلّص المدة.`);
+      }
+    }
   } else {
     if (!isTime(input.fromTime) || !isTime(input.toTime)) return bad('حدّد الوقت من/إلى');
     fromTime = input.fromTime;
@@ -122,8 +134,11 @@ export function validateRequest(input, ctx) {
     }
   }
 
-  return { ok: true, value: { kind, purpose, purposeOther, reason, fromDate, toDate, fromTime, toTime, days, minutes } };
+  return { ok: true, value: { kind, purpose, purposeOther, reason, fromDate, toDate, fromTime, toTime, days, minutes, medicalRequired, medicalProof: medicalRequired && input.medicalProof === true } };
 }
+
+/** هل يحتاج هذا الطلب (كما هو مخزَّن) إلى تأكيد ورقة طبية؟ إجازة مرضية تزيد عن المسموح بلا ورقة. */
+export const needsMedical = (row, rules) => row.kind === 'leave' && row.purpose === 'sick' && Number(row.days) > rules.medical.freeDays;
 
 const LEAVE_KEYWORD = { annual: 'سنوي', sick: 'مرض', emergency: 'طارئ' };
 

@@ -52,7 +52,7 @@ test('الإجازة السنوية تُقدَّم قبل موعدها بيوم 
 });
 
 test('المرضية والطارئة تُقدَّم في يوم الحالة أو بعده ضمن المهلة', () => {
-  const sick = (from, to = from) => validateRequest(leave({ purpose: 'sick', reason: '', fromDate: from, toDate: to }), ctx());
+  const sick = (from, to = from) => validateRequest(leave({ purpose: 'sick', reason: '', fromDate: from, toDate: to, medicalProof: true }), ctx());
   assert.equal(sick(TODAY).ok, true, 'اليوم نفسه');
   assert.equal(sick('2026-10-29', TODAY).ok, true, 'بدأت قبل أيام وتنتهي اليوم');
   assert.equal(sick('2026-10-19').ok, true, '14 يوماً');
@@ -195,9 +195,10 @@ test('الموظف يقدّم إجازته والمدير يراها في صند
 test('إجازة سابقة معتمدة تُعيد حساب أيامها في daily_results، وإلغاؤها يعيدها', async () => {
   const { db, env, u } = await world();
   // مرضية: من الخميس 29/10 إلى اليوم الإثنين 2/11 (أيام العمل: الخميس والأحد والإثنين)
-  const r = await post(env, u.emp2, '/api/requests', { kind: 'leave', purpose: 'sick', fromDate: '2026-10-29', toDate: TODAY });
+  const r = await post(env, u.emp2, '/api/requests', { kind: 'leave', purpose: 'sick', fromDate: '2026-10-29', toDate: TODAY, medicalProof: true });
   assert.equal(r.status, 201, JSON.stringify(r.body));
-  assert.equal((await post(env, u.mgr, `/api/requests/${r.body.id}/approve`, {})).status, 200);
+  // أكثر من يوم: تؤكّد الورقةَ الموارد البشرية لا المدير المباشر
+  assert.equal((await post(env, u.hr, `/api/requests/${r.body.id}/approve`, { medicalConfirmed: true })).status, 200);
   const status = async () => (await db.prepare("SELECT date, status, approved_hours AS h FROM daily_results WHERE employee_id = 2 ORDER BY date").all()).results;
   const s1 = await status();
   assert.deepEqual(s1.map((x) => [x.date, x.status]), [['2026-10-29', 'إجازة مرضية'], ['2026-11-01', 'إجازة مرضية'], ['2026-11-02', 'إجازة مرضية']]);
@@ -365,6 +366,86 @@ test('تفاصيل الطلب تُبيّن إن كان المدير المباش
   assert.equal(d2.request.managerId, null);
   assert.equal(d2.managerCanDecide, false);
   assert.equal((await post(env, u.director, `/api/requests/${b.body.id}/approve`, { leaveType: 'إجازة سنوية' })).status, 200, 'المدير العام يعتمد');
+});
+
+test('الإجازة المرضية: يوم واحد بلا ورقة، وأكثر منه يلزمه إقرار بورقة طبية', () => {
+  const sick = (from, to, extra = {}) => validateRequest(leave({ purpose: 'sick', reason: '', fromDate: from, toDate: to, ...extra }), ctx());
+  assert.equal(sick(TODAY, TODAY).ok, true, 'يوم واحد بلا ورقة');
+  assert.equal(sick('2026-10-29', TODAY).ok, false, 'ثلاثة أيام عمل بلا ورقة');
+  assert.match(sick('2026-10-29', TODAY).error, /ورقة طبية/);
+  const ok = sick('2026-10-29', TODAY, { medicalProof: true });
+  assert.equal(ok.ok, true);
+  assert.deepEqual([ok.value.days, ok.value.medicalRequired, ok.value.medicalProof], [3, true, true]);
+  // الجمعة والسبت عطلة: الخميس→السبت = يوم عمل واحد فلا تُطلب ورقة
+  assert.equal(sick('2026-10-29', '2026-10-31').ok, true);
+  // النوع الاعتيادي لا يتأثر
+  assert.equal(validateRequest(leave({ fromDate: '2026-11-08', toDate: '2026-11-12' }), ctx()).ok, true);
+  // عدد الأيام المسموحة بلا ورقة قابل للضبط
+  const two = mergeRules({ medical: { freeDays: 2 } });
+  const asked = leave({ purpose: 'sick', reason: '', fromDate: '2026-11-01', toDate: TODAY });
+  assert.equal(validateRequest(asked, ctx()).ok, false, 'يومان بلا ورقة والمسموح يوم');
+  assert.equal(validateRequest(asked, ctx({ rules: two })).ok, true, 'المسموح يومان');
+});
+
+test('الإجازة المرضية لأكثر من يوم: لا يعتمدها المدير المباشر، وتؤكّدها الموارد البشرية أو المفوَّض', async () => {
+  const { db, env, u } = await world();
+  const noProof = await post(env, u.emp2, '/api/requests', { kind: 'leave', purpose: 'sick', fromDate: '2026-11-01', toDate: TODAY });
+  assert.equal(noProof.status, 400);
+  assert.match(noProof.body.error, /ورقة طبية/);
+  const prev = await post(env, u.emp2, '/api/requests/preview', { kind: 'leave', purpose: 'sick', fromDate: '2026-11-01', toDate: TODAY, medicalProof: true });
+  assert.equal(prev.status, 200);
+
+  const r = await post(env, u.emp2, '/api/requests', { kind: 'leave', purpose: 'sick', fromDate: '2026-11-01', toDate: TODAY, medicalProof: true });
+  assert.equal(r.status, 201, JSON.stringify(r.body));
+  const id = r.body.id;
+  const one = await post(env, u.emp3, '/api/requests', { kind: 'leave', purpose: 'sick', fromDate: TODAY, toDate: TODAY });
+  assert.equal(one.status, 201, 'يوم واحد بلا ورقة يُقبل');
+
+  // المدير المباشر لا يرى الطلب في صندوقه ولا يقرّره، لكنه يقرّر اليوم الواحد
+  const inbox = (await get(env, u.mgr, '/api/requests?scope=inbox')).body.requests.map((x) => x.id);
+  assert.deepEqual(inbox, [one.body.id]);
+  assert.equal((await post(env, u.mgr, `/api/requests/${id}/approve`, { medicalConfirmed: true })).status, 403);
+  assert.equal((await post(env, u.mgr, `/api/requests/${id}/reject`, { note: 'لا' })).status, 403);
+  assert.equal((await get(env, u.mgr, `/api/requests/${id}`)).body.request.can.decide, false);
+  assert.equal((await get(env, u.mgr, `/api/requests/${one.body.id}`)).body.request.can.decide, true);
+
+  // الموارد البشرية: لا اعتماد بلا تأكيد استلام الورقة
+  assert.equal((await get(env, u.hr, `/api/requests/${id}`)).body.request.needsMedical, true);
+  const no = await post(env, u.hr, `/api/requests/${id}/approve`, {});
+  assert.equal(no.status, 400);
+  assert.match(no.body.error, /الورقة الطبية/);
+  assert.equal((await post(env, u.hr, `/api/requests/${id}/approve`, { medicalConfirmed: true })).status, 200);
+  const d = (await get(env, u.hr, `/api/requests/${id}`)).body.request;
+  assert.deepEqual([d.status, d.medicalProof, d.medicalBy], ['approved', true, 'hr@nawaculture.org']);
+
+  // تفويض فردي: موظفة بدور «موظف» تصير تؤكّد الأوراق الطبية فتراها وتقرّرها
+  const clerk = await login(db, 'clerk@nawaculture.org', 'employee', 3);
+  const r2 = await post(env, u.emp2, '/api/requests', { kind: 'leave', purpose: 'sick', fromDate: '2026-11-08', toDate: '2026-11-10', medicalProof: true });
+  assert.equal((await get(env, clerk, '/api/requests/meta')).body.canDecide, false);
+  assert.equal((await get(env, clerk, `/api/requests/${r2.body.id}`)).status, 403);
+  await db.prepare("UPDATE users SET medical = 1 WHERE email = 'clerk@nawaculture.org'").run();
+  const meta = (await get(env, clerk, '/api/requests/meta')).body;
+  assert.deepEqual([meta.canDecide, meta.pending, meta.canBehalf], [true, 1, false]);
+  assert.deepEqual((await get(env, clerk, '/api/requests?scope=inbox')).body.requests.map((x) => x.id), [r2.body.id]);
+  assert.equal((await get(env, clerk, `/api/requests/${r2.body.id}`)).body.request.can.decide, true);
+  assert.equal((await post(env, clerk, `/api/requests/${r2.body.id}/approve`, { medicalConfirmed: true })).status, 200);
+
+  // تقليص المدة إلى يوم واحد عند الاعتماد لا يستلزم تأكيد ورقة
+  const r3 = await post(env, u.emp2, '/api/requests', { kind: 'leave', purpose: 'sick', fromDate: '2026-11-15', toDate: '2026-11-16', medicalProof: true });
+  assert.equal((await post(env, u.hr, `/api/requests/${r3.body.id}/approve`, { toDate: '2026-11-15' })).status, 200);
+  assert.equal((await get(env, u.hr, `/api/requests/${r3.body.id}`)).body.request.medicalBy, null);
+});
+
+test('منح الإجازة المرضية مباشرة: الموارد البشرية بإقرارها بالورقة، والمدير المباشر لا يملك ذلك', async () => {
+  const { env, u } = await world();
+  const body = { kind: 'leave', purpose: 'sick', employeeId: 2, fromDate: '2026-11-01', toDate: TODAY, approve: true };
+  assert.equal((await post(env, u.hr, '/api/requests', body)).status, 400, 'بلا إقرار بورقة');
+  const ok = await post(env, u.hr, '/api/requests', { ...body, medicalProof: true });
+  assert.equal(ok.status, 201, JSON.stringify(ok.body));
+  assert.equal((await get(env, u.hr, `/api/requests/${ok.body.id}`)).body.request.status, 'approved');
+  const bad = await post(env, u.mgr, '/api/requests', { ...body, fromDate: '2026-11-15', toDate: '2026-11-16', medicalProof: true });
+  assert.equal(bad.status, 403, 'يُدخل لكنه لا يعتمد');
+  assert.equal((await get(env, u.mgr, `/api/requests/${bad.body.requestId}`)).body.request.status, 'pending');
 });
 
 test('السقف الشهري للمغادرات يعمل عند تفعيله صراحةً (جاهز للمستقبل) وهو تنبيه لا منع', async () => {

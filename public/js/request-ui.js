@@ -47,6 +47,12 @@ export async function openRequestForm({ kind, meta, user, onSaved }) {
   const otherIn = h('input', { type: 'text', maxlength: '80', placeholder: 'حدّد الغرض', 'aria-label': 'حدّد الغرض', oninput: refresh });
   const otherBox = h('div', { hidden: true }, field('حدّد', otherIn));
   const hint = h('p', { class: 'field-hint' });
+  // الإجازة المرضية: بلا ورقة طبية تُقبل يوماً واحداً فقط (الخادم يفرض ذلك ويؤكّده المعتمِد)
+  const medIn = h('input', { type: 'checkbox', onchange: refresh });
+  const free = meta.rules.medical?.freeDays ?? 1;
+  const medBox = h('div', { class: 'fieldset', hidden: true },
+    h('label', { class: 'check' }, medIn, h('span', null, 'توجد ورقة طبية تثبت الإجازة')),
+    h('p', { class: 'field-hint' }, `بلا ورقة طبية تُقبل الإجازة المرضية ${free === 1 ? 'يوماً واحداً' : `${free} أيام`} فقط. للمدة الأطول تُسلَّم الورقة للموارد البشرية وتؤكّدها هي قبل الاعتماد.`));
 
   const reason = h('textarea', { rows: '2', maxlength: '300', placeholder: isLeave ? 'مثال: زيارة عائلية' : 'مثال: مراجعة طبيب', oninput: refresh });
   const dFrom = h('input', { type: 'date', required: true, onchange: refresh });
@@ -69,6 +75,7 @@ export async function openRequestForm({ kind, meta, user, onSaved }) {
     empSel ? h('div', { class: 'span-all' }, field('لمن هذا الطلب؟', empSel, 'اختر موظفاً لتُدخل الطلب نيابة عنه أو لتمنحه الإجازة.')) : null,
     h('div', { class: 'span-all' }, h('span', { class: 'field-label' }, isLeave ? 'نوع الإجازة' : 'الغرض'), purposeRow, hint),
     h('div', { class: 'span-all' }, otherBox),
+    isLeave ? h('div', { class: 'span-all' }, medBox) : null,
     h('div', { class: 'span-all' }, field(isLeave ? 'الغرض من الإجازة' : `الغرض من ${kind === 'exit' ? 'المغادرة' : 'التأخير'}`, reason)),
     isLeave
       ? [field('تاريخ بدء الإجازة', dFrom), field('تاريخ انتهاء الإجازة', dTo)]
@@ -81,6 +88,7 @@ export async function openRequestForm({ kind, meta, user, onSaved }) {
   function sync() {
     const p = purposeVal();
     otherBox.hidden = p !== 'other';
+    medBox.hidden = !(isLeave && p === 'sick');
     hint.textContent = ruleHint(kind, p, meta, behalf());
     const canApprove = meta.canDecide && behalf();
     approveBox.hidden = !canApprove;
@@ -104,6 +112,7 @@ export async function openRequestForm({ kind, meta, user, onSaved }) {
       kind, purpose: purposeVal(), purposeOther: otherIn.value, reason: reason.value, fromDate: dFrom.value,
       ...(isLeave ? { toDate: dTo.value || dFrom.value } : { fromTime: tFrom.value, toTime: tTo.value }),
     };
+    if (isLeave && p.purpose === 'sick') p.medicalProof = medIn.checked;
     if (behalf()) p.employeeId = Number(empSel.value);
     return p;
   }
@@ -191,12 +200,17 @@ export async function openRequestDetail({ id, meta, onChanged }) {
       row(r.kind === 'leave' ? 'الفترة' : 'الوقت', fmtPeriod(r)), row('المدة', fmtLength(r)),
       row('تاريخ التقديم', fmtDate(r.requestDate)),
       row('أدخله', r.createdByName || r.createdBy),
+      r.needsMedical || r.medicalBy ? row('الورقة الطبية', r.medicalBy ? `مؤكَّدة من ${r.medicalBy}` : r.medicalProof ? 'أفاد مقدّم الطلب بوجودها (لم تُؤكَّد بعد)' : 'غير مُقرّ بها') : null,
       r.reason ? row('التفاصيل', r.reason, true) : null);
     const head = h('div', { class: 'req-head' }, h('span', { class: 'req-kind' }, KIND[r.kind].label, ' #', r.id), statusChip(r.status));
     const parts = [head, info];
 
     // من يعتمد هذا الطلب؟ (يُعرض ما دام معلّقاً كي يعرف الجميع أين وصل)
-    if (r.status === 'pending') {
+    if (r.status === 'pending' && r.needsMedical) {
+      parts.push(h('div', { class: 'notice notice-warn' },
+        r.medicalProof ? 'إجازة مرضية لأكثر من يوم: أفاد مقدّم الطلب بوجود ورقة طبية. تؤكّدها الموارد البشرية أو مديرة الشؤون الإدارية والمالية عند الاعتماد، ولا يكفي اعتماد المدير المباشر.'
+          : 'إجازة مرضية لأكثر من يوم بلا إقرار بورقة طبية. يقرّرها الموارد البشرية أو مديرة الشؤون الإدارية والمالية.'));
+    } else if (r.status === 'pending') {
       const hr = 'الموارد البشرية أو المدير العام';
       const who = !r.managerId ? `لا مدير مباشر مسجّل لهذا الموظف، فيعتمد طلبه ${hr}.`
         : !data.managerCanDecide ? `المدير المباشر (${r.managerName}) بلا حساب دخول بدور «مدير مباشر»، فيعتمد الطلب ${hr}.`
@@ -235,13 +249,15 @@ export async function openRequestDetail({ id, meta, onChanged }) {
       const leaveSel = isLeave ? select(data.leaveTypes.map((t) => [t, t]), data.suggestedLeaveType || '') : null;
       if (leaveSel && !data.suggestedLeaveType) leaveSel.prepend(h('option', { value: '', selected: true }, '— اختر نوع الإجازة —'));
       const note = h('textarea', { rows: '2', maxlength: '300', placeholder: 'ملاحظة (اختيارية عند الاعتماد، مطلوبة عند الرفض)' });
+      // الإجازة المرضية لأكثر من يوم: لا اعتماد قبل أن يؤكّد المعتمِد استلام الورقة الطبية (يتحقق الخادم من ذلك)
+      const medOk = r.needsMedical ? h('input', { type: 'checkbox' }) : null;
       let t = 0;
       const recalc = () => {
         clearTimeout(t);
         t = setTimeout(async () => {
           try {
             const { calc } = await post('/api/requests/preview', isLeave
-              ? { kind: r.kind, purpose: r.purpose, purposeOther: r.purposeOther, reason: r.reason || 'x', fromDate: dFrom.value, toDate: dTo.value || dFrom.value, employeeId: r.employeeId, exceptId: r.id }
+              ? { kind: r.kind, purpose: r.purpose, purposeOther: r.purposeOther, reason: r.reason || 'x', fromDate: dFrom.value, toDate: dTo.value || dFrom.value, employeeId: r.employeeId, exceptId: r.id, medicalProof: true }
               : { kind: r.kind, purpose: r.purpose, purposeOther: r.purposeOther, reason: r.reason || 'x', fromDate: r.fromDate, fromTime: tFrom.value, toTime: tTo.value, employeeId: r.employeeId, exceptId: r.id });
             showCalc(calc);
           } catch (e) {
@@ -260,6 +276,7 @@ export async function openRequestDetail({ id, meta, onChanged }) {
         try {
           await post(`/api/requests/${r.id}/approve`, {
             note: note.value,
+            ...(medOk ? { medicalConfirmed: medOk.checked } : {}),
             ...(isLeave ? { fromDate: dFrom.value, toDate: dTo.value || dFrom.value, leaveType: leaveSel.value } : { fromTime: tFrom.value, toTime: tTo.value }),
           });
           toast('اعتُمد الطلب، يمكنك الآن طباعته للتوقيع');
@@ -291,6 +308,7 @@ export async function openRequestDetail({ id, meta, onChanged }) {
         h('div', { class: 'form-grid' },
           isLeave ? [field('تاريخ بدء الإجازة', dFrom), field('تاريخ انتهاء الإجازة', dTo), h('div', { class: 'span-all' }, field('نوع الإجازة في السجل (يحدد أثرها في الحضور والتايم شيت)', leaveSel))]
             : [field('من الساعة', tFrom), field('إلى الساعة', tTo)],
+          medOk ? h('div', { class: 'span-all' }, h('label', { class: 'check' }, medOk, h('span', null, 'استلمتُ الورقة الطبية وهي تثبت مدة الإجازة المرضية'))) : null,
           h('div', { class: 'span-all' }, field('ملاحظة', note))),
         h('p', { class: 'field-hint' }, 'يمكنك تعديل التواريخ أو الأوقات قبل الاعتماد؛ يُحفظ ما طلبه الموظف للمراجعة.'),
         h('div', { class: 'dlg-actions' }, rejectBtn, approveBtn)));

@@ -76,6 +76,7 @@ export default async function render({ params }) {
       h('span', { class: 'pmeta' },
         h('span', null, `طلب رقم ${r.id}`),
         approved && r.leaveType ? h('span', null, `النوع في السجل: ${r.leaveType}`) : null,
+        r.medicalBy ? h('span', null, 'ورقة طبية: مؤكَّدة') : null,
         h('span', null, isLeave ? `المحتسب: ${fmtDays(r.days)}` : `المحتسب: ${fmtMinutes(r.minutes)}`))));
 
   const statusNote = approved ? null

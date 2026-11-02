@@ -15,14 +15,15 @@ import { recomputePairs } from './recompute.js';
 import { tzOf } from './close.js';
 import { json, isDate, clip, localDate, localTime, nowOf, addDays, daysBetween } from './util.js';
 import { canReadEmployee, canManageRequests, canDecideRequest, canRevokeRequest, employeeScope } from './authz.js';
-import { validateRequest, mergeRules, workingDates, suggestLeaveType, monthOf, monthBounds, KINDS, PURPOSES } from '../engine/requests.js';
+import { validateRequest, mergeRules, workingDates, suggestLeaveType, monthOf, monthBounds, needsMedical, KINDS, PURPOSES } from '../engine/requests.js';
 
 const LIST_LIMIT = 300;
 
 const COLS = `r.id, r.employee_id AS employeeId, r.kind, r.purpose, r.purpose_other AS purposeOther, r.reason,
   r.from_date AS fromDate, r.to_date AS toDate, r.from_time AS fromTime, r.to_time AS toTime, r.days, r.minutes,
   r.leave_type AS leaveType, r.status, r.request_date AS requestDate, r.created_by AS createdBy, r.created_at AS createdAt,
-  r.decided_by AS decidedBy, r.decided_at AS decidedAt, r.decision_note AS decisionNote, r.original`;
+  r.decided_by AS decidedBy, r.decided_at AS decidedAt, r.decision_note AS decisionNote, r.original,
+  r.medical_proof AS medicalProof, r.medical_by AS medicalBy, r.medical_at AS medicalAt`;
 
 const NAME_OF_EMAIL = (col) => `(SELECT ee.name FROM users uu JOIN employees ee ON ee.id = uu.employee_id WHERE uu.email = ${col})`;
 
@@ -34,6 +35,7 @@ const DETAIL_SQL = `SELECT ${COLS}, e.name AS employeeName, e.code AS employeeCo
 const shape = (r) => {
   if (!r) return r;
   const { original, ...rest } = r;
+  if ('medicalProof' in rest) rest.medicalProof = !!rest.medicalProof;
   let orig = null;
   try {
     orig = original ? JSON.parse(original) : null;
@@ -68,6 +70,45 @@ export function registerRequestRoutes(add, kit) {
       rules: mergeRules(stored),
       holidays: new Set(hol.results.map((r) => r.date)),
     };
+  }
+
+  const loadRules = async (db) => {
+    const row = await db.prepare("SELECT value FROM settings WHERE key = 'requests'").first();
+    try {
+      return mergeRules(row ? JSON.parse(row.value) : null);
+    } catch {
+      return mergeRules(null);
+    }
+  };
+
+  /** من يؤكّد الورقة الطبية: الموارد البشرية والمدير العام والمسؤول دائماً، وغيرهم بتفويض في صفحة المستخدمين. */
+  async function isMedicalApprover(db, user) {
+    if (['hr', 'director', 'admin'].includes(user.role)) return true;
+    return (await db.prepare('SELECT medical FROM users WHERE id = ?').bind(user.id).first('medical')) === 1;
+  }
+
+  /** قرار الاعتماد/الرفض: الإجازة المرضية التي تحتاج ورقة طبية لا يقرّرها إلا مؤكِّد الأوراق (لا المدير المباشر وحده). */
+  function decideAllowed(user, medicalOk, target, row, rules) {
+    if (user.employeeId != null && user.employeeId === target.id) return false;
+    return needsMedical(row, rules) ? medicalOk : canDecideRequest(user, target);
+  }
+
+  /** شرط «بانتظار قراري»؛ null = لا صندوق لهذا المستخدم. */
+  function inboxWhere(user, medicalOk, freeDays) {
+    const own = user.employeeId ?? -1;
+    const med = "r.kind = 'leave' AND r.purpose = 'sick' AND r.days > ?";
+    if (['hr', 'director', 'admin'].includes(user.role)) return { sql: "r.status = 'pending' AND r.employee_id != ?", params: [own] };
+    const parts = [];
+    const params = [];
+    if (user.role === 'manager' && user.employeeId != null) {
+      parts.push(`(e.manager_id = ? AND NOT (${med}))`);
+      params.push(user.employeeId, freeDays);
+    }
+    if (medicalOk) {
+      parts.push(`(${med})`);
+      params.push(freeDays);
+    }
+    return parts.length ? { sql: `r.status = 'pending' AND r.employee_id != ? AND (${parts.join(' OR ')})`, params: [own, ...params] } : null;
   }
 
   /** الأيام التي بين تاريخين لحساب العطل: نجلب العطل مرة واحدة بعد معرفة المدى */
@@ -158,10 +199,13 @@ export function registerRequestRoutes(add, kit) {
     const row = shape(await db.prepare(`${DETAIL_SQL} WHERE r.id = ?`).bind(id).first());
     if (!row) return { row: null };
     const target = { id: row.employeeId, manager_id: row.managerId };
-    if (!canReadEmployee(user, target)) return { row, forbidden: true };
+    const rules = await loadRules(db);
+    const medicalOk = await isMedicalApprover(db, user);
+    row.needsMedical = needsMedical(row, rules);
+    if (!canReadEmployee(user, target) && !(row.needsMedical && medicalOk)) return { row, forbidden: true };
     const owner = (user.employeeId != null && user.employeeId === row.employeeId) || row.createdBy === user.email;
     row.can = {
-      decide: row.status === 'pending' && canDecideRequest(user, target),
+      decide: row.status === 'pending' && decideAllowed(user, medicalOk, target, row, rules),
       cancel: (row.status === 'pending' && (owner || canManageRequests(user, target))) || (row.status === 'approved' && canRevokeRequest(user, target)),
     };
     return { row, target };
@@ -197,10 +241,12 @@ export function registerRequestRoutes(add, kit) {
     const merged = {
       kind: row.kind, purpose: row.purpose, purposeOther: row.purpose_other, reason: row.reason,
       fromDate, toDate, fromTime: adjust.fromTime ?? row.from_time, toTime: adjust.toTime ?? row.to_time,
+      medicalProof: true, // وجود الورقة يتحقق منه المعتمِد صراحةً أدناه، لا بمجرد إقرار مقدّم الطلب
     };
     const v = validateRequest(merged, { ...ctx0, holidays, enforceTiming: false });
     if (!v.ok) return { error: bad(v.error, v.status || 400) };
     const val = v.value;
+    if (val.medicalRequired && adjust.medicalConfirmed !== true) return { error: bad('أكّد استلامك الورقة الطبية التي تثبت الإجازة المرضية قبل الاعتماد') };
 
     let leaveType = null;
     let dates = [];
@@ -230,12 +276,13 @@ export function registerRequestRoutes(add, kit) {
       db
         .prepare(
           `UPDATE requests SET status = 'approved', from_date = ?, to_date = ?, from_time = ?, to_time = ?, days = ?, minutes = ?, leave_type = ?,
-             decided_by = ?, decided_at = datetime('now'), decision_note = ?, original = ? WHERE id = ? AND status = 'pending'`,
+             decided_by = ?, decided_at = datetime('now'), decision_note = ?, original = ?,
+             medical_proof = ?, medical_by = ?, medical_at = ${val.medicalRequired ? "datetime('now')" : 'NULL'} WHERE id = ? AND status = 'pending'`,
         )
-        .bind(val.fromDate, val.toDate, val.fromTime, val.toTime, val.days, val.minutes, leaveType, user.email, note, original, row.id),
+        .bind(val.fromDate, val.toDate, val.fromTime, val.toTime, val.days, val.minutes, leaveType, user.email, note, original, val.medicalRequired ? 1 : 0, val.medicalRequired ? user.email : null, row.id),
     ];
     if (isLeave) stmts.push(db.prepare(OVERRIDE_UPSERT).bind(row.employee_id, leaveType, `طلب #${row.id}`, user.email, row.id, JSON.stringify(dates)));
-    stmts.push(auditStmt(db, user, 'request.approve', 'request', row.id, { employeeId: row.employee_id, kind: row.kind, from: val.fromDate, to: val.toDate, days: val.days, minutes: val.minutes, adjusted: changed }));
+    stmts.push(auditStmt(db, user, 'request.approve', 'request', row.id, { employeeId: row.employee_id, kind: row.kind, from: val.fromDate, to: val.toDate, days: val.days, minutes: val.minutes, adjusted: changed, medicalConfirmedBy: val.medicalRequired ? user.email : null }));
     const res = await db.batch(stmts);
     if (!res[0].meta.changes) return { error: bad('الطلب لم يعد معلّقاً', 409) };
     if (isLeave) await recomputeDates(db, row.employee_id, dates, ctx0.today, settings);
@@ -246,22 +293,17 @@ export function registerRequestRoutes(add, kit) {
   add('GET', '/api/requests/meta', async ({ env, db, user }) => {
     const ctx = await context(env, db);
     const inboxRoles = ['manager', 'hr', 'director', 'admin'];
-    let pending = 0;
-    if (inboxRoles.includes(user.role)) {
-      const own = user.employeeId ?? -1;
-      pending =
-        user.role === 'manager'
-          ? await db.prepare("SELECT COUNT(*) AS n FROM requests r JOIN employees e ON e.id = r.employee_id WHERE r.status = 'pending' AND e.manager_id = ? AND r.employee_id != ?").bind(own, own).first('n')
-          : await db.prepare("SELECT COUNT(*) AS n FROM requests WHERE status = 'pending' AND employee_id != ?").bind(own).first('n');
-    }
+    const medicalOk = await isMedicalApprover(db, user);
+    const ib = inboxWhere(user, medicalOk, ctx.rules.medical.freeDays);
+    const pending = ib ? await db.prepare(`SELECT COUNT(*) AS n FROM requests r JOIN employees e ON e.id = r.employee_id WHERE ${ib.sql}`).bind(...ib.params).first('n') : 0;
     return json({
       ok: true,
       today: ctx.today,
-      rules: { annual: ctx.rules.annual, emergency: ctx.rules.emergency, sick: ctx.rules.sick, other: ctx.rules.other, maxSpanDays: ctx.rules.maxSpanDays },
+      rules: { annual: ctx.rules.annual, emergency: ctx.rules.emergency, sick: ctx.rules.sick, other: ctx.rules.other, maxSpanDays: ctx.rules.maxSpanDays, medical: ctx.rules.medical },
       leaveTypes: ctx.settings ? Object.keys(ctx.settings.leaveTypes) : [],
       work: ctx.settings ? { start: ctx.settings.start, end: ctx.settings.end } : null,
       canBehalf: inboxRoles.includes(user.role),
-      canDecide: inboxRoles.includes(user.role),
+      canDecide: inboxRoles.includes(user.role) || medicalOk,
       linked: user.employeeId != null,
       pending,
     });
@@ -272,25 +314,23 @@ export function registerRequestRoutes(add, kit) {
     const where = [];
     const params = [];
     const own = user.employeeId;
+    const wide = scope === 'inbox' || scope === 'all';
+    const rules = wide ? await loadRules(db) : null;
+    const medicalOk = wide ? await isMedicalApprover(db, user) : false;
     if (scope === 'mine') {
       if (own == null) return json({ ok: true, requests: [] });
       where.push('r.employee_id = ?');
       params.push(own);
     } else if (scope === 'inbox') {
-      if (user.role === 'manager') {
-        if (own == null) return json({ ok: true, requests: [] });
-        where.push("r.status = 'pending' AND e.manager_id = ? AND r.employee_id != ?");
-        params.push(own, own);
-      } else if (['hr', 'director', 'admin'].includes(user.role)) {
-        where.push("r.status = 'pending' AND r.employee_id != ?");
-        params.push(own ?? -1);
-      } else {
-        return json({ ok: true, requests: [] });
-      }
+      const ib = inboxWhere(user, medicalOk, rules.medical.freeDays);
+      if (!ib) return json({ ok: true, requests: [] });
+      where.push(ib.sql);
+      params.push(...ib.params);
     } else {
       const sc = employeeScope(user, 'e');
-      where.push(sc.sql);
-      params.push(...sc.params);
+      // مؤكِّد الأوراق الطبية يرى أيضاً الإجازات المرضية التي تحتاج ورقة (ليتابع ما قرّره)
+      where.push(medicalOk ? `(${sc.sql} OR (r.kind = 'leave' AND r.purpose = 'sick' AND r.days > ?))` : sc.sql);
+      params.push(...sc.params, ...(medicalOk ? [rules.medical.freeDays] : []));
     }
     const status = url.searchParams.get('status');
     if (status && ['pending', 'approved', 'rejected', 'cancelled'].includes(status)) {
@@ -362,19 +402,21 @@ export function registerRequestRoutes(add, kit) {
     const [ins] = await db.batch([
       db
         .prepare(
-          `INSERT INTO requests (employee_id, kind, purpose, purpose_other, reason, from_date, to_date, from_time, to_time, days, minutes, request_date, created_by)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO requests (employee_id, kind, purpose, purpose_other, reason, from_date, to_date, from_time, to_time, days, minutes, request_date, created_by, medical_proof)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
-        .bind(target.id, v.kind, v.purpose, v.purposeOther, v.reason, v.fromDate, v.toDate, v.fromTime, v.toTime, v.days, v.minutes, ctx.today, user.email),
+        .bind(target.id, v.kind, v.purpose, v.purposeOther, v.reason, v.fromDate, v.toDate, v.fromTime, v.toTime, v.days, v.minutes, ctx.today, user.email, v.medicalProof ? 1 : 0),
       auditStmt(db, user, 'request.create', 'request', null, { employeeId: target.id, kind: v.kind, purpose: v.purpose, from: v.fromDate, to: v.toDate, onBehalf: !p.self }),
     ]);
     const id = ins.meta.last_row_id;
     if (body.approve === true) {
-      if (!canDecideRequest(user, { id: target.id, manager_id: target.manager_id })) {
+      const row = await db.prepare('SELECT * FROM requests WHERE id = ?').bind(id).first();
+      const medicalOk = await isMedicalApprover(db, user);
+      if (!decideAllowed(user, medicalOk, { id: target.id, manager_id: target.manager_id }, row, ctx.rules)) {
         return json({ ok: false, error: 'تم إدخال الطلب لكنك لا تملك صلاحية اعتماده', requestId: id }, 403);
       }
-      const row = await db.prepare('SELECT * FROM requests WHERE id = ?').bind(id).first();
-      const r = await approveRow({ env, db, user, row, adjust: { leaveType: body.leaveType, note: body.note } });
+      // من يدخل الإجازة المرضية ويمنحها مباشرة وهي بين يديه الورقة الطبية يؤكّدها بإقراره (medicalProof)
+      const r = await approveRow({ env, db, user, row, adjust: { leaveType: body.leaveType, note: body.note, medicalConfirmed: v.medicalProof } });
       if (r.error) {
         const msg = (await r.error.json()).error;
         return json({ ok: false, error: `أُدخل الطلب (#${id}) لكن تعذّر اعتماده: ${msg}`, requestId: id }, r.error.status);
@@ -389,7 +431,7 @@ export function registerRequestRoutes(add, kit) {
     if (no) return forbidden();
     const ctx = await context(env, db, row.fromDate, row.toDate);
     const v = validateRequest(
-      { kind: row.kind, purpose: row.purpose, purposeOther: row.purposeOther, reason: row.reason || 'x', fromDate: row.fromDate, toDate: row.toDate, fromTime: row.fromTime, toTime: row.toTime },
+      { kind: row.kind, purpose: row.purpose, purposeOther: row.purposeOther, reason: row.reason || 'x', fromDate: row.fromDate, toDate: row.toDate, fromTime: row.fromTime, toTime: row.toTime, medicalProof: true },
       { ...ctx, enforceTiming: false },
     );
     // يُحسب من القيم الحالية؛ إن لم تعد صالحة (إعدادات تغيّرت) نعرض المخزّن بلا احتساب
@@ -415,7 +457,7 @@ export function registerRequestRoutes(add, kit) {
     const id = Number(params.id);
     const row = await db.prepare('SELECT r.*, e.manager_id AS managerId FROM requests r JOIN employees e ON e.id = r.employee_id WHERE r.id = ?').bind(id).first();
     if (!row) return notFound('الطلب');
-    if (!canDecideRequest(user, { id: row.employee_id, manager_id: row.managerId })) return forbidden();
+    if (!decideAllowed(user, await isMedicalApprover(db, user), { id: row.employee_id, manager_id: row.managerId }, row, await loadRules(db))) return forbidden();
     if (row.status !== 'pending') return bad('الطلب لم يعد معلّقاً', 409);
     const r = await approveRow({ env, db, user, row, adjust: body });
     if (r.error) return r.error;
@@ -428,7 +470,7 @@ export function registerRequestRoutes(add, kit) {
     const id = Number(params.id);
     const row = await db.prepare('SELECT r.*, e.manager_id AS managerId FROM requests r JOIN employees e ON e.id = r.employee_id WHERE r.id = ?').bind(id).first();
     if (!row) return notFound('الطلب');
-    if (!canDecideRequest(user, { id: row.employee_id, manager_id: row.managerId })) return forbidden();
+    if (!decideAllowed(user, await isMedicalApprover(db, user), { id: row.employee_id, manager_id: row.managerId }, row, await loadRules(db))) return forbidden();
     const note = clip(body.note, 300);
     if (!note || note.length < 2) return bad('اكتب سبب الرفض');
     const [r] = await db.batch([
