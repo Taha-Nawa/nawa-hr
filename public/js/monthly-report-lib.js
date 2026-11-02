@@ -33,9 +33,13 @@ export function nextFromTasks(tasks, month) {
 /** الاجتماعات بترتيب التاريخ (بلا تاريخ في الآخر) مع ثبات الترتيب لمن تساووا. */
 export const sortMeetings = (list) => list.map((m, i) => [m, i]).sort(([a, i], [b, j]) => (a.date && b.date ? (a.date < b.date ? -1 : a.date > b.date ? 1 : 0) : a.date ? -1 : b.date ? 1 : 0) || i - j).map(([m]) => m);
 
-/** لا يُكرَّر سطر بعنوانه نفسه عند الاستيراد (مقارنة بعد توحيد المسافات). */
-export function appendUnique(existing, incoming) {
-  const key = (t) => String(t.title || '').replace(/\s+/g, ' ').trim();
+/** توحيد المسافات لمقارنة النصوص عند الاستيراد. */
+export const normText = (t) => String(t ?? '').replace(/\s+/g, ' ').trim();
+
+/** لا يُكرَّر سطر بمفتاحه نفسه عند الاستيراد (الافتراضي: العنوان بعد توحيد المسافات؛ والاجتماع مفتاحه العنوان + التاريخ). */
+export function appendUnique(existing, incoming, key = (t) => normText(t.title)) {
   const seen = new Set(existing.map(key));
   return [...existing, ...incoming.filter((t) => !seen.has(key(t)) && seen.add(key(t)))];
 }
+
+export const meetingKey = (m) => `${normText(m.title)}|${m.date || ''}`;

@@ -3,8 +3,9 @@ import { h, clear, toast, confirmBox, icon, todayLocal } from '../dom.js';
 import { get, put, patch } from '../api.js';
 import { fmtStamp } from '../time12.js';
 import {
-  monthLabel, shiftMonthStr, monthBounds, tasksFromPrevious, nextFromTasks, appendUnique, STATUS_SUGGESTIONS, IMPORTANCE_SUGGESTIONS,
+  monthLabel, shiftMonthStr, monthBounds, tasksFromPrevious, nextFromTasks, appendUnique, meetingKey, STATUS_SUGGESTIONS, IMPORTANCE_SUGGESTIONS,
 } from '../monthly-report-lib.js';
+import { tasksFromLog, meetingsFromLog, nextFromLog } from '../work-log-lib.js';
 
 const clone = (v) => JSON.parse(JSON.stringify(v));
 const blankTask = () => ({ title: '', status: '', challenges: '' });
@@ -31,6 +32,13 @@ function rowsEditor({ items, columns, canEdit, onChange, cls }) {
   return { el: box, redraw };
 }
 
+/** سجل صاحب التقرير اليومي لهذا الشهر وللشهر التالي (مهامه القادمة المبدوءة فيه). null إن تعذّر، فيعمل المحرّر بلا استيراد. */
+async function loadLog(month) {
+  const [cur, nxt] = await Promise.allSettled([get(`/api/work-log?month=${month}`), get(`/api/work-log?month=${shiftMonthStr(month, 1)}`)]);
+  if (cur.status !== 'fulfilled') return null;
+  return { cur: cur.value.entries, nxt: nxt.status === 'fulfilled' ? nxt.value.entries : [] };
+}
+
 export default async function render({ user, params }) {
   const id = Number(params.id);
   const month = params.month;
@@ -41,6 +49,7 @@ export default async function render({ user, params }) {
     return h('div', { class: 'page' }, h('div', { class: 'notice notice-err' }, e.message), user.role !== 'employee' ? h('a', { href: '#/monthly-report', class: 'back' }, 'كل التقارير') : null);
   }
   const { employee, canEdit, canReview, prevNext } = d;
+  const log = canEdit ? await loadLog(month) : null;
   const { from, to } = monthBounds(month);
   const today = todayLocal();
   const state = { tasks: d.report.tasks.map((t) => ({ ...blankTask(), ...t })), meetings: d.report.meetings.map((t) => ({ ...blankMeeting(), ...t })), next: d.report.next.map((t) => ({ ...blankNext(), ...t })) };
@@ -108,6 +117,25 @@ export default async function render({ user, params }) {
     } }, icon('arrow-left'), 'ترحيل غير المنجز إلى الشهر القادم')
     : null;
 
+  // ---- الاستيراد من السجل اليومي «ماذا أنجزت اليوم» (الحذف من التكرار بالعنوان؛ الاجتماع بالعنوان والتاريخ)
+  const logTasks = log ? tasksFromLog(log.cur) : [];
+  const logMeets = log ? meetingsFromLog(log.cur) : [];
+  const logNext = log ? nextFromLog([...log.cur, ...log.nxt]) : [];
+  const importFrom = (label, found, items, rows, hasContent, key) => (canEdit && found.length
+    ? h('button', { type: 'button', class: 'btn btn-sm', onclick: () => {
+      const before = items.length;
+      items.splice(0, items.length, ...appendUnique(items.filter(hasContent), found, key));
+      rows.redraw();
+      changed();
+      const n = items.length - before;
+      toast(n > 0 ? `أُضيف ${n} من سجلك اليومي` : 'كل ما في سجلك مضاف مسبقاً', n > 0 ? 'ok' : 'err');
+    } }, icon('check'), `${label} (${found.length})`)
+    : null);
+  const importLog = importFrom('استيراد من سجلي اليومي', logTasks, state.tasks, tasks, (t) => t.title || t.status || t.challenges);
+  const importMeet = importFrom('استيراد من سجلي اليومي', logMeets, state.meetings, meetings, (t) => t.title || t.summary || t.place || t.date, meetingKey);
+  const importNext = importFrom('استيراد من سجلي اليومي', logNext, state.next, next, (t) => t.title || t.start || t.end);
+  const logLink = canEdit ? h('a', { href: `#/work-log/${month}`, class: 'btn' }, icon('check'), log ? `سجلي اليومي (${log.cur.length})` : 'سجلي اليومي') : null;
+
   // ---- الشريط العلوي وأزرار الحفظ
   const chip = h('span', { class: 'chip' });
   const bar = h('div', { class: 'mr-bar' });
@@ -152,7 +180,7 @@ export default async function render({ user, params }) {
         dirty ? h('span', { class: 'muted small' }, 'تعديلات لم تُحفظ') : null,
       ].filter(Boolean)); // append الأصلية تكتب null نصاً
     }
-    bar.append(printLink);
+    bar.append(...[logLink, printLink].filter(Boolean));
     clear(stamp).append(d.report.updatedAt ? `آخر حفظ: ${fmtStamp(d.report.updatedAt)}` : 'لم يُحفظ بعد');
   }
 
@@ -187,11 +215,11 @@ export default async function render({ user, params }) {
         h('div', { class: 'kv' }, h('dt', null, 'تاريخ تقديم التقرير'), h('dd', null, submitDate))),
       !employee.jobTitle || !employee.department ? h('p', { class: 'muted small' }, 'الوظيفة والإدارة تُؤخذان من بطاقة الموظف؛ اطلب من الموارد البشرية استكمالها إن كانت ناقصة.') : null),
     h('div', { class: 'mr-actions' }, bar, stamp),
-    section('1. المهام الرئيسية خلال فترة التقرير', canEdit ? 'اكتب كل مهمة في سطر، وحالتها، وما واجهك من تحديات (إن وُجدت).' : null,
-      h('div', null, tasks.el, ...datalists), [importPrev, addBtn(state.tasks, blankTask, tasks, 'إضافة مهمة')]),
-    section('2. الاجتماعات والنشاطات الخارجية خلال فترة التقرير', null, meetings.el, addBtn(state.meetings, blankMeeting, meetings, 'إضافة اجتماع / نشاط')),
+    section('1. المهام الرئيسية خلال فترة التقرير', canEdit ? (logTasks.length ? 'في سجلك اليومي إنجازات لهذا الشهر: استوردها بنقرة ثم راجع الحالة والتحديات.' : 'اكتب كل مهمة في سطر، وحالتها، وما واجهك من تحديات (إن وُجدت). وسجّل إنجازك يومياً في «ماذا أنجزت اليوم» لتستورده هنا.') : null,
+      h('div', null, tasks.el, ...datalists), [importLog, importPrev, addBtn(state.tasks, blankTask, tasks, 'إضافة مهمة')]),
+    section('2. الاجتماعات والنشاطات الخارجية خلال فترة التقرير', null, meetings.el, [importMeet, addBtn(state.meetings, blankMeeting, meetings, 'إضافة اجتماع / نشاط')]),
     section('المرفقات', 'أسماء المرفقات فقط (النظام لا يحفظ ملفات).', attachments),
-    section('3. المهام الرئيسية خلال فترة التقرير اللاحقة', null, next.el, [carry, addBtn(state.next, blankNext, next, 'إضافة مهمة')]),
+    section('3. المهام الرئيسية خلال فترة التقرير اللاحقة', null, next.el, [importNext, carry, addBtn(state.next, blankNext, next, 'إضافة مهمة')]),
     status === 'submitted' || canReview
       ? h('section', { class: 'panel mr-sec' },
         h('h2', null, 'ملاحظات المدير المباشر'),

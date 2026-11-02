@@ -735,6 +735,32 @@ table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; w
   .mr-del { margin-top: 0; justify-self: start; }
 }
 
+/* ------------------------------------------------------------ السجل اليومي «ماذا أنجزت اليوم» */
+.wl-form { display: flex; flex-direction: column; gap: 12px; }
+.wl-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 14px; align-items: start; }
+.wl-fields .wl-title, .wl-fields .wl-wide { grid-column: 1 / -1; }
+.wl-fields input { width: 100%; }
+.wl-submit { display: flex; justify-content: flex-end; }
+.wl-kinds { align-self: stretch; flex-wrap: wrap; overflow-x: visible; }
+.wl-kinds .seg-tab { flex: 1 1 auto; justify-content: center; }
+.wl-list { display: flex; flex-direction: column; gap: 12px; }
+.wl-day { display: flex; flex-direction: column; gap: 8px; }
+.wl-day-head { margin: 0; font-size: 1rem; color: var(--red-d); }
+.wl-items { display: flex; flex-direction: column; gap: 0; margin: 0; padding: 0; }
+.wl-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px 12px; align-items: start; padding: 10px 0; border-top: 1px solid var(--line-2); }
+.wl-item:first-child { border-top: 0; }
+.wl-item > .chip { white-space: nowrap; margin-top: 2px; }
+.wl-body { min-width: 0; }
+.wl-text { margin: 0; overflow-wrap: anywhere; white-space: pre-line; }
+.wl-meta { margin: 2px 0 0; overflow-wrap: anywhere; display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: center; }
+.wl-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.mr-import { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+@media (max-width: 640px) {
+  .wl-item { grid-template-columns: minmax(0, 1fr); }
+  .wl-item > .chip { justify-self: start; }
+  .wl-actions { justify-content: flex-start; }
+}
+
 /* التقرير الشهري: الطباعة — مطابقة لملف إكسل الأصلي («تقرير شهر 8»): A4 عمودي، مقياس طباعة 49%، هامش علوي 19mm وسفلي 5mm
    ويمين/يسار صفر، الجدول بمنتصف الصفحة. كل القياسات = قيمة إكسل × 0.49 (الخط 14pt ← 6.86pt، و12pt ← 5.88pt؛ الارتفاعات
    بالنقطة × 0.1729mm؛ أعمدة A–E بعرض 79/484/301/215/172 بكسل ← 10.24/62.74/39.02/27.87/22.30mm). الخط Sakkal Majalla.
