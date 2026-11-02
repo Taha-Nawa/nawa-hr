@@ -28,6 +28,8 @@ export const ACTIONS = {
   'device.manage': ['admin'],
   'user.manage': ['admin'],
   'audit.read': ['hr', 'director', 'admin'],
+  'volunteer.manage': ['hr', 'admin'], // المتطوعون وحضورهم الشهري
+  'volunteer.read': ['hr', 'director', 'admin'],
   'gates.read': ['hr', 'director', 'admin'], // حالة اتصال البوابات (لوحة اليوم)
   'links.manage': ['admin'],
   'balance.manage': ['hr', 'admin'], // توزيع أرصدة الإجازات على الموظفين

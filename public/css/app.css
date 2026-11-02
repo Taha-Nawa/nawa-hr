@@ -416,6 +416,65 @@ textarea { width: 100%; resize: vertical; }
 .pfoot { margin-top: auto; border-top: 0.5pt solid #000; padding-top: 1mm; display: flex; flex-direction: row-reverse; justify-content: space-between; gap: 4mm; font-size: 11pt; }
 .pfoot .pmeta { display: flex; gap: 5mm; font-size: 9pt; color: #444; }
 
+/* ------------------------------------------------------------ كشف الحضور الأسبوعي (أفقي A4) وكشف المتطوعين (عمودي)
+   الصفحة الأفقية تُعرَّف باسم weekly فيبقى @page الافتراضي عمودياً لبقية النماذج. */
+@page weekly { size: A4 landscape; margin: 0; }
+.check-inline { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; }
+.paper-frame.land .paper-sheet { width: 297mm; }
+.sheet-paper { page: weekly; width: 297mm; height: 209.5mm; padding: 10mm 17.8mm 8mm; gap: 0; }
+.sheet-paper + .sheet-paper { margin-top: 12px; }
+.sh-head { text-align: center; }
+.sh-head img { height: 17mm; width: auto; display: block; margin: 0 auto; }
+.sh-head h2 { font: inherit; font-size: 12pt; font-weight: 700; margin: 1mm 0 2.5mm; }
+.sh-meta { display: flex; justify-content: space-between; align-items: flex-end; gap: 6mm; margin-bottom: 2.5mm; text-align: start; }
+.sh-fill { display: inline-block; min-width: 22mm; border-bottom: var(--pline); text-align: center; font-style: normal; padding-inline: 1mm; }
+.sh-fill.wide { min-width: 60mm; }
+.sh-fill.sm { min-width: 18mm; }
+.sh-tbl { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.sh-tbl th, .sh-tbl td { border: 0.5pt solid #920000; padding: 0 0.4mm; text-align: center; vertical-align: middle; }
+.sh-tbl thead th { font-weight: 700; }
+.sh-tbl thead tr:first-child th { background: #920000; color: #fff; height: 6.4mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.sh-tbl .sh-name { width: 41mm; font-size: 11pt; }
+.sh-tbl .sh-day small { font-weight: 400; font-size: 8pt; }
+.sh-sub th { font-weight: 400; font-size: 9pt; height: 5mm; }
+.sh-tbl tbody td { height: 7.8mm; }
+.sh-tbl .sh-nm { text-align: start; padding-inline: 1.5mm; font-size: 10.5pt; white-space: nowrap; overflow: hidden; text-overflow: clip; }
+.sh-t { display: block; font-size: 8pt; line-height: 1.05; white-space: nowrap; direction: rtl; }
+.sh-tbl .sh-label { background: #f2dcdb; font-size: 9pt; white-space: nowrap; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.sheet-paper .pfoot { margin-top: auto; border-top: 0.5pt solid #920000; }
+.sheet-stage > .loading, .sheet-stage > .empty { padding: 20px 0; }
+
+/* شاشة المتطوعين (الإدخال الشهري) */
+.month-label { min-width: 9ch; text-align: center; }
+.is-inactive td { color: var(--muted); }
+.vol-edit th, .vol-edit td { padding: 5px 4px; vertical-align: middle; }
+.vol-edit th { white-space: normal; line-height: 1.3; }
+.vol-edit .t12 { gap: 1px; }
+.vol-edit .t12 select { font-size: 0.8rem; padding: 2px 1px; height: 32px; min-height: 32px; }
+.vol-edit .t12 .t12-h, .vol-edit .t12 .t12-m { min-width: 40px; }
+.vol-edit .t12 .t12-ap { min-width: 44px; }
+.vol-edit input[type="text"] { width: 100%; min-width: 90px; height: 32px; min-height: 32px; padding: 2px 8px; }
+.vol-edit tr.off td { background: #f3efe9; }
+.sticky-actions { position: sticky; bottom: 0; z-index: 2; background: var(--canvas); padding: 10px 0; border-top: 1px solid var(--line); display: flex; gap: 10px; flex-wrap: wrap; }
+a.btn.is-disabled { opacity: 0.5; }
+
+/* كشف المتطوع الشهري (عمودي): ثمانية أعمدة كالنموذج الأصلي */
+.vol-paper { padding: 12mm 17.8mm 12mm; gap: 0; }
+.vol-paper .phead img { width: 27mm; }
+.vol-paper .phead h2 { margin: 1mm 0 1mm; }
+.vol-month { text-align: center; font-weight: 700; margin: 0 0 3mm; }
+.vol-ident { display: flex; flex-direction: column; gap: 1.5mm; margin-bottom: 3mm; font-weight: 700; }
+.vol-ident .pf { width: 62%; }
+.vol-tbl { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.vol-tbl th, .vol-tbl td { border: 0.5pt solid #000; text-align: center; padding: 0 0.6mm; vertical-align: middle; }
+.vol-tbl th { font-weight: 700; font-size: 10pt; height: 9mm; line-height: 1.1; }
+.vol-tbl td { height: 5.4mm; font-size: 9.5pt; white-space: nowrap; }
+.vol-tbl .c-day { width: 15mm; } .vol-tbl .c-date { width: 21mm; } .vol-tbl .c-time { width: 20mm; } .vol-tbl .c-sign { width: 18mm; } .vol-tbl .c-why { width: auto; }
+.vol-tbl tr.off td { background: #f3efe9; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.vol-foot { display: flex; justify-content: space-between; gap: 8mm; margin-top: 6mm; font-weight: 700; }
+.vol-foot .col { width: 48%; display: flex; flex-direction: column; gap: 2mm; }
+.vol-total { margin-top: 3mm; font-size: 10pt; color: #333; }
+
 /* ------------------------------------------------------------ تابلت (آيباد أفقي/عمودي) */
 @media (max-width: 1100px) {
   .shell { grid-template-columns: 200px minmax(0, 1fr); }
@@ -539,6 +598,9 @@ textarea { width: 100%; resize: vertical; }
   .paper-frame { width: 210mm; margin: 0; overflow: visible; }
   .paper-sheet { zoom: 1; margin: 0; }
   .paper { border: 0; box-shadow: none; }
+  .paper-frame.land { width: 297mm; }
+  .sheet-paper, .sheet-paper + .sheet-paper { margin: 0; break-after: page; }
+  .sheet-paper:last-child { break-after: auto; }
 }
 
 /* ------------------------------------------------------------ الإجازات المتوقعة: التقويم الشهري وجدول الفريق */
