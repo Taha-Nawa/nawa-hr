@@ -47,8 +47,11 @@ const DRIVE_ID = /^[A-Za-z0-9_-]{10,}$/;
 
 /**
  * يفحص رابط صورة الموظف ويطبّعه قبل الحفظ. الصورة لا تُرفع ولا تُخزَّن عندنا: يُحفظ الرابط نصاً فقط ويحمّلها المتصفح من مصدرها.
- * يُرجع { url } (null إن كان فارغاً) أو { error }. يقبل https فقط، ويحوّل رابط مشاركة Google Drive
- * (file/d/ID أو open?id=ID أو uc?id=ID) إلى رابط صورة مصغّرة مباشر.
+ * يُرجع { url } (null إن كان فارغاً) أو { error }. يقبل https فقط، ويحوّل روابط المشاركة إلى روابط صورة مباشرة:
+ *   - Google Drive (file/d/ID أو open?id=ID أو uc?id=ID) ← drive.google.com/thumbnail
+ *   - OneDrive الشخصي (1drv.ms وonedrive.live.com) ← api.onedrive.com/v1.0/shares/u!…/root/content
+ *   - OneDrive for Business وSharePoint (*.sharepoint.com) ← الرابط نفسه مع download=1
+ * الرابط يجب أن يكون مشاركة «أي شخص لديه الرابط»؛ معاينة نموذج الموظف تُظهر فوراً هل يعمل.
  */
 export function photoUrl(input) {
   const raw = String(input ?? '').trim();
@@ -61,11 +64,19 @@ export function photoUrl(input) {
   }
   if (u.protocol !== 'https:') return { error: 'الرابط يجب أن يبدأ بـ https://' };
   if (u.username || u.password) return { error: 'الرابط غير صالح' };
-  if (u.hostname === 'drive.google.com' || u.hostname === 'docs.google.com') {
+  const host = u.hostname.toLowerCase();
+  let url = raw;
+  if (host === 'drive.google.com' || host === 'docs.google.com') {
     const id = (u.pathname.match(/\/d\/([^/]+)/) || [])[1] || u.searchParams.get('id');
     if (!id || !DRIVE_ID.test(id)) return { error: 'رابط Google Drive غير مفهوم؛ انسخ رابط المشاركة من الملف نفسه' };
-    return { url: `https://drive.google.com/thumbnail?id=${id}&sz=w400` };
+    url = `https://drive.google.com/thumbnail?id=${id}&sz=w400`;
+  } else if (host === '1drv.ms' || host === 'onedrive.live.com') {
+    const b64 = btoa(u.href).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    url = `https://api.onedrive.com/v1.0/shares/u!${b64}/root/content`;
+  } else if (host.endsWith('.sharepoint.com')) {
+    u.searchParams.set('download', '1');
+    url = u.href;
   }
-  if (raw.length > 500) return { error: 'الرابط أطول من 500 حرف' };
-  return { url: raw };
+  if (url.length > 500) return { error: 'الرابط أطول من 500 حرف' };
+  return { url };
 }

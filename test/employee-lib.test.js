@@ -71,3 +71,13 @@ test('رابط الصورة: https فقط، ورابط Google Drive يُحوَّ
   assert.equal(photoUrl('https://drive.google.com/uc?export=view&id=1AbCdEfGhIjKlMnOp').url, want);
   assert.ok(photoUrl('https://drive.google.com/drive/folders').error, 'رابط درايف بلا معرّف ملف');
 });
+
+test('رابط الصورة: OneDrive الشخصي يُحوَّل عبر واجهة المشاركات، وSharePoint يأخذ download=1', () => {
+  const short = 'https://1drv.ms/i/s!AbCdEfGh';
+  const b64 = Buffer.from(short).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  assert.equal(photoUrl(short).url, `https://api.onedrive.com/v1.0/shares/u!${b64}/root/content`);
+  assert.match(photoUrl('https://onedrive.live.com/?cid=ABC&id=ABC%21123&authkey=%21xyz').url, /^https:\/\/api\.onedrive\.com\/v1\.0\/shares\/u![A-Za-z0-9_-]+\/root\/content$/);
+  assert.equal(photoUrl('https://nawa-my.sharepoint.com/:i:/g/personal/taha_nawaculture_org/EabcDEF?e=xyz').url, 'https://nawa-my.sharepoint.com/:i:/g/personal/taha_nawaculture_org/EabcDEF?e=xyz&download=1');
+  assert.equal(photoUrl('https://nawa-my.sharepoint.com/x?download=0').url, 'https://nawa-my.sharepoint.com/x?download=1');
+  assert.ok(photoUrl(`https://onedrive.live.com/?id=${'a'.repeat(400)}`).error, 'بعد التحويل يتجاوز 500');
+});

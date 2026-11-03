@@ -44,7 +44,7 @@ export async function employeeForm({ emp, onSaved }) {
     preview.append('جارٍ فحص الصورة…');
   };
   f.photo.addEventListener('change', showPreview);
-  const photoField = field('رابط الصورة الشخصية', f.photo, 'رابط https مباشر للصورة (لا رفع للصور: يُحفظ الرابط فقط). رابط Google Drive المشارَك يُحوَّل تلقائياً.');
+  const photoField = field('رابط الصورة الشخصية', f.photo, 'رابط الصورة فقط (لا رفع ولا تخزين). يُقبل رابط مشاركة Google Drive أو OneDrive/SharePoint (أي شخص لديه الرابط) ويُحوَّل تلقائياً؛ وإلا رابط https مباشر للصورة.');
   photoField.classList.add('span-all');
   photoField.append(preview);
   if (v.photo) showPreview();
