@@ -1,14 +1,16 @@
-import { h, clear, dialog, field, select, toast, dash } from '../dom.js';
+import { h, clear, dialog, field, select, toast, dash, todayLocal } from '../dom.js';
 import { get, post, patch } from '../api.js';
-import { photoUrl } from '../employee-lib.js';
+import { photoUrl, projectSummary } from '../employee-lib.js';
 
 const CAN_EDIT = ['hr', 'admin'];
 
-/** نموذج إضافة/تعديل موظف. emp = null للإضافة. onSaved يُستدعى بعد النجاح. */
-export async function employeeForm({ emp, onSaved }) {
+/** نموذج إضافة/تعديل موظف. emp = null للإضافة. allocations = توزيعه على المشاريع إن عُرف (يجعل حقل المشروع للقراءة فقط). onSaved يُستدعى بعد النجاح. */
+export async function employeeForm({ emp, allocations = null, onSaved }) {
   const [{ centers }, { employees }] = await Promise.all([get('/api/centers'), get('/api/employees')]);
   const isNew = !emp;
   const v = emp || {};
+  // من له توزيع ساري اليوم: «المشروع / الممول» يُحسب منه ولا يُكتب يدوياً (النسب والمشاريع تُحرَّر من قسم التوزيع في صفحة الموظف)
+  const derived = projectSummary(allocations, todayLocal());
   const f = {
     code: h('input', { name: 'code', value: v.code || '', required: true, disabled: !isNew, dir: 'ltr', autocomplete: 'off', placeholder: 'NW-014' }),
     name: h('input', { name: 'name', value: v.name || '', required: true }),
@@ -18,7 +20,7 @@ export async function employeeForm({ emp, onSaved }) {
     jobTitle: h('input', { value: v.jobTitle || '' }),
     department: h('input', { value: v.department || '' }),
     contractType: h('input', { value: v.contractType || '', placeholder: 'عقد كامل / جزئي …' }),
-    project: h('input', { value: v.project || '' }),
+    project: h('input', { value: derived.count > 1 ? derived.full.split(':')[0] : derived.count ? derived.full : v.project || '', readOnly: derived.count > 0, title: derived.count > 1 ? derived.full : null }),
     nameEn: h('input', { value: v.nameEn || '', dir: 'ltr', lang: 'en' }),
     jobTitleEn: h('input', { value: v.jobTitleEn || '', dir: 'ltr', lang: 'en' }),
     departmentEn: h('input', { value: v.departmentEn || '', dir: 'ltr', lang: 'en' }),
@@ -60,7 +62,7 @@ export async function employeeForm({ emp, onSaved }) {
       photo: ph.url,
       name: f.name.value, email: f.email.value || null, centerId: idOrNull(f.center), managerId: idOrNull(f.manager),
       jobTitle: f.jobTitle.value || null, department: f.department.value || null, contractType: f.contractType.value || null,
-      project: f.project.value || null, startDate: f.startDate.value || null,
+      ...(derived.count ? {} : { project: f.project.value || null }), startDate: f.startDate.value || null,
       nameEn: f.nameEn.value || null, jobTitleEn: f.jobTitleEn.value || null, departmentEn: f.departmentEn.value || null, managerLabelEn: f.managerLabelEn.value || null,
     };
     try {
@@ -83,7 +85,7 @@ export async function employeeForm({ emp, onSaved }) {
   field('القسم', f.department),
   field('المدير المباشر', f.manager),
   field('نوع التعاقد', f.contractType),
-  field('المشروع / الممول', f.project),
+  field('المشروع / الممول', f.project, derived.count ? 'محسوب من «توزيع الموظف على المشاريع والممولين» أسفل صفحة الموظف؛ لإضافة مشروع أو تغيير النسب اضغط «تعديل التوزيع» هناك.' : null),
   field('تاريخ التعيين', f.startDate),
   field('الاسم بالإنجليزية', f.nameEn),
   field('المسمى بالإنجليزية', f.jobTitleEn),

@@ -157,7 +157,7 @@ a.btn { text-decoration: none; }
 
 input, select, textarea { font: inherit; color: var(--ink); background: #fff; border: 1px solid #d3c8bc; border-radius: var(--radius-sm); padding: 7px 10px; min-height: 40px; max-width: 100%; }
 input[type="checkbox"] { min-height: 0; width: 18px; height: 18px; accent-color: var(--red); }
-input:disabled, select:disabled { background: var(--canvas); color: var(--ink-2); }
+input:disabled, select:disabled, input[readonly] { background: var(--canvas); color: var(--ink-2); }
 input[type="search"] { min-width: min(300px, 100%); }
 /* حقل الوقت بنظام 12 ساعة (ساعة : دقيقة ص/م) */
 .t12 { display: inline-flex; align-items: center; gap: 4px; direction: ltr; }

@@ -40,6 +40,19 @@ export function activeAllocations(allocations, today) {
     .sort((a, b) => b.percent - a.percent);
 }
 
+/**
+ * ملخّص مشاريع الموظف من توزيعه الساري اليوم (المصدر الوحيد للحقيقة؛ نص «المشروع / الممول» في بيانات الموظف وصف قديم قد لا يطابقه).
+ * { count, names, short, full }: short للشارة («3 مشاريع» أو اسم المشروع الوحيد)، وfull للنموذج («ضمن 3 مشاريع: أ + ب + ج»).
+ * count = 0 إن لم يكن له توزيع ساريّ اليوم، فيبقى النص القديم هو المعروض.
+ */
+export function projectSummary(allocations, today) {
+  const names = [...new Set(activeAllocations(allocations, today).map((x) => x.funder))];
+  const n = names.length;
+  if (!n) return { count: 0, names, short: '', full: '' };
+  const word = n === 2 ? 'مشروعين' : `${n} مشاريع`;
+  return { count: n, names, short: n === 1 ? names[0] : n === 2 ? 'مشروعان' : word, full: n === 1 ? names[0] : `ضمن ${word}: ${names.join(' + ')}` };
+}
+
 /** «2023-03-01» ← «01/03/2023» */
 export const dmy = (date) => (date ? `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}` : '');
 

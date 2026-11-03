@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { initials, serviceSpan, activeAllocations, dmy, photoUrl } from '../public/js/employee-lib.js';
+import { initials, serviceSpan, activeAllocations, projectSummary, dmy, photoUrl } from '../public/js/employee-lib.js';
 
 test('حرفا الأفقية: الاسم الأول وآخر كلمة دون «ال» والألقاب', () => {
   assert.equal(initials('منى خالد العطار'), 'م.ع');
@@ -47,6 +47,24 @@ test('التوزيع الساري اليوم فقط، الأكبر أولاً، 
   assert.deepEqual(activeAllocations(a, '2026-11-03'), [{ funder: 'UNDP 2026', percent: 60 }, { funder: 'الميزانية العامة', percent: 40 }]);
   assert.deepEqual(activeAllocations([{ funder: 'x', share: 0.3333, from: '2026-01-01', to: '2026-12-31' }], '2026-02-02'), [{ funder: 'x', percent: 33.33 }]);
   assert.deepEqual(activeAllocations(null, '2026-11-03'), []);
+});
+
+test('ملخّص المشاريع من التوزيع الساري: ثلاثة مشاريع لا «مشروعان» القديمة', () => {
+  const a = [
+    { funder: 'مشروع أ', share: 0.5, from: '2026-01-01', to: '2030-12-31' },
+    { funder: 'مشروع ب', share: 0.4, from: '2026-01-01', to: '2030-12-31' },
+    { funder: 'مشروع ج', share: 0.1, from: '2026-01-01', to: '2030-12-31' },
+    { funder: 'منتهٍ', share: 1, from: '2024-01-01', to: '2024-12-31' },
+  ];
+  assert.deepEqual(projectSummary(a, '2026-11-03'), { count: 3, names: ['مشروع أ', 'مشروع ب', 'مشروع ج'], short: '3 مشاريع', full: 'ضمن 3 مشاريع: مشروع أ + مشروع ب + مشروع ج' });
+  const two = projectSummary(a.slice(0, 2), '2026-11-03');
+  assert.equal(two.short, 'مشروعان');
+  assert.equal(two.full, 'ضمن مشروعين: مشروع أ + مشروع ب');
+  assert.deepEqual(projectSummary([{ funder: 'وحيد', share: 1, from: '2026-01-01', to: '2026-12-31' }], '2026-05-05'), { count: 1, names: ['وحيد'], short: 'وحيد', full: 'وحيد' });
+  // مشروع مكرّر في فترتين متقاطعتين لا يُعدّ مرتين، وبلا توزيع ساري يبقى النص القديم (count = 0)
+  assert.equal(projectSummary([{ funder: 'س', share: 0.5, from: '2026-01-01', to: '2026-12-31' }, { funder: 'س', share: 0.5, from: '2026-01-01', to: '2026-12-31' }], '2026-06-06').count, 1);
+  assert.equal(projectSummary([], '2026-11-03').count, 0);
+  assert.equal(projectSummary(null, '2026-11-03').full, '');
 });
 
 test('تنسيق التاريخ يوم/شهر/سنة', () => {

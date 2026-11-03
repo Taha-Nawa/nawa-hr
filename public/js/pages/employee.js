@@ -5,7 +5,7 @@ import { statusChip, groupOf } from './today.js';
 import { employeeForm } from './employees.js';
 import { openManualDialog } from './manual.js';
 import { fmt12 } from '../time12.js';
-import { initials, serviceSpan, activeAllocations, dmy } from '../employee-lib.js';
+import { initials, serviceSpan, activeAllocations, projectSummary, dmy } from '../employee-lib.js';
 
 const monthRange = (ym) => {
   const [y, m] = ym.split('-').map(Number);
@@ -51,6 +51,10 @@ export default async function render({ user, params }) {
     h('dl', { class: 'ec-fields' }, fields));
   const allocField = kv('توزيع الدوام على المشاريع', '', 'ec-stack');
   allocField.hidden = true;
+  // «المشروع الأساسي» وشارته يُشتقّان من التوزيع الساري اليوم متى وُجد (يُحدَّثان بعد تحميله)، وإلا يبقى النص المكتوب في بيانات الموظف
+  const projKv = kv('المشروع الأساسي', emp.project);
+  const projChip = h('span', { class: 'ec-chip ec-chip-project ec-d', hidden: !emp.project }, emp.project || '');
+  let allocs = null;
   const active = emp.status === 'active';
   const span = serviceSpan(emp.startDate, emp.endDate, today);
 
@@ -65,17 +69,17 @@ export default async function render({ user, params }) {
         h('span', { class: `ec-chip ${active ? 'ec-chip-on' : 'ec-chip-off'}` }, active ? icon('check') : null, active ? 'على رأس العمل' : 'متوقف'),
         emp.contractType ? h('span', { class: 'ec-chip ec-chip-contract ec-m' }, emp.contractType) : null,
         emp.center ? h('span', { class: 'ec-chip ec-chip-center ec-d' }, icon('door'), emp.center) : null,
-        emp.project ? h('span', { class: 'ec-chip ec-chip-project ec-d' }, emp.project) : null)),
+        projChip)),
     h('div', { class: 'ec-actions' },
       h('a', { href: `#/reports?employee=${emp.id}`, class: 'btn' }, 'التايم شيت'),
-      canEdit ? h('button', { type: 'button', class: 'btn btn-primary', onclick: () => employeeForm({ emp, onSaved: () => location.reload() }) }, 'تعديل البيانات') : null));
+      canEdit ? h('button', { type: 'button', class: 'btn btn-primary', onclick: () => employeeForm({ emp, allocations: allocs, onSaved: () => location.reload() }) }, 'تعديل البيانات') : null));
 
   const cards = h('div', { class: 'ec-grid' },
     group('الوظيفة', 'briefcase', 'red',
       kv('المسمى الوظيفي', emp.jobTitle), kv('القسم / الإدارة', emp.department), kv('المدير المباشر', manager ? manager.name : emp.managerLabel),
       kv('نوع التعاقد', emp.contractType ? h('span', { class: 'ec-pill' }, emp.contractType) : '')),
     group('المركز والمشروع', 'door', 'olive',
-      kv('المركز', emp.center ? h('span', { class: 'ec-center' }, emp.center) : ''), kv('المشروع الأساسي', emp.project), allocField),
+      kv('المركز', emp.center ? h('span', { class: 'ec-center' }, emp.center) : ''), projKv, allocField),
     group('التواصل والتعيين', 'mail', 'blue',
       kv('البريد المؤسسي', emp.email ? h('span', { class: 'ec-mail', dir: 'ltr' }, emp.email) : '', 'ec-stack'),
       kv('تاريخ التعيين', dmy(emp.startDate)),
@@ -93,6 +97,14 @@ export default async function render({ user, params }) {
 
   // شريط توزيع الدوام الساري اليوم داخل بطاقة «المركز والمشروع» (يُملأ بعد تحميل التوزيعات)
   function drawAllocSummary(allocations) {
+    allocs = allocations;
+    const ps = projectSummary(allocations, today);
+    if (ps.count) {
+      projChip.hidden = false;
+      projChip.textContent = ps.short;
+      projChip.title = ps.full;
+      projKv.querySelector('dd').textContent = ps.short;
+    }
     const segs = activeAllocations(allocations, today);
     allocField.hidden = !segs.length;
     const dd = allocField.querySelector('dd');
