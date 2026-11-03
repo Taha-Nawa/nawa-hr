@@ -3,10 +3,13 @@
 var $=function(s){return document.querySelector(s)};
 var K={cfg:"nawa_cfg",badges:"nawa_badges",pend:"nawa_pending",log:"nawa_log",
        sok:"nawa_last_sync_ok",bok:"nawa_last_badges_ok",
-       pend2:"nawa_pending2",sok2:"nawa_last_sync2_ok"};
+       pend2:"nawa_pending2",sok2:"nawa_last_sync2_ok",
+       pbadges:"nawa_pbadges",unc:"nawa_unclosed"};
 var syncErr=0, lastSyncOk=0, lastBadgeOk=0, warnedAt=0;
 var cfg=null, badges=[], pending=[], pending2=[], log=[], move="حضور";
 var syncErr2=0, lastSyncOk2=0, warnedAt2=0;
+/* مزوّدو الخدمة (بطاقاتهم من النظام الجديد فقط) وقائمة «لم يسجّلوا الانصراف» */
+var pbadges=[], unc=null, uncOpen=false, uncLoading=false, uncTimer=0, lastProv=false;
 var stream=null, scanning=false, lastCode="", lastAt=0, canvas=null, ctx=null;
 /* تسمية العرض فقط: تظهر «مغادرة» للمستخدم بينما تبقى القيمة المسجّلة في الجدول «خروج»
    حتى لا تتأثر السجلات القديمة ولا معادلات التايم شيت. */
@@ -55,6 +58,7 @@ function openSetup(first){
     $("#cfgUrl2").value=cfg.url2||""; $("#cfgToken2").value=cfg.token2||""}
   if(!$("#cfgUrl2").value)$("#cfgUrl2").value=sameOriginGate();
   $("#cacheInfo").textContent="البطاقات المخزّنة على الجهاز: "+badges.length+
+    (pbadges.length?"  |  مزوّدو خدمة: "+pbadges.length:"")+
     (pending.length?"  |  حركات بانتظار الإرسال: "+pending.length:"")+
     (on2()&&pending2.length?"  |  بانتظار النظام الجديد: "+pending2.length:"");
   stopCam();
@@ -90,7 +94,7 @@ $("#btnSave").onclick=function(){
   }
   var c={center:$("#cfgCenter").value,device:$("#cfgDevice").value.trim()||"DEV-01",
          url:u,token:$("#cfgToken").value.trim(),url2:u2||"",token2:u2?t2:""};
-  cfg=c; save(K.cfg,cfg); openMain(); refreshBadges(); sync(); sync2();
+  cfg=c; save(K.cfg,cfg); unc=null; save(K.unc,null); openMain(); refreshBadges(); sync(); sync2(); loadUnc();
 };
 $("#btnBack").onclick=function(){openMain()};
 /* نسخة احتياطية: الحركات محفوظة في متصفح هذا الجهاز فقط،
@@ -250,11 +254,13 @@ function beep(ok){
 }
 /* ---------- معالجة المسح ---------- */
 function onCode(code){
+  if(uncOpen)return; /* لوحة «لم يسجّلوا الانصراف» مفتوحة: لا تُسجَّل مسحات خلفها دون أن يراها الحارس */
   var now=Date.now();
   if(code===lastCode&&now-lastAt<2500)return;
   lastCode=code; lastAt=now;
   var b=null;
   for(var i=0;i<badges.length;i++){if(badges[i].card===code){b=badges[i];break}}
+  if(!b){for(var pi=0;pi<pbadges.length;pi++){if(pbadges[pi].card===code){b=pbadges[pi];break}}}
   if(!b){ reject(code,"بطاقة غير مسجّلة"); return }
   if(String(b.status).trim()!=="سارية"){ reject(code,"بطاقة ملغاة — "+(b.name||""),b); return }
   var d=new Date(), today=dstr(d);
@@ -312,7 +318,7 @@ function showRes(ok,title,code,b,rec){
 function updSent(){
   var s=$("#resSent"); if(!s||!lastRec)return;
   var id=lastRec.id, g=!pending.some(function(p){return p.id===id});
-  var h='<span class="tick '+(g?'ok':'')+'">'+ico(g?"i-check":"i-up")+(g?"وصلت Google":"بانتظار Google")+'</span>';
+  var h=lastProv?"":'<span class="tick '+(g?'ok':'')+'">'+ico(g?"i-check":"i-up")+(g?"وصلت Google":"بانتظار Google")+'</span>';
   if(on2()){var n=!pending2.some(function(p){return p.id===id});
     h+='<span class="tick '+(n?'ok':(syncErr2?'err':''))+'">'+ico(n?"i-check":"i-up")+(n?"وصلت النظام الجديد":"بانتظار النظام الجديد")+'</span>'}
   s.innerHTML=h;
@@ -332,7 +338,9 @@ function accept(b,d){
     type:move, date:dstr(d), time:tstr(d), iso:iso,
     device:cfg.device, offline:!navigator.onLine, note:""
   };
-  pending.push(rec); save(K.pend,pending);
+  /* حركة مزوّد الخدمة تذهب إلى النظام الجديد وحده: Google لا يعرف المزوّدين ولا يجوز أن تلوّث جدوله */
+  lastProv=(b.kind==="provider");
+  if(!lastProv){pending.push(rec); save(K.pend,pending)}
   if(on2()){pending2.push(rec); save(K.pend2,pending2)}
   log.unshift(rec); log=log.slice(0,300); save(K.log,log);
   lastRec=rec;
@@ -389,7 +397,7 @@ function render(){
   $("#conn").className = "conn"+(online?"":" off");
   $("#connLbl").textContent = online?"متصل":"غير متصل";
   clockTick(); updSent();
-  updateWarn();
+  updateWarn(); updUnc();
 }
 /* شريط تحذير ظاهر بدل الفشل الصامت */
 function mins(t){return Math.round((Date.now()-t)/60000)}
@@ -476,7 +484,7 @@ function sync2(){
       var ids={}; batch.forEach(function(m){ids[m.id]=1});
       pending2=pending2.filter(function(m){return !ids[m.id]});
       save(K.pend2,pending2); render();
-      if(pending2.length)sync2();
+      if(pending2.length)sync2(); else loadUnc();
     })
     .catch(function(){
       clearTimeout(to); syncing2=false; syncErr2++; render();
@@ -492,7 +500,22 @@ function heartbeat(){
     fetch(u+"?action=ping&token="+encodeURIComponent(t)).catch(function(){});
   }catch(e){}
 }
+/* بطاقات مزوّدي الخدمة: من النظام الجديد وحده، وتُحفظ على الجهاز لتعمل دون اتصال. فشلها لا يمسّ قائمة Google. */
+function refreshProviderBadges(){
+  if(!on2()){ if(pbadges.length){pbadges=[]; save(K.pbadges,pbadges)} return }
+  if(!navigator.onLine)return;
+  fetch(cfg.url2+"?action=badges&token="+encodeURIComponent(cfg.token2))
+  .then(function(r){return r.json()})
+  .then(function(j){
+    if(j&&j.ok&&j.badges){
+      pbadges=j.badges.filter(function(x){return x&&x.kind==="provider"});
+      save(K.pbadges,pbadges); render();
+    }
+  })
+  .catch(function(){});
+}
 function refreshBadges(){
+  refreshProviderBadges();
   if(!navigator.onLine||!cfg||!cfg.url)return;
   fetch(cfg.url+"?action=badges&token="+encodeURIComponent(cfg.token))
   .then(function(r){return r.json()})
@@ -504,8 +527,141 @@ function refreshBadges(){
   })
   .catch(function(){render()});
 }
+/* ---------- لم يسجّلوا الانصراف ---------- */
+/* القائمة من النظام الجديد (حضور بلا انصراف لكل يوم) وتُخزَّن على الجهاز لتُعرض دون اتصال.
+   فوقها تراكب حركات هذا الجهاز الحيّة: من سُجّل انصرافه هنا يختفي فوراً، ومن سُجّل حضوره هنا ولم يصل يظهر فوراً. */
+function lastAgeMin(){return unc&&unc.t?Math.max(0,Math.round((Date.now()-unc.t)/60000)):null}
+function localDays(){
+  var m={}, i, L, k, e;
+  for(i=log.length-1;i>=0;i--){ /* السجل الأحدث أولاً؛ نمرّ من الأقدم */
+    L=log[i]; k=L.date+"|"+L.code;
+    e=m[k]||(m[k]={date:L.date,code:L.code,name:L.name,center:L.center,checkIn:"",inIso:"",inId:"",lastType:"",lastTime:"",out:false});
+    if(L.type==="حضور"&&!e.checkIn){e.checkIn=L.time; e.inIso=L.iso; e.inId=L.id}
+    if(L.type==="انصراف")e.out=true;
+    e.lastType=L.type; e.lastTime=L.time;
+  }
+  return m;
+}
+function isProvCode(code){for(var i=0;i<pbadges.length;i++)if(pbadges[i].code===code)return true;return false}
+function uncView(){
+  var today=dstr(new Date()), data=unc&&unc.data, ld=localDays(), byDate={}, seen={}, i, d, k, it, key, lx, c;
+  var p2={}; for(i=0;i<pending2.length;i++)p2[pending2[i].id]=1;
+  if(data&&data.days){
+    for(d=0;d<data.days.length;d++){
+      var D=data.days[d];
+      for(i=0;i<D.items.length;i++){
+        it=D.items[i]; key=D.date+"|"+it.code; lx=ld[key];
+        if(lx&&lx.out)continue; /* سُجّل انصرافه على هذا الجهاز ولم يصل الخادم بعد */
+        seen[key]=1;
+        if(lx&&lx.lastTime&&lx.lastTime>(it.lastTime||"")){
+          it={kind:it.kind,code:it.code,name:it.name,center:it.center,checkIn:it.checkIn,lastType:lx.lastType,lastTime:lx.lastTime}}
+        (byDate[D.date]=byDate[D.date]||[]).push(it);
+      }
+    }
+  }
+  for(k in ld){
+    if(!ld.hasOwnProperty(k))continue;
+    c=ld[k];
+    if(c.out||!c.checkIn||seen[k])continue;
+    /* حضور سُجّل هنا: يظهر إن لم يصل الخادم بعد أو لم تُحمَّل القائمة أصلاً (اليوم فقط). غير ذلك يعني أن الخادم يعرف انصرافه أو أنه يوم عطلة */
+    var show=!data?c.date===today:(!!p2[c.inId]||!unc.t||unc.t<Date.parse(c.inIso));
+    if(!show)continue;
+    (byDate[c.date]=byDate[c.date]||[]).push({kind:isProvCode(c.code)?"provider":"employee",code:c.code,name:c.name,center:c.center,checkIn:c.checkIn,lastType:c.lastType,lastTime:c.lastTime});
+  }
+  var dates=[], total=0, past=0, days=[];
+  for(k in byDate)if(byDate.hasOwnProperty(k))dates.push(k);
+  dates.sort().reverse();
+  for(i=0;i<dates.length;i++){
+    var items=byDate[dates[i]];
+    try{items.sort(function(a,b){return String(a.name).localeCompare(String(b.name),"ar")})}catch(e){}
+    days.push({date:dates[i],isToday:dates[i]===today,items:items});
+    total+=items.length; if(dates[i]!==today)past+=items.length;
+  }
+  return {days:days,total:total,past:past,today:today};
+}
+function ymdAdd(date,n){var p=date.split("-"), d=new Date(+p[0],+p[1]-1,+p[2]+n); return dstr(d)}
+function uncDayLabel(date,today){
+  if(date===today)return "اليوم";
+  if(date===ymdAdd(today,-1))return "أمس";
+  var p=date.split("-"), d=new Date(+p[0],+p[1]-1,+p[2]);
+  return DAYS[d.getDay()]+" "+d.getDate()+" "+MONTHS[d.getMonth()];
+}
+function uncLine(it){
+  var s=it.checkIn?"حضور "+t12(it.checkIn):"";
+  if(it.lastType&&it.lastType!=="حضور"&&it.lastTime){
+    s+=(s?" — ":"")+"آخر حركة: "+lbl(it.lastType)+" "+t12(it.lastTime)+(it.lastType==="خروج"?" (لم يعد)":"");
+  }
+  return s;
+}
+function updUnc(){
+  var v=uncView(), tab=$("#uncTab"), n=$("#uncN");
+  n.textContent=v.total; n.classList.toggle("hide",!v.total); n.classList.toggle("soft",!v.past);
+  tab.classList.toggle("warn",v.past>0);
+  tab.setAttribute("aria-label","لم يسجّلوا الانصراف: "+v.total);
+  if(uncOpen)renderUnc(v);
+}
+function renderUnc(v){
+  v=v||uncView();
+  var b=$("#uncBody"), age=$("#uncAge"), i, j;
+  b.innerHTML="";
+  var m=lastAgeMin();
+  if(!on2()) age.textContent="للأيام السابقة اربط الجهاز بالنظام الجديد من الإعدادات؛ المعروض الآن: حركات هذا الجهاز اليوم.";
+  else if(m===null) age.textContent=navigator.onLine?"جارٍ تحميل القائمة…":"لا اتصال بالإنترنت ولم تُحمَّل القائمة بعد.";
+  else age.textContent="آخر تحديث "+(m<1?"الآن":"قبل "+m+" دقيقة")+(navigator.onLine?"":" — لا اتصال، هذه آخر قائمة محفوظة");
+  if(!v.days.length){
+    var em=el("div","unc-em"); em.innerHTML=ico("i-check");
+    em.appendChild(document.createTextNode("لا أحد: كل من سجّل حضوره سجّل انصرافه."));
+    b.appendChild(em); return;
+  }
+  for(i=0;i<v.days.length;i++){
+    var D=v.days[i], sec=el("section","unc-day"+(D.isToday?" today":"")), h=el("h4","",uncDayLabel(D.date,v.today));
+    h.appendChild(el("b","",String(D.items.length))); sec.appendChild(h);
+    if(D.isToday)sec.appendChild(el("p","unc-hint","ربما ما زالوا في الدوام؛ تأكد قبل نهاية اليوم."));
+    var ul=el("ul","unc-list");
+    for(j=0;j<D.items.length;j++){
+      var it=D.items[j], li=el("li","unc-row"+(it.lastType==="خروج"?" left":"")), top=el("div","unc-who");
+      top.appendChild(el("strong","",it.name));
+      if(it.kind==="provider")top.appendChild(el("span","unc-tag","مزوّد خدمة"));
+      if(it.center&&it.center!==(cfg&&cfg.center))top.appendChild(el("span","unc-ctr",it.center));
+      li.appendChild(top); li.appendChild(el("div","unc-times",uncLine(it))); ul.appendChild(li);
+    }
+    sec.appendChild(ul); b.appendChild(sec);
+  }
+}
+function openUnc(){
+  uncOpen=true; $("#uncPanel").classList.add("open"); $("#uncPanel").setAttribute("aria-hidden","false");
+  $("#uncBack").classList.remove("hide"); $("#uncTab").setAttribute("aria-expanded","true");
+  renderUnc(); loadUnc(true); $("#uncClose").focus();
+  clearTimeout(uncTimer); uncTimer=setTimeout(closeUnc,120000); /* يُغلق وحده بعد دقيقتين كي لا تبقى شاشة المسح محجوبة */
+}
+function closeUnc(){
+  uncOpen=false; clearTimeout(uncTimer); $("#uncPanel").classList.remove("open"); $("#uncPanel").setAttribute("aria-hidden","true");
+  $("#uncBack").classList.add("hide"); $("#uncTab").setAttribute("aria-expanded","false");
+}
+function loadUnc(force){
+  try{
+    if(!on2()||!navigator.onLine||uncLoading)return;
+    if(!force&&unc&&unc.t&&Date.now()-unc.t<60000)return;
+    uncLoading=true;
+    var ac=(typeof AbortController!=="undefined")?new AbortController():null, to=setTimeout(function(){if(ac)ac.abort()},15000);
+    fetch(cfg.url2+"?action=unclosed&days=7&token="+encodeURIComponent(cfg.token2),{signal:ac?ac.signal:undefined})
+    .then(function(r){return r.json()})
+    .then(function(j){
+      clearTimeout(to); uncLoading=false;
+      if(j&&j.ok&&j.days){unc={t:Date.now(),data:{days:j.days}}; save(K.unc,unc)}
+      updUnc();
+    })
+    .catch(function(){clearTimeout(to); uncLoading=false; updUnc()});
+  }catch(e){uncLoading=false}
+}
+$("#uncTab").onclick=openUnc;
+$("#uncClose").onclick=closeUnc;
+$("#uncBack").onclick=closeUnc;
+$("#uncRefresh").onclick=function(){loadUnc(true);toast("جارٍ التحديث…",1200)};
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&uncOpen)closeUnc()});
 /* ---------- الإقلاع ---------- */
 cfg=load(K.cfg,null); badges=load(K.badges,[]);
+pbadges=load(K.pbadges,[]); unc=load(K.unc,null);
 pending=load(K.pend,[]); log=load(K.log,[]); pending2=load(K.pend2,[]);
 lastSyncOk2=load(K.sok2,0)||0;
 lastSyncOk=load(K.sok,0)||0; lastBadgeOk=load(K.bok,0)||0;
@@ -524,9 +680,11 @@ setInterval(function(){render();sync();sync2()},20000);
 setInterval(updateWarn,60000);
 setInterval(clockTick,5000);
 setInterval(refreshBadges,900000);
+setInterval(function(){loadUnc()},300000);
+setTimeout(function(){loadUnc()},4000);
 setInterval(heartbeat,300000);
 setTimeout(heartbeat,3000);
-window.addEventListener("online",function(){render();sync();sync2();refreshBadges();heartbeat()});
+window.addEventListener("online",function(){render();sync();sync2();refreshBadges();heartbeat();loadUnc()});
 window.addEventListener("offline",render);
 document.addEventListener("visibilitychange",function(){
   if(document.hidden)stopCam();

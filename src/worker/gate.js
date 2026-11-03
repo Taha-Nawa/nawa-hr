@@ -2,6 +2,7 @@
  * نقطة الربط مع تطبيق البوابة — متوافقة مع صيغة خدمة Apps Script الحالية كي يكفي تبديل الرابط في إعدادات الجهاز:
  *   GET  ?action=ping&token=...      → { ok, msg }
  *   GET  ?action=badges&token=...    → { ok, badges:[{card, code, name, center, status, photo}], count }
+ *   GET  ?action=unclosed&token=...  → { ok, today, days:[{date, isToday, items:[{kind, code, name, center, checkIn, lastType, lastTime}]}], total, past } (حضور بلا انصراف)
  *   POST (text/plain JSON) { token, moves:[{id,card,code,name,center,type,date,time,iso,device,offline,note}] }
  *                                    → { ok, saved, skipped, rejected?, unmatched?, warning? }
  *
@@ -10,6 +11,7 @@
  */
 import { json, sha256hex, isDate, isTime, clip, localDate, nowOf } from './util.js';
 import { gateProviderBadges, ingestProviderMoves } from './providers.js';
+import { gateUnclosed } from './unclosed.js';
 import { loadWorkSettings } from './settings.js';
 import { recomputePairs } from './recompute.js';
 import { releaseOnCheckIn } from './release.js';
@@ -86,6 +88,7 @@ async function route(request, env, execCtx) {
       return json({ ok: true, msg: 'الخدمة تعمل', device: device.id });
     }
     if (action === 'badges') return badges(env.DB, localDate(env.TIMEZONE || 'Asia/Hebron', nowOf(env)));
+    if (action === 'unclosed') return json(await gateUnclosed(env, device, url.searchParams.get('days')));
     return json({ ok: false, error: 'إجراء غير معروف' }, 400);
   }
   // إشعار الإجازة الملغاة بعد الرد (ولا يعطّل الحفظ): بلا waitUntil (الاختبارات) يُنتظر الوعد

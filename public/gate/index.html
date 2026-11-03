@@ -119,6 +119,17 @@
       <h4>حركات اليوم <b id="cnt">0</b></h4>
       <div id="feed"><div class="em"><svg class="ic" aria-hidden="true"><use href="#i-qr"/></svg>ستظهر هنا حركات اليوم فور تسجيلها</div></div>
     </section>
+    <button class="unc-tab" id="uncTab" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="لم يسجّلوا الانصراف"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg><span class="unc-tl">لم ينصرفوا</span><b class="unc-n hide" id="uncN">0</b></button>
+    <div class="unc-back hide" id="uncBack"></div>
+    <aside class="unc-panel" id="uncPanel" role="dialog" aria-modal="true" aria-labelledby="uncTitle" aria-hidden="true">
+      <header class="unc-head">
+        <div><h3 id="uncTitle">لم يسجّلوا الانصراف</h3><p class="unc-sub">سجّلوا حضورهم ولم يسجّلوا انصرافهم، يوماً بيوم</p></div>
+        <button class="cog" id="uncClose" type="button" aria-label="إغلاق"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="unc-bar"><span id="uncAge"></span><button class="unc-ref" id="uncRefresh" type="button">تحديث</button></div>
+      <div class="unc-body" id="uncBody"></div>
+      <p class="unc-foot">يختفي الاسم تلقائياً حين يُسجَّل الانصراف أو يُصحَّح اليوم.</p>
+    </aside>
     <footer class="foot">
       <span class="sync" id="syncG"><i class="sdot"></i><b class="dst">Google</b><span class="pend zero" id="pend">لا شيء بانتظار الإرسال</span></span>
       <span class="sync hide" id="syncN"><i class="sdot"></i><b class="dst">النظام الجديد</b><span class="pend zero" id="pend2">لا شيء بانتظار الإرسال</span></span>
