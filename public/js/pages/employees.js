@@ -1,5 +1,6 @@
 import { h, clear, dialog, field, select, toast, dash } from '../dom.js';
 import { get, post, patch } from '../api.js';
+import { photoUrl } from '../employee-lib.js';
 
 const CAN_EDIT = ['hr', 'admin'];
 
@@ -26,14 +27,37 @@ export async function employeeForm({ emp, onSaved }) {
     endDate: h('input', { type: 'date', value: v.endDate || '' }),
     status: select([['active', 'على رأس العمل'], ['inactive', 'متوقف']], v.status || 'active'),
     card: h('input', { value: '', dir: 'ltr', placeholder: 'NW-014-A', autocomplete: 'off' }),
+    photo: h('input', { name: 'photo', value: v.photo || '', dir: 'ltr', placeholder: 'https://…/photo.jpg', autocomplete: 'off', inputmode: 'url' }),
   };
+  // معاينة الصورة من الرابط مباشرة: لا رفع ولا تخزين عندنا، والمتصفح هو الذي يحمّلها من مصدرها
+  const preview = h('span', { class: 'ph-prev', hidden: true });
+  const showPreview = () => {
+    const r = photoUrl(f.photo.value);
+    preview.hidden = !f.photo.value.trim();
+    preview.className = 'ph-prev';
+    preview.replaceChildren();
+    if (!f.photo.value.trim()) return;
+    if (r.error) { preview.classList.add('bad'); preview.append(r.error); return; }
+    const img = h('img', { src: r.url, alt: '', referrerpolicy: 'no-referrer' });
+    img.addEventListener('load', () => { preview.classList.add('ok'); preview.replaceChildren(img, 'الصورة صالحة'); });
+    img.addEventListener('error', () => { preview.classList.add('bad'); preview.replaceChildren('تعذّر تحميل صورة من هذا الرابط: تأكد أنه رابط مباشر للصورة ومشاركته للجميع'); });
+    preview.append('جارٍ فحص الصورة…');
+  };
+  f.photo.addEventListener('change', showPreview);
+  const photoField = field('رابط الصورة الشخصية', f.photo, 'رابط https مباشر للصورة (لا رفع للصور: يُحفظ الرابط فقط). رابط Google Drive المشارَك يُحوَّل تلقائياً.');
+  photoField.classList.add('span-all');
+  photoField.append(preview);
+  if (v.photo) showPreview();
   const err = h('div', { class: 'notice notice-err', hidden: true, role: 'alert' });
 
   const form = h('form', { class: 'form-grid', onsubmit: async (e) => {
     e.preventDefault();
     err.hidden = true;
     const idOrNull = (el) => (el.value === '' ? null : Number(el.value));
+    const ph = photoUrl(f.photo.value);
+    if (ph.error) { err.textContent = `رابط الصورة: ${ph.error}`; err.hidden = false; return; }
     const common = {
+      photo: ph.url,
       name: f.name.value, email: f.email.value || null, centerId: idOrNull(f.center), managerId: idOrNull(f.manager),
       jobTitle: f.jobTitle.value || null, department: f.department.value || null, contractType: f.contractType.value || null,
       project: f.project.value || null, startDate: f.startDate.value || null,
@@ -53,6 +77,7 @@ export async function employeeForm({ emp, onSaved }) {
   field('كود الموظف', f.code, isNew ? 'لا يتكرر ولا يُعاد استخدامه' : null),
   field('الاسم', f.name),
   field('البريد المؤسسي', f.email),
+  photoField,
   field('المركز', f.center),
   field('المسمى الوظيفي', f.jobTitle),
   field('القسم', f.department),

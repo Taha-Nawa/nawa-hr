@@ -18,6 +18,17 @@ const shiftMonth = (ym, n) => {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 };
 
+/** الصورة الشخصية من رابطها إن وُجد (تُحمَّل من مصدرها ولا نخزّنها)؛ ما دامت لم تُحمَّل أو تعذّر تحميلها تبقى حروف الاسم. */
+function avatarEl(emp) {
+  const box = h('div', { class: 'ec-avatar', 'aria-hidden': 'true' }, initials(emp.name));
+  if (/^https:\/\//.test(emp.photo || '')) {
+    const img = h('img', { alt: '', referrerpolicy: 'no-referrer', decoding: 'async' });
+    img.addEventListener('load', () => { box.classList.add('has-photo'); box.replaceChildren(img); });
+    img.src = emp.photo;
+  }
+  return box;
+}
+
 export default async function render({ user, params }) {
   const id = Number(params.id);
   const { employees } = await get('/api/employees');
@@ -44,7 +55,7 @@ export default async function render({ user, params }) {
   const span = serviceSpan(emp.startDate, emp.endDate, today);
 
   const hero = h('section', { class: 'ec-hero' },
-    h('div', { class: 'ec-avatar', 'aria-hidden': 'true' }, initials(emp.name)),
+    avatarEl(emp),
     h('div', { class: 'ec-id' },
       h('a', { href: '#/employees', class: 'back' }, 'كل الموظفين'),
       h('h1', null, emp.name),

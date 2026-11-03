@@ -975,3 +975,13 @@ table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; w
   .ec-en dl { grid-template-columns: 1fr 1fr; gap: 10px 14px; }
   .ec-en .ec-en-name { grid-column: 1 / -1; }
 }
+
+/* صورة الموظف من رابط خارجي: داخل الدائرة وتغطيها، وتحتها حروف الاسم عند غيابها */
+.ec-avatar { overflow: hidden; }
+.ec-avatar.has-photo { background: #fff; }
+.ec-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ph-prev { display: flex; align-items: center; gap: 10px; margin-top: 4px; font-size: 0.85rem; color: var(--ink-2); }
+.ph-prev[hidden] { display: none; }
+.ph-prev img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--line); }
+.ph-prev.ok { color: var(--olive); }
+.ph-prev.bad { color: var(--red-d); }

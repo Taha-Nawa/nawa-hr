@@ -41,6 +41,14 @@ test('تعديل الموظف: حقول مسموحة فقط، وإيقافه ي�
   assert.equal((await patch(3, { id: 77 })).status, 400);
   assert.equal((await patch(3, { status: 'deleted' })).status, 400);
   assert.equal((await patch(3, { photo: 'javascript:alert(1)' })).status, 400, 'روابط الصور https فقط');
+  assert.equal((await patch(3, { photo: 'http://example.org/a.jpg' })).status, 400);
+  assert.equal((await patch(3, { photo: 'https://example.org/a.jpg' })).status, 200, 'رابط الصورة يُحفظ نصاً');
+  assert.equal((await call(env, 'GET', '/api/employees', { cookie: hr.cookie })).body.employees.find((e) => e.id === 3).photo, 'https://example.org/a.jpg');
+  assert.equal((await patch(3, { photo: '' })).status, 200, 'الفراغ يمسح الصورة');
+  const withPhoto = await call(env, 'POST', '/api/employees', { cookie: hr.cookie, body: { code: 'NW-012', name: 'سلمى', photo: 'https://example.org/s.jpg' } });
+  assert.equal(withPhoto.status, 201);
+  assert.equal(withPhoto.body.employee.photo, 'https://example.org/s.jpg');
+  assert.equal((await call(env, 'POST', '/api/employees', { cookie: hr.cookie, body: { code: 'NW-013', name: 'منى', photo: 'http://x.org/a.jpg' } })).status, 400, 'الإنشاء يرفض غير https');
   assert.equal((await patch(3, { startDate: '2026-02-31' })).status, 400);
   assert.equal((await patch(3, {})).status, 400);
   assert.equal((await patch(999, { name: 'لا أحد' })).status, 404);

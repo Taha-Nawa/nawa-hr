@@ -42,3 +42,30 @@ export function activeAllocations(allocations, today) {
 
 /** «2023-03-01» ← «01/03/2023» */
 export const dmy = (date) => (date ? `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}` : '');
+
+const DRIVE_ID = /^[A-Za-z0-9_-]{10,}$/;
+
+/**
+ * يفحص رابط صورة الموظف ويطبّعه قبل الحفظ. الصورة لا تُرفع ولا تُخزَّن عندنا: يُحفظ الرابط نصاً فقط ويحمّلها المتصفح من مصدرها.
+ * يُرجع { url } (null إن كان فارغاً) أو { error }. يقبل https فقط، ويحوّل رابط مشاركة Google Drive
+ * (file/d/ID أو open?id=ID أو uc?id=ID) إلى رابط صورة مصغّرة مباشر.
+ */
+export function photoUrl(input) {
+  const raw = String(input ?? '').trim();
+  if (!raw) return { url: null };
+  let u;
+  try {
+    u = new URL(raw);
+  } catch {
+    return { error: 'الرابط غير صالح' };
+  }
+  if (u.protocol !== 'https:') return { error: 'الرابط يجب أن يبدأ بـ https://' };
+  if (u.username || u.password) return { error: 'الرابط غير صالح' };
+  if (u.hostname === 'drive.google.com' || u.hostname === 'docs.google.com') {
+    const id = (u.pathname.match(/\/d\/([^/]+)/) || [])[1] || u.searchParams.get('id');
+    if (!id || !DRIVE_ID.test(id)) return { error: 'رابط Google Drive غير مفهوم؛ انسخ رابط المشاركة من الملف نفسه' };
+    return { url: `https://drive.google.com/thumbnail?id=${id}&sz=w400` };
+  }
+  if (raw.length > 500) return { error: 'الرابط أطول من 500 حرف' };
+  return { url: raw };
+}

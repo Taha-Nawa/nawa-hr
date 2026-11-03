@@ -196,14 +196,16 @@ add('POST', '/api/employees', async ({ request, db, user }) => {
   if (email && !EMAIL_RE.test(email)) return bad('البريد غير صالح');
   const centerId = body.centerId ?? null;
   const managerId = body.managerId ?? null;
+  const photo = body.photo === undefined ? null : PATCHABLE.photo(body.photo);
+  if (photo === undefined) return bad('رابط الصورة يجب أن يبدأ بـ https://');
   const stmts = [
     db.prepare(
       `INSERT INTO employees (code, name, email, center_id, manager_id, start_date, job_title, department, contract_type, project, manager_label,
-                              name_en, job_title_en, department_en, manager_label_en)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                              name_en, job_title_en, department_en, manager_label_en, photo_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(code, name, email, centerId, managerId, isDate(body.startDate) ? body.startDate : null,
       clip(body.jobTitle, 120), clip(body.department, 120), clip(body.contractType, 60), clip(body.project, 300), clip(body.managerLabel, 200),
-      clip(body.nameEn, 120), clip(body.jobTitleEn, 120), clip(body.departmentEn, 120), clip(body.managerLabelEn, 200)),
+      clip(body.nameEn, 120), clip(body.jobTitleEn, 120), clip(body.departmentEn, 120), clip(body.managerLabelEn, 200), photo),
   ];
   if (card) stmts.push(db.prepare('INSERT INTO badges (card, employee_id) VALUES (?, (SELECT id FROM employees WHERE code = ?))').bind(card, code));
   stmts.push(auditStmt(db, user, 'employee.create', 'employee', code, { name, email, card: !!card }));

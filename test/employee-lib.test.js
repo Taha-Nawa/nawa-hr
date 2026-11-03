@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { initials, serviceSpan, activeAllocations, dmy } from '../public/js/employee-lib.js';
+import { initials, serviceSpan, activeAllocations, dmy, photoUrl } from '../public/js/employee-lib.js';
 
 test('حرفا الأفقية: الاسم الأول وآخر كلمة دون «ال» والألقاب', () => {
   assert.equal(initials('منى خالد العطار'), 'م.ع');
@@ -52,4 +52,22 @@ test('التوزيع الساري اليوم فقط، الأكبر أولاً، 
 test('تنسيق التاريخ يوم/شهر/سنة', () => {
   assert.equal(dmy('2023-03-01'), '01/03/2023');
   assert.equal(dmy(null), '');
+});
+
+test('رابط الصورة: https فقط، ورابط Google Drive يُحوَّل إلى صورة مباشرة، والفارغ يعني بلا صورة', () => {
+  assert.deepEqual(photoUrl(''), { url: null });
+  assert.deepEqual(photoUrl('   '), { url: null });
+  assert.deepEqual(photoUrl(null), { url: null });
+  assert.equal(photoUrl(' https://example.org/a/me.jpg ').url, 'https://example.org/a/me.jpg');
+  assert.ok(photoUrl('http://example.org/me.jpg').error, 'http مرفوض');
+  assert.ok(photoUrl('javascript:alert(1)').error);
+  assert.ok(photoUrl('data:image/png;base64,AAAA').error);
+  assert.ok(photoUrl('ليس رابطاً').error);
+  assert.ok(photoUrl('https://user:pw@example.org/me.jpg').error, 'بيانات دخول داخل الرابط مرفوضة');
+  assert.ok(photoUrl(`https://example.org/${'a'.repeat(500)}`).error, 'أطول من 500');
+  const want = 'https://drive.google.com/thumbnail?id=1AbCdEfGhIjKlMnOp&sz=w400';
+  assert.equal(photoUrl('https://drive.google.com/file/d/1AbCdEfGhIjKlMnOp/view?usp=sharing').url, want);
+  assert.equal(photoUrl('https://drive.google.com/open?id=1AbCdEfGhIjKlMnOp').url, want);
+  assert.equal(photoUrl('https://drive.google.com/uc?export=view&id=1AbCdEfGhIjKlMnOp').url, want);
+  assert.ok(photoUrl('https://drive.google.com/drive/folders').error, 'رابط درايف بلا معرّف ملف');
 });
