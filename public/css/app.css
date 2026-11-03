@@ -897,3 +897,81 @@ table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; w
   .id-card { border-color: #920000; }
   .prov-paper { min-height: 0; }
 }
+
+/* ------------------------------------------------------------ بطاقة الموظف: تعريف مجمّع (تصميم أ، اعتُمد 2026-11-03)
+   بطاقة رئيسية بالاسم والشارات، ثم ثلاث بطاقات موضوعية، ثم بيانات الإنجليزية. على الجوال تصير الحقول صفوف «عنوان ← قيمة». */
+.ec-hero { background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--red); border-radius: 16px; padding: 22px 28px; display: flex; align-items: center; gap: 22px; box-shadow: var(--shadow); }
+.ec-avatar { width: 84px; height: 84px; flex: none; border-radius: 50%; background: var(--red-soft); color: var(--red-d); box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--line); display: grid; place-items: center; font-size: 1.75rem; font-weight: 700; }
+.ec-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ec-id .back { margin-bottom: 0; }
+.ec-id h1 { font-size: 1.75rem; overflow-wrap: anywhere; }
+.ec-sub { color: var(--ink-2); font-size: 1.02rem; }
+.ec-sub:empty { display: none; }
+.ec-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.ec-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
+.ec-chip .ic { width: 14px; height: 14px; }
+.ec-chip-code { border: 1px solid var(--ink-2); letter-spacing: 0.5px; font-variant-numeric: tabular-nums; }
+.ec-chip-on { background: var(--olive-soft); color: var(--olive); }
+.ec-chip-off { background: #ebe6e0; color: var(--ink-2); }
+.ec-chip-center { background: var(--leave-soft); color: var(--leave); }
+.ec-chip-project { background: var(--gold-soft); color: var(--gold-d); }
+.ec-chip-contract { background: var(--line-2); color: var(--ink-2); }
+.ec-m { display: none; }
+.ec-actions { display: flex; gap: 10px; flex: none; }
+
+.ec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+.ec-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px 22px 14px; box-shadow: var(--shadow); }
+.ec-card h2 { display: flex; align-items: center; gap: 10px; font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+.ec-ico { width: 36px; height: 36px; flex: none; border-radius: 10px; display: grid; place-items: center; }
+.ec-ico .ic { width: 20px; height: 20px; }
+.ec-ico-red { background: var(--red-soft); color: var(--red); }
+.ec-ico-olive { background: var(--olive-soft); color: var(--olive); }
+.ec-ico-blue { background: var(--leave-soft); color: var(--leave); }
+.ec-fields { margin: 0; display: flex; flex-direction: column; }
+.ec-f { display: flex; flex-direction: column; gap: 2px; padding: 12px 0; border-top: 1px solid var(--line-2); min-width: 0; }
+.ec-fields > .ec-f:first-child { border-top: 0; }
+.ec-f dt { font-size: 0.8rem; color: var(--muted); }
+.ec-f dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.ec-pill { display: inline-block; padding: 2px 12px; border-radius: 999px; background: var(--line-2); color: var(--ink-2); font-size: 0.85rem; }
+.ec-center { display: inline-flex; align-items: center; gap: 8px; }
+.ec-center::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--leave); flex: none; }
+.ec-mail { display: inline-block; font-size: 0.9rem; unicode-bidi: plaintext; }
+.ec-bar { display: flex; gap: 2px; height: 10px; margin: 6px 0 8px; border-radius: 999px; overflow: hidden; background: var(--line-2); }
+.ec-seg { min-width: 4px; }
+.ec-c0 { background: var(--red); } .ec-c1 { background: var(--gold); } .ec-c2 { background: var(--olive); }
+.ec-c3 { background: var(--leave); } .ec-c4 { background: var(--rose); } .ec-c5 { background: var(--ink-2); }
+.ec-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; font-weight: 500; }
+.ec-legend li { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ec-legend .ec-fund { min-width: 0; overflow-wrap: anywhere; }
+.ec-legend b { margin-inline-start: auto; flex: none; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ec-dot { width: 10px; height: 10px; flex: none; border-radius: 3px; }
+
+.ec-en { background: #fffaf0; border: 1px dashed #d9c9b0; border-radius: 16px; padding: 14px 22px; display: flex; flex-direction: column; gap: 10px; }
+.ec-en h2 { font-size: 0.88rem; font-weight: 700; color: var(--ink-2); }
+.ec-en dl { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px 16px; }
+.ec-en dt { font-size: 0.75rem; color: var(--muted); }
+.ec-en dd { margin: 0; font-size: 0.9rem; font-weight: 600; overflow-wrap: anywhere; }
+
+@media (max-width: 720px) {
+  .ec-hero { flex-wrap: wrap; align-items: flex-start; gap: 14px; padding: 18px; border-radius: 14px; }
+  .ec-avatar { width: 60px; height: 60px; font-size: 1.3rem; box-shadow: none; }
+  .ec-id { flex: 1 1 0; }
+  .ec-id h1 { font-size: 1.25rem; }
+  .ec-sub { font-size: 0.9rem; }
+  .ec-chips { flex: 1 1 100%; margin-top: 0; }
+  .ec-d { display: none; }
+  .ec-m { display: inline-flex; }
+  .ec-actions { flex: 1 1 100%; display: grid; grid-template-columns: 1fr 1fr; }
+  .ec-actions .btn { width: 100%; justify-content: center; }
+  .ec-grid { grid-template-columns: 1fr; gap: 14px; }
+  .ec-card { border-radius: 14px; padding: 16px 18px 8px; }
+  .ec-ico { width: 32px; height: 32px; border-radius: 9px; }
+  .ec-ico .ic { width: 18px; height: 18px; }
+  .ec-f { flex-direction: row; justify-content: space-between; align-items: baseline; gap: 12px; padding: 11px 0; }
+  .ec-f dd { text-align: end; font-size: 0.95rem; }
+  .ec-f.ec-stack { flex-direction: column; align-items: stretch; gap: 4px; }
+  .ec-f.ec-stack dd { text-align: start; }
+  .ec-en { border-radius: 14px; padding: 14px 18px; }
+  .ec-en dl { grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+  .ec-en .ec-en-name { grid-column: 1 / -1; }
+}

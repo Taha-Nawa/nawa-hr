@@ -1,10 +1,11 @@
-import { h, clear, todayLocal, dayName, AR_MONTHS, hrs, dash, toast, confirmBox, field, dialog } from '../dom.js';
+import { h, clear, icon, todayLocal, dayName, AR_MONTHS, hrs, dash, toast, confirmBox, field, dialog } from '../dom.js';
 import { get, post, put } from '../api.js';
 import { allocationCheck, MAX_CONCURRENT } from '../allocations-lib.js';
 import { statusChip, groupOf } from './today.js';
 import { employeeForm } from './employees.js';
 import { openManualDialog } from './manual.js';
 import { fmt12 } from '../time12.js';
+import { initials, serviceSpan, activeAllocations, dmy } from '../employee-lib.js';
 
 const monthRange = (ym) => {
   const [y, m] = ym.split('-').map(Number);
@@ -25,25 +26,72 @@ export default async function render({ user, params }) {
   const canEdit = ['hr', 'admin'].includes(user.role);
 
   let ym = todayLocal().slice(0, 7);
-  const info = h('dl', { class: 'info' });
+  const today = todayLocal();
   const monthBar = h('div', { class: 'date-nav' });
   const sums = h('div', { class: 'sums' });
   const tableBox = h('div', { class: 'table-wrap' });
   const badgeBox = h('section', { class: 'panel' });
 
+  // ---- بطاقة التعريف المجمّعة (تصميم أ): بطاقة رئيسية ثم ثلاث بطاقات بحسب موضوعها ثم الإنجليزية
   const manager = employees.find((e) => e.id === emp.managerId);
-  const row = (k, v) => [h('dt', null, k), h('dd', null, dash(v))];
-  info.append(
-    ...row('الكود', emp.code), ...row('البريد', emp.email), ...row('المركز', emp.center), ...row('المسمى', emp.jobTitle),
-    ...row('القسم', emp.department), ...row('المدير المباشر', manager ? manager.name : emp.managerLabel), ...row('التعاقد', emp.contractType),
-    ...row('المشروع', emp.project), ...row('التعيين', emp.startDate), ...row('الحالة', emp.status === 'active' ? 'على رأس العمل' : 'متوقف'),
-  );
+  const kv = (label, value, cls = '') => h('div', { class: `ec-f ${cls}`.trim() }, h('dt', null, label), h('dd', null, value === null || value === undefined || value === '' ? '—' : value));
+  const group = (title, ico, tone, ...fields) => h('section', { class: 'ec-card', 'aria-label': title },
+    h('h2', null, h('span', { class: `ec-ico ec-ico-${tone}`, 'aria-hidden': 'true' }, icon(ico)), title),
+    h('dl', { class: 'ec-fields' }, fields));
+  const allocField = kv('توزيع الدوام على المشاريع', '', 'ec-stack');
+  allocField.hidden = true;
+  const active = emp.status === 'active';
+  const span = serviceSpan(emp.startDate, emp.endDate, today);
+
+  const hero = h('section', { class: 'ec-hero' },
+    h('div', { class: 'ec-avatar', 'aria-hidden': 'true' }, initials(emp.name)),
+    h('div', { class: 'ec-id' },
+      h('a', { href: '#/employees', class: 'back' }, 'كل الموظفين'),
+      h('h1', null, emp.name),
+      h('p', { class: 'ec-sub' }, [emp.jobTitle, emp.department].filter(Boolean).join(' · ')),
+      h('div', { class: 'ec-chips' },
+        h('span', { class: 'ec-chip ec-chip-code', dir: 'ltr' }, emp.code),
+        h('span', { class: `ec-chip ${active ? 'ec-chip-on' : 'ec-chip-off'}` }, active ? icon('check') : null, active ? 'على رأس العمل' : 'متوقف'),
+        emp.contractType ? h('span', { class: 'ec-chip ec-chip-contract ec-m' }, emp.contractType) : null,
+        emp.center ? h('span', { class: 'ec-chip ec-chip-center ec-d' }, icon('door'), emp.center) : null,
+        emp.project ? h('span', { class: 'ec-chip ec-chip-project ec-d' }, emp.project) : null)),
+    h('div', { class: 'ec-actions' },
+      h('a', { href: `#/reports?employee=${emp.id}`, class: 'btn' }, 'التايم شيت'),
+      canEdit ? h('button', { type: 'button', class: 'btn btn-primary', onclick: () => employeeForm({ emp, onSaved: () => location.reload() }) }, 'تعديل البيانات') : null));
+
+  const cards = h('div', { class: 'ec-grid' },
+    group('الوظيفة', 'briefcase', 'red',
+      kv('المسمى الوظيفي', emp.jobTitle), kv('القسم / الإدارة', emp.department), kv('المدير المباشر', manager ? manager.name : emp.managerLabel),
+      kv('نوع التعاقد', emp.contractType ? h('span', { class: 'ec-pill' }, emp.contractType) : '')),
+    group('المركز والمشروع', 'door', 'olive',
+      kv('المركز', emp.center ? h('span', { class: 'ec-center' }, emp.center) : ''), kv('المشروع الأساسي', emp.project), allocField),
+    group('التواصل والتعيين', 'mail', 'blue',
+      kv('البريد المؤسسي', emp.email ? h('span', { class: 'ec-mail', dir: 'ltr' }, emp.email) : '', 'ec-stack'),
+      kv('تاريخ التعيين', dmy(emp.startDate)),
+      emp.endDate ? kv('تاريخ انتهاء الخدمة', dmy(emp.endDate)) : null,
+      kv('مدة الخدمة', span)));
+
   // بالإنجليزية (للتايم شيت المرسل للممولين)
-  const en = h('dl', { class: 'info', dir: 'ltr', lang: 'en' });
-  en.append(
-    ...row('Name', emp.nameEn), ...row('Job title', emp.jobTitleEn), ...row('Department', emp.departmentEn),
-    ...row('Center', emp.centerEn), ...row('Line manager', emp.managerLabelEn));
+  const enRow = (k, v) => h('div', null, h('dt', null, k), h('dd', null, dash(v)));
   const hasEn = [emp.nameEn, emp.jobTitleEn, emp.departmentEn, emp.centerEn, emp.managerLabelEn].some(Boolean);
+  const enBox = hasEn ? h('section', { class: 'ec-en', 'aria-label': 'البيانات بالإنجليزية' },
+    h('h2', null, 'بالإنجليزية (للتايم شيت المرسل للممولين)'),
+    h('dl', { dir: 'ltr', lang: 'en' },
+      h('div', { class: 'ec-en-name' }, h('dt', null, 'Name'), h('dd', null, dash(emp.nameEn))),
+      enRow('Job title', emp.jobTitleEn), enRow('Department', emp.departmentEn), enRow('Center', emp.centerEn), enRow('Line manager', emp.managerLabelEn))) : null;
+
+  // شريط توزيع الدوام الساري اليوم داخل بطاقة «المركز والمشروع» (يُملأ بعد تحميل التوزيعات)
+  function drawAllocSummary(allocations) {
+    const segs = activeAllocations(allocations, today);
+    allocField.hidden = !segs.length;
+    const dd = allocField.querySelector('dd');
+    clear(dd);
+    if (!segs.length) return;
+    dd.append(
+      h('div', { class: 'ec-bar', role: 'img', 'aria-label': segs.map((x) => `${x.funder} ${x.percent}%`).join('، ') },
+        segs.map((x, i) => h('span', { class: `ec-seg ec-c${i % 6}`, style: { flexGrow: String(x.percent) } }))),
+      h('ul', { class: 'ec-legend' }, segs.map((x, i) => h('li', null, h('span', { class: `ec-dot ec-c${i % 6}`, 'aria-hidden': 'true' }), h('span', { class: 'ec-fund', dir: 'auto' }, x.funder), h('b', null, `${x.percent}%`)))));
+  }
   const allocBox = h('section', { class: 'panel' });
   let work = null;
   const editDay = async (date) => {
@@ -91,6 +139,7 @@ export default async function render({ user, params }) {
 
   async function loadAllocations() {
     const { allocations } = await get(`/api/employees/${id}/projects`);
+    drawAllocSummary(allocations);
     clear(allocBox).append(h('div', { class: 'page-head' },
       h('h2', null, 'توزيع الموظف على المشاريع والممولين'),
       canEdit ? h('button', { type: 'button', class: 'btn btn-sm', onclick: () => allocationDialog(allocations) }, allocations.length ? 'تعديل التوزيع' : 'إضافة توزيع') : null));
@@ -193,14 +242,11 @@ export default async function render({ user, params }) {
   }
 
   const page = h('div', { class: 'page' },
-    h('header', { class: 'page-head' },
-      h('div', null, h('a', { href: '#/employees', class: 'back' }, 'كل الموظفين'), h('h1', null, emp.name)),
-      h('div', { class: 'row-actions' },
-        h('a', { href: `#/reports?employee=${emp.id}`, class: 'btn' }, 'التايم شيت'),
-        canEdit ? h('button', { type: 'button', class: 'btn', onclick: () => employeeForm({ emp, onSaved: () => location.reload() }) }, 'تعديل البيانات') : null)),
-    h('section', { class: 'panel' }, info, hasEn ? en : null),
+    hero,
+    cards,
+    enBox,
     allocBox,
-    badgeBox,
+    canEdit ? badgeBox : null,
     h('section', { class: 'panel-plain' }, h('div', { class: 'page-head' }, h('h2', null, 'سجل الدوام'), monthBar), sums, tableBox));
   await Promise.all([loadMonth(), loadBadges(), loadAllocations().catch(() => {})]);
   return page;
