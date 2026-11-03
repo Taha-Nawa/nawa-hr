@@ -30,6 +30,8 @@ export const ACTIONS = {
   'audit.read': ['hr', 'director', 'admin'],
   'volunteer.manage': ['hr', 'admin'], // المتطوعون وحضورهم الشهري
   'volunteer.read': ['hr', 'director', 'admin'],
+  'provider.manage': ['hr', 'admin'], // مزوّدو الخدمة: عقود، جداول، بطاقات، تصحيح الحركات
+  'provider.read': ['manager', 'hr', 'director', 'admin'], // المدير المباشر يرى من يشرف عليه أو من في مركزه فقط (providerScope)
   'gates.read': ['hr', 'director', 'admin'], // حالة اتصال البوابات (لوحة اليوم)
   'backup.export': ['admin'], // النسخة الاحتياطية الكاملة (تحوي بيانات شخصية)
   'links.manage': ['admin'],

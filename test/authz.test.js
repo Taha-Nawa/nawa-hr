@@ -89,6 +89,10 @@ const WRITE = {
   listVolunteers: (e, c) => call(e, 'GET', '/api/volunteers', { cookie: c }),
   createVolunteer: (e, c) => call(e, 'POST', '/api/volunteers', { cookie: c, body: { name: 'متطوع اختبار' } }),
   saveVolunteerMonth: (e, c) => call(e, 'PUT', '/api/volunteers/999/month', { cookie: c, body: { month: '2026-11', days: [] } }),
+  listProviders: (e, c) => call(e, 'GET', '/api/providers', { cookie: c }),
+  providerBoard: (e, c) => call(e, 'GET', '/api/providers/board', { cookie: c }),
+  createProvider: (e, c) => call(e, 'POST', '/api/providers', { cookie: c, body: { name: '' } }),
+  addProviderMove: (e, c) => call(e, 'POST', '/api/providers/999/moves', { cookie: c, body: { date: '2026-11-01', type: 'حضور', time: '09:00', note: 'اختبار' } }),
   gatesStatus: (e, c) => call(e, 'GET', '/api/gates/status', { cookie: c }),
   backupManifest: (e, c) => call(e, 'GET', '/api/backup/manifest', { cookie: c }),
   backupTable: (e, c) => call(e, 'GET', '/api/backup/table?name=employees', { cookie: c }),
@@ -124,6 +128,10 @@ const MATRIX = {
   listVolunteers: [403, 403, 200, 200, 200],
   createVolunteer: [403, 403, 201, 403, 201],
   saveVolunteerMonth: [403, 403, 404, 403, 404],
+  listProviders: [403, 200, 200, 200, 200],
+  providerBoard: [403, 200, 200, 200, 200],
+  createProvider: [403, 403, 400, 403, 400],
+  addProviderMove: [403, 403, 404, 403, 404],
   gatesStatus: [403, 403, 200, 200, 200],
   backupManifest: [403, 403, 403, 403, 200],
   backupTable: [403, 403, 403, 403, 200],
@@ -150,7 +158,7 @@ for (const [action, expected] of Object.entries(MATRIX)) {
 }
 
 test('المصفوفة تغطي كل إجراءات authz.ACTIONS الفعلية (لا إجراء بلا اختبار)', () => {
-  const covered = new Set(['backup.export', 'volunteer.manage', 'volunteer.read', 'gates.read', 'employee.create', 'employee.update', 'badge.manage', 'center.manage', 'settings.read', 'settings.write', 'device.manage', 'user.manage', 'audit.read', 'holiday.write', 'import.run', 'recompute.run', 'links.manage', 'balance.manage', 'emergency.manage', 'day.correct']);
+  const covered = new Set(['backup.export', 'volunteer.manage', 'volunteer.read', 'provider.manage', 'provider.read', 'gates.read', 'employee.create', 'employee.update', 'badge.manage', 'center.manage', 'settings.read', 'settings.write', 'device.manage', 'user.manage', 'audit.read', 'holiday.write', 'import.run', 'recompute.run', 'links.manage', 'balance.manage', 'emergency.manage', 'day.correct']);
   const uncovered = Object.keys(ACTIONS).filter((a) => !covered.has(a));
   assert.deepEqual(uncovered.sort(), []);
 });

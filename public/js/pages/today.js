@@ -1,6 +1,6 @@
 import { h, clear, todayLocal, addDays, longDate, hrs, dash } from '../dom.js';
 import { get } from '../api.js';
-import { fmt12 } from '../time12.js';
+import { fmt12, fmtRange12 } from '../time12.js';
 import { monthLabel } from '../monthly-report-lib.js';
 
 // تصنيف الحالة القادمة من المحرك إلى مجموعة للعرض واللون.
@@ -50,6 +50,7 @@ export default async function render({ user }) {
   let gates = [];
   let backup = null;
   let due = [];
+  let noShows = []; // مزوّدو خدمة تجاوزوا مهلة بداية حصتهم دون مسح بطاقة
   async function go(d) {
     date = d;
     dateInput.value = d;
@@ -82,6 +83,12 @@ export default async function render({ user }) {
         h('b', null, gates.length === 1 ? 'بوابة غير متصلة: ' : 'بوابات غير متصلة: '),
         gates.map((g, i) => h('span', null, i ? '، ' : '', `${g.name || g.id}${g.center ? ` (${g.center})` : ''} — ${g.state === 'silent' ? `منذ ${g.minutesSincePing} دقيقة` : 'لا حركة ولا نبض اليوم'}`)),
         h('div', { class: 'small' }, 'حركات هذه البوابة محفوظة على جهازها وتصل عند عودة الاتصال، لكنها لا تُحتسب قبل ذلك: تأكد من الإنترنت وأن التطبيق مفتوح، أو سجّل الحضور يدوياً.')));
+    }
+    if (date === today && noShows.length) {
+      notice.append(h('div', { class: 'notice notice-warn', role: 'alert' },
+        h('b', null, noShows.length === 1 ? 'مزوّد خدمة لم يحضر: ' : 'مزوّدو خدمة لم يحضروا: '),
+        noShows.map((i, k) => h('span', null, k ? '، ' : '', `${i.name}${i.center ? ` (${i.center})` : ''}${i.session ? ` — حصته ${fmtRange12(i.session.start, i.session.end)}` : ''}`)),
+        ' ', h('a', { href: '#/providers' }, 'افتح لوحة المزوّدين')));
     }
     if (date === today && backup?.due) {
       notice.append(h('div', { class: 'notice notice-warn', role: 'status' },
@@ -153,6 +160,9 @@ export default async function render({ user }) {
 
   // حالة البوابات (لمن يملك الصلاحية): لا تعطّل اللوحة إن تعذّرت
   try { gates = (await get('/api/gates/status')).problems || []; draw(); } catch { /* غير متاح */ }
+  if (['manager', 'hr', 'director', 'admin'].includes(user.role)) {
+    try { noShows = (await get('/api/providers/board')).items.filter((i) => i.state === 'noshow'); draw(); } catch { /* غير متاح */ }
+  }
   if (user.employeeId != null) { try { due = (await get('/api/monthly-reports/due')).items; draw(); } catch { /* غير متاح */ } }
   if (user.role === 'admin') { try { backup = await get('/api/backup/status'); draw(); } catch { /* غير متاح */ } }
   await go(date);

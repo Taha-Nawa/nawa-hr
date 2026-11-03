@@ -5,6 +5,7 @@ import { closeDay, purgeAuth } from './close.js';
 import { alertGates, GATE_CRON } from './gates.js';
 import { backupReminder } from './backup.js';
 import { reportReminders } from './report-reminders.js';
+import { alertProviders, EVENING_CRON } from './provider-alerts.js';
 
 const REMINDER_HOUR_UTC = 5;
 
@@ -30,6 +31,11 @@ export default {
 
   // الإقفال الليلي (cron في wrangler.jsonc): يحسب «أمس» لكل الموظفين فيظهر الغياب والعطل.
   async scheduled(controller, env, ctx) {
+    if (controller?.cron === EVENING_CRON) {
+      // المساء (16:00–19:59 محلياً): «لم يحضر» لمزوّدي الخدمة فقط؛ مراقبة البوابات محصورة بساعات الدوام الصباحية
+      ctx.waitUntil(alertProviders(env).catch((e) => console.error('provider alert failed', e?.stack || e)));
+      return;
+    }
     if (controller?.cron === GATE_CRON) {
       // تذكيرات التقرير الشهري تأخذ تشغيل 05:00 UTC (07:00/08:00 محلياً) وحدها كي لا تزاحم مراقبة البوابات في حدود الاستعلامات؛
       // فيفوت فحص بوابات واحد في اليوم (يعوّضه الذي يليه بعد نصف ساعة).
@@ -39,6 +45,7 @@ export default {
         return;
       }
       ctx.waitUntil(alertGates(env).catch((e) => console.error('gate alert failed', e?.stack || e)));
+      ctx.waitUntil(alertProviders(env).catch((e) => console.error('provider alert failed', e?.stack || e)));
       return;
     }
     ctx.waitUntil(closeDay(env).catch((e) => console.error('close-day failed', e?.stack || e)));

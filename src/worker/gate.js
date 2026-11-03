@@ -8,7 +8,8 @@
  * الفرق الأمني عن النسخة القديمة: لكل جهاز رمزه الخاص (يُخزَّن مبصوماً SHA-256) ويُلغى منفرداً،
  * بدل رمز واحد مشترك مكتوب في الشيفرة.
  */
-import { json, sha256hex, isDate, isTime, clip } from './util.js';
+import { json, sha256hex, isDate, isTime, clip, localDate, nowOf } from './util.js';
+import { gateProviderBadges, ingestProviderMoves } from './providers.js';
 import { loadWorkSettings } from './settings.js';
 import { recomputePairs } from './recompute.js';
 import { releaseOnCheckIn } from './release.js';
@@ -84,7 +85,7 @@ async function route(request, env, execCtx) {
       await env.DB.prepare("UPDATE devices SET last_ping = datetime('now') WHERE id = ? AND (last_ping IS NULL OR last_ping < datetime('now', '-4 minutes'))").bind(device.id).run();
       return json({ ok: true, msg: 'الخدمة تعمل', device: device.id });
     }
-    if (action === 'badges') return badges(env.DB);
+    if (action === 'badges') return badges(env.DB, localDate(env.TIMEZONE || 'Asia/Hebron', nowOf(env)));
     return json({ ok: false, error: 'إجراء غير معروف' }, 400);
   }
   // إشعار الإجازة الملغاة بعد الرد (ولا يعطّل الحفظ): بلا waitUntil (الاختبارات) يُنتظر الوعد
@@ -92,7 +93,7 @@ async function route(request, env, execCtx) {
   return ingest(env.DB, device, body, { onReleased: (list) => notifyRelease({ env, db: env.DB, url, defer }, list) });
 }
 
-async function badges(db) {
+async function badges(db, today) {
   const r = await db
     .prepare(
       `SELECT b.card, e.code, e.name, COALESCE(c.name, '') AS center, b.status, COALESCE(e.photo_url, '') AS photo
@@ -109,6 +110,8 @@ async function badges(db) {
     status: x.status === 'active' ? 'سارية' : 'ملغاة',
     photo: x.photo,
   }));
+  // مزوّدو الخدمة بعقد ساري: يُمسح عليهم كالموظفين تماماً؛ بانتهاء العقد تختفي بطاقتهم من القائمة
+  list.push(...(await gateProviderBadges(db, today)));
   return json({ ok: true, badges: list, count: list.length });
 }
 
@@ -169,10 +172,20 @@ export async function ingestMoves(db, deviceId, moves, { touchDevice = false, on
     return out;
   }
 
+  // 0) بطاقات مزوّدي الخدمة تُحفظ في جدولها الخاص ولا تدخل حساب الموظفين (قرار 3 نوفمبر 2026).
+  const prov = await ingestProviderMoves(db, deviceId, good);
+  const rows = prov.rest;
+  out.saved = prov.saved;
+  out.skipped = prov.skipped;
+  if (rows.length === 0) {
+    await touchNow();
+    return out;
+  }
+
   // 1) الحفظ أولاً وبشكل مستقل عن الحساب: لا تضيع حركة لأن الإعدادات ناقصة.
-  const ins = await db.prepare(INSERT_SQL).bind(JSON.stringify(good), deviceId).all();
-  out.saved = ins.results.length;
-  out.skipped = good.length - out.saved;
+  const ins = await db.prepare(INSERT_SQL).bind(JSON.stringify(rows), deviceId).all();
+  out.saved += ins.results.length;
+  out.skipped += rows.length - ins.results.length;
   const unmatched = ins.results.filter((r) => r.employee_id === null).length;
   if (unmatched) out.unmatched = unmatched;
 

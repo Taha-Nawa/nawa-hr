@@ -99,7 +99,7 @@ test('التحقق من الإعلان: التاريخ والعطلة والوق
   await addHolidays(db, ['2026-10-28']);
   const ok = { date: DAY, centerId: 1, dismissTime: '11:00' };
   const status = async (over, who = u.hr) => (await post(env, who, '/api/emergencies', { ...ok, ...over })).status;
-  assert.equal(await status({ date: '2026-11-03' }), 400, 'يوم لم يأتِ');
+  assert.equal(await status({ date: '2099-01-05' }), 400, 'يوم لم يأتِ');
   assert.equal(await status({ date: 'x' }), 400);
   assert.equal(await status({ date: '2026-10-30' }), 400, 'جمعة: عطلة أسبوعية');
   assert.equal(await status({ date: '2026-10-28' }), 400, 'عطلة رسمية');

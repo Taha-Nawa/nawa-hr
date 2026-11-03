@@ -810,3 +810,90 @@ table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; w
 @media print {
   .mr-paper { padding: 0; min-height: 0; border: 0; box-shadow: none; width: 210mm; }
 }
+
+/* ------------------------------------------------------------ مزوّدو الخدمة (عقود مؤقتة بلا حساب): لوحة الآن، الملف، البطاقة، الكشف */
+.pv-board { display: flex; flex-direction: column; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.pv-board-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.pv-board-head .section-title { margin: 0; }
+.pv-now { color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+.pv-summary { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.pv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.pv-card { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; background: var(--canvas); border: 1px solid var(--line); border-inline-start: 4px solid var(--line); border-radius: var(--radius-sm); min-width: 0; }
+.pv-card header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.pv-card .chip { flex: none; }
+.pv-ok { border-inline-start-color: var(--olive); }
+.pv-warn { border-inline-start-color: var(--gold); }
+.pv-bad { border-inline-start-color: var(--red); background: var(--red-soft); }
+.pv-info { border-inline-start-color: var(--leave); }
+.pv-idle { opacity: 0.85; }
+.pv-name { font-weight: 700; color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
+.pv-name:hover { text-decoration: underline; }
+.pv-meta { color: var(--muted); font-size: 0.82rem; }
+.pv-line { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.pv-line .ic { width: 15px; height: 15px; flex: none; }
+.pv-line.pv-warn { color: var(--gold-d); font-weight: 600; border: 0; background: none; padding: 0; }
+.pv-dates { white-space: nowrap; }
+@media (max-width: 720px) { .pv-dates { white-space: normal; } }
+.tbl tr.is-inactive td { opacity: 0.6; }
+.tbl tr.is-future td { color: var(--muted); }
+.pv-month-head { align-items: center; margin-top: 6px; }
+.pv-month-head .section-title { margin: 0; }
+.pv-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.pv-stat { display: flex; flex-direction: column; gap: 1px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-inline-start: 4px solid var(--line); border-radius: var(--radius-sm); box-shadow: var(--shadow); }
+.pv-stat strong { font-size: 1.35rem; font-variant-numeric: tabular-nums; line-height: 1.4; }
+.pv-stat-label { color: var(--ink-2); font-size: 0.82rem; font-weight: 600; }
+.pv-stat-sub { color: var(--muted); font-size: 0.78rem; }
+.pv-stat.ok { border-inline-start-color: var(--olive); }
+.pv-stat.warn { border-inline-start-color: var(--gold); }
+.pv-stat.bad { border-inline-start-color: var(--red); }
+.sched h3, .mv-list h3 { font-size: 0.98rem; margin-bottom: 2px; }
+.sched-rows { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }
+.sched-row { display: grid; grid-template-columns: minmax(110px, 1fr) minmax(0, 1.2fr) minmax(0, 1.2fr) auto; gap: 8px 10px; align-items: end; padding: 8px 10px; background: var(--canvas); border: 1px solid var(--line-2); border-radius: var(--radius-sm); }
+.sched-row.mv-row { grid-template-columns: minmax(110px, 1fr) minmax(0, 1.4fr) auto; }
+.sched-del { color: var(--red); align-self: end; }
+.mv-list { display: flex; flex-direction: column; gap: 6px; }
+.mv-item { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 6px 10px; border: 1px solid var(--line-2); border-radius: var(--radius-sm); font-variant-numeric: tabular-nums; }
+.mv-item .code { flex: 1 1 140px; color: var(--muted); font-size: 0.82rem; }
+
+/* بطاقة المزوّد: 85.6×54 مم (حجم بطاقة بنكية). يمين: البيانات، يسار: الرمز */
+.id-sheet { display: flex; flex-wrap: wrap; gap: 8mm; justify-content: center; padding: 6px 0; }
+.id-card { width: 85.6mm; height: 54mm; box-sizing: border-box; display: flex; gap: 2.5mm; padding: 3.5mm 3.5mm 3mm; background: #fff; color: #000; border: 0.3mm solid #920000; border-radius: 3mm; overflow: hidden; break-inside: avoid; font-family: "Sakkal Majalla", "Form Fallback", "Traditional Arabic", serif; line-height: 1.25; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.id-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.6mm; }
+.id-head { display: flex; align-items: center; gap: 2mm; padding-bottom: 1.4mm; margin-bottom: 1mm; border-bottom: 0.3mm solid #920000; }
+.id-head img { width: 9mm; height: auto; flex: none; }
+.id-head strong { display: block; font-size: 8.5pt; }
+.id-head span { display: block; font-size: 7.5pt; color: #920000; font-weight: 700; }
+.id-name { font: inherit; font-size: 12.5pt; font-weight: 700; overflow-wrap: anywhere; }
+.id-meta { font-size: 8.5pt; color: #333; }
+.id-code { font-size: 9pt; font-weight: 700; letter-spacing: 0.5pt; text-align: right; unicode-bidi: plaintext; }
+.id-valid { margin-top: auto; font-size: 8pt; color: #555; }
+.id-qr { flex: none; width: 31mm; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1mm; text-align: center; }
+.id-qr svg { width: 29mm; height: 29mm; display: block; }
+.id-qr span { font-size: 6.5pt; line-height: 1.15; color: #333; }
+
+/* كشف المزوّد المطبوع */
+.prov-paper { height: auto; min-height: 296mm; }
+.prov-ident { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5mm 8mm; }
+.prov-ident .pf { width: auto; }
+.prov-tbl .c-sess { width: 33mm; } .prov-tbl .c-exit { width: 31mm; } .prov-tbl .c-hrs { width: 16mm; } .prov-tbl .c-day { width: 14mm; } .prov-tbl .c-date { width: 14mm; } .prov-tbl .c-time { width: 18mm; }
+.prov-tbl td { font-size: 8.5pt; white-space: normal; line-height: 1.15; }
+.prov-tbl td > div { white-space: nowrap; }
+.prov-tbl td.left { text-align: start; white-space: normal; padding-inline: 1mm; line-height: 1.15; }
+.prov-tbl td { height: 5.4mm; }
+.prov-rule { margin-top: 2mm; font-size: 9pt; color: #444; }
+.prov-foot .pf { width: 100%; }
+
+@media (max-width: 720px) {
+  .pv-grid { grid-template-columns: 1fr; }
+  .pv-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sched-row, .sched-row.mv-row { grid-template-columns: 1fr 1fr; }
+  .sched-row .sched-del { grid-column: 2; justify-self: end; }
+  .sched-row.mv-row > :first-child { grid-column: 1 / -1; }
+  .id-sheet { gap: 6mm; }
+}
+
+@media print {
+  .id-sheet { gap: 6mm 8mm; justify-content: flex-start; padding: 8mm; }
+  .id-card { border-color: #920000; }
+  .prov-paper { min-height: 0; }
+}
