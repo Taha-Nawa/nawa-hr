@@ -36,7 +36,7 @@
 
 *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; font: 14px/1.75 var(--font); color: var(--ink); background: var(--canvas); -webkit-font-smoothing: antialiased; overscroll-behavior-y: none; }
+body { margin: 0; font: 13px/1.7 var(--font); color: var(--ink); background: var(--canvas); -webkit-font-smoothing: antialiased; overscroll-behavior-y: none; }
 h1, h2, h3, p { margin: 0; }
 h1 { font-size: 1.5rem; line-height: 1.35; font-weight: 800; }
 h2 { font-size: 1.05rem; font-weight: 700; }
@@ -483,7 +483,7 @@ a.btn.is-disabled { opacity: 0.5; }
 
 /* ------------------------------------------------------------ جوال وتابلت عمودي: شريط علوي + أزرار سفلية */
 @media (max-width: 860px) {
-  body { font-size: 15px; padding-inline: env(safe-area-inset-right) env(safe-area-inset-left); }
+  body { font-size: 14px; padding-inline: env(safe-area-inset-right) env(safe-area-inset-left); }
   .shell { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); align-content: start; }
   .side { display: none; }
   .topbar {
@@ -1034,4 +1034,54 @@ table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; w
 @media (max-width: 860px) {
   .uc-tab { top: 38%; width: 50px; }
   .uc-drawer { width: 100vw; }
+}
+
+/* ============================================================ مقياس الخطوط الموحّد (قرار 6.24)
+   الخط Alexandria عريض ويبدو أكبر من حجمه، فالنص الأساسي 13px (جوال 14px). القاعدة: التسمية أصغر من قيمتها (لا العكس)،
+   والتلميحات والشارات 11.5–12.5px، والعناوين 15–22px، والأرقام الكبيرة 16–19px. حقول الجوال تبقى 16px كي لا يكبّر آيفون الصفحة.
+   كل القيم بوحدة rem (1rem = 16px) فتُضبط من مكان واحد. لا يمسّ ما يُطبع (pt/mm) ولا البوابة. */
+h2 { font-size: 0.95rem; }
+.small { font-size: 0.76rem; }
+.back { font-size: 0.8rem; }
+.who { font-size: 0.8rem; }
+.field-label { font-size: 0.76rem; }
+.field-hint { font-size: 0.72rem; }
+.check-inline { font-size: 0.8rem; }
+.btn-sm { font-size: 0.78rem; }
+.tbl th { font-size: 0.74rem; }
+.tbl .code, .alert-text { font-size: 0.72rem; }
+.chip, .ec-chip, .ec-pill { font-size: 0.76rem; }
+.tile b { font-size: 1.15rem; }
+.tile span { font-size: 0.78rem; }
+.sum b { font-size: 1.1rem; }
+.sum span, .info dt, .ec-f dt, .req-info dt, .link-host, .pv-meta, .pv-stat-label, .mv-item .code { font-size: 0.74rem; }
+.bal-main strong, .req-kind { font-size: 1rem; }
+.bal-sub, .pv-stat-sub { font-size: 0.72rem; }
+.calc-title, .link-note, .qr-card b { font-size: 0.82rem; }
+.link-title, .decide h3, .install-card h3, .wl-day-head { font-size: 0.92rem; }
+.pv-stat strong { font-size: 1.2rem; }
+.pv-line, .plan-bal, .secret, .code-block { font-size: 0.78rem; }
+.sample, .mr-chk-tag { font-size: 0.72rem; }
+.mr-lab, .pd-warn, .pd-team, .pd-req, .cal-legend, .cal-dow { font-size: 0.74rem; }
+.dec label { font-size: 0.8rem; }
+.sched h3, .mv-list h3 { font-size: 0.9rem; }
+.ec-card h2 { font-size: 0.9rem; }
+.ec-mail { font-size: 0.82rem; }
+.cal-nav h2 { font-size: 1.05rem; }
+.cal-day .n { font-size: 0.95rem; }
+.uc-head h2 { font-size: 1.05rem; }
+.uc-day h3 { font-size: 0.92rem; }
+.uc-times, .uc-hint, .uc-center, .uc-foot { font-size: 0.74rem; }
+@media (min-width: 861px) {
+  h1 { font-size: 1.25rem; }
+  .ec-id h1 { font-size: 1.4rem; }
+  .ec-sub { font-size: 0.9rem; }
+}
+@media (max-width: 860px) {
+  h1 { font-size: 1.15rem; }
+  .ec-id h1 { font-size: 1.1rem; }
+  .ec-sub { font-size: 0.82rem; }
+  .info dd, .ec-f dd { font-size: 0.88rem; }
+  .tbl.stack td:first-child { font-size: 0.95rem; }
+  .topbar-title { font-size: 0.95rem; }
 }
