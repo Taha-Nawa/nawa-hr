@@ -40,6 +40,7 @@ const PAGES = [
   { path: 'settings', group: 'admin', title: 'الإعدادات والعطل', icon: 'sliders', roles: ['hr', 'director', 'admin'], load: () => import('./pages/settings.js') },
   { path: 'import', group: 'admin', title: 'الاستيراد من إكسل', icon: 'upload', roles: ['hr', 'admin'], load: () => import('./pages/import.js') },
   { path: 'devices', group: 'admin', title: 'أجهزة البوابة', icon: 'tablet', roles: ['admin'], load: () => import('./pages/devices.js') },
+  { path: 'permissions', group: 'admin', title: 'مصفوفة الصلاحيات', icon: 'lock', roles: ['hr', 'director', 'admin'], load: () => import('./pages/permissions.js') },
   { path: 'users', group: 'admin', title: 'المستخدمون', icon: 'shield', roles: ['admin'], load: () => import('./pages/users.js') },
   { path: 'backup', group: 'admin', title: 'النسخ الاحتياطي', icon: 'download', roles: ['admin'], load: () => import('./pages/backup.js') },
   { path: 'audit', group: 'admin', title: 'سجل التدقيق', icon: 'audit', roles: ['hr', 'director', 'admin'], load: () => import('./pages/audit.js') },

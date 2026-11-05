@@ -5,7 +5,7 @@
  * قراءة فقط.
  */
 import { json, localDate, addDays } from './util.js';
-import { can, employeeScope } from './authz.js';
+import { can, employeeScope, ACTIONS } from './authz.js';
 import { tzOf } from './close.js';
 import { loadWorkSettings } from './settings.js';
 import { toMin } from '../engine/attendance.js';
@@ -181,5 +181,11 @@ export function registerInsightRoutes(add, { bad, forbidden }) {
         .all()
     ).results;
     return json({ ok: true, since, thresholds: { late: LATE_N, absent: ABSENT_N }, employees: rows.map((r) => ({ ...r, lateFlag: r.late >= LATE_N, absentFlag: r.absent >= ABSENT_N })) });
+  });
+
+  // مصفوفة الصلاحيات الفعلية (من authz.ACTIONS نفسها فلا تنحرف عن الواقع) — قراءة لمن يقرأ سجل التدقيق
+  add('GET', '/api/permissions', async ({ user }) => {
+    if (!can(user, 'audit.read')) return forbidden();
+    return json({ ok: true, actions: ACTIONS });
   });
 }

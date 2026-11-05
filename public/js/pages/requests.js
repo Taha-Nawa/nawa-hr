@@ -1,5 +1,5 @@
-import { h, clear, icon, field, select } from '../dom.js';
-import { get } from '../api.js';
+import { h, clear, icon, field, select, toast, confirmBox } from '../dom.js';
+import { get, post } from '../api.js';
 import { KIND, kindOf, statusChip, purposeText, fmtPeriod, fmtLength, fmtDate } from '../requests-lib.js';
 import { openRequestForm, openRequestDetail } from '../request-ui.js';
 import { PURPOSES, fmtDays } from '../balances-lib.js';
@@ -14,6 +14,7 @@ export default async function render({ user }) {
   let status = '';
   let kind = '';
   let q = '';
+  const picked = new Set();
 
   const tabBar = h('div', { class: 'seg-tabs', role: 'tablist', 'aria-label': 'قوائم الطلبات' });
   const tools = h('div', { class: 'tools' });
@@ -47,6 +48,25 @@ export default async function render({ user }) {
     ].filter(Boolean));
   }
 
+  async function approveSelected() {
+    const ids = [...picked];
+    if (!ids.length || !(await confirmBox(`اعتماد ${ids.length} طلب كما قُدّمت (دون تعديل)؟ يطبّق النظام على كل طلب قواعده (الأرصدة، الورقة الطبية، التعارض) وما لا يجوز اعتماده يُترك ويُذكر.`, 'اعتماد المحدد'))) return;
+    let ok = 0;
+    const failed = [];
+    for (const id of ids) {
+      try {
+        await post(`/api/requests/${id}/approve`, {});
+        ok += 1;
+      } catch (e) {
+        failed.push(`#${id}: ${e.message}`);
+      }
+    }
+    picked.clear();
+    toast(failed.length ? `اعتُمد ${ok} وتعذّر ${failed.length}: ${failed[0]}` : `اعتُمد ${ok} طلب`, failed.length ? 'err' : 'ok');
+    meta.pending = Math.max(0, meta.pending - ok);
+    load();
+  }
+
   function drawRows() {
     const list = rows.filter((r) => !q || r.employeeName.includes(q) || r.employeeCode.toLowerCase().includes(q.toLowerCase()));
     clear(box);
@@ -55,9 +75,16 @@ export default async function render({ user }) {
       return;
     }
     const showEmp = tab !== 'mine';
+    const bulk = tab === 'inbox';
+    if (bulk) {
+      const all = h('input', { type: 'checkbox', 'aria-label': 'تحديد الكل', checked: list.every((r) => picked.has(r.id)), onchange: (e) => { for (const r of list) (e.target.checked ? picked.add(r.id) : picked.delete(r.id)); drawRows(); } });
+      box.append(h('div', { class: 'bulk-bar' }, h('label', { class: 'check' }, all, ' تحديد الكل'),
+        h('button', { type: 'button', class: 'btn btn-primary', disabled: picked.size === 0, onclick: approveSelected }, icon('check'), `اعتماد المحدد (${picked.size})`)));
+    }
     box.append(h('table', { class: 'tbl' },
-      h('thead', null, h('tr', null, ['الطلب', showEmp ? 'الموظف' : null, 'الفترة', 'المدة', 'الغرض', 'التقديم', 'الحالة', ''].map((t) => (t === null ? null : h('th', null, t))))),
+      h('thead', null, h('tr', null, [bulk ? '' : null, 'الطلب', showEmp ? 'الموظف' : null, 'الفترة', 'المدة', 'الغرض', 'التقديم', 'الحالة', ''].map((t) => (t === null ? null : h('th', null, t))))),
       h('tbody', null, list.map((r) => h('tr', { class: 'req-row', tabindex: '0', onclick: () => open(r.id), onkeydown: (e) => { if (e.key === 'Enter') open(r.id); } },
+        bulk ? h('td', { onclick: (e) => e.stopPropagation() }, h('input', { type: 'checkbox', 'aria-label': `تحديد طلب ${r.employeeName}`, checked: picked.has(r.id), onchange: (e) => { if (e.target.checked) picked.add(r.id); else picked.delete(r.id); drawRows(); } })) : null,
         h('td', null, h('span', { class: 'kind-tag' }, icon(KIND[kindOf(r)].icon), KIND[kindOf(r)].short)),
         showEmp ? h('td', { class: 'wide' }, h('span', { class: 'emp-link' }, r.employeeName), h('div', { class: 'code' }, r.employeeCode)) : null,
         h('td', { class: 'wide' }, fmtPeriod(r)),

@@ -1268,3 +1268,4 @@ h2 { font-size: 0.95rem; }
 .pal-box kbd { white-space: nowrap; }
 .trend-up { color: #1f7a45; font-weight: 700; }
 .trend-down { color: var(--red); font-weight: 700; }
+.bulk-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }

@@ -105,3 +105,11 @@ test('الاتجاهات والأنماط: مقارنة مع الشهر السا
   assert.ok(t.body.rows.length >= 1 && t.body.prev === '2026-09');
   assert.equal((await call(env, 'GET', '/api/insights/trends?month=2026-10', { cookie: u.emp.cookie })).status, 403);
 });
+
+test('مصفوفة الصلاحيات تُقرأ لمن يقرأ التدقيق فقط', async () => {
+  const { env, u } = await world();
+  const r = await call(env, 'GET', '/api/permissions', { cookie: u.hr.cookie });
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.body.actions['exception.manage'], ['hr', 'admin']);
+  assert.equal((await call(env, 'GET', '/api/permissions', { cookie: u.emp.cookie })).status, 403);
+});
