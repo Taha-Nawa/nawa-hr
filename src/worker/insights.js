@@ -196,36 +196,45 @@ export function registerInsightRoutes(add, { bad, forbidden }) {
     const n = Math.min(31, Math.max(1, Number(url.searchParams.get('days')) || 14));
     const since = addDays(localDate(tzOf(env)), -n);
     const sc = employeeScope(user, 'e');
-    const rows = (
-      await db
-        .prepare(
-          `SELECT m.employee_id AS id, e.code, e.name, m.date, m.type, m.time, m.lat, m.lng, m.acc, m.offline,
-                  c.name AS center, c.lat AS cLat, c.lng AS cLng, c.radius_m AS radius
-           FROM movements m JOIN employees e ON e.id = m.employee_id LEFT JOIN centers c ON c.id = e.center_id
-           WHERE m.date >= ? AND ${sc.sql}
-             AND EXISTS (SELECT 1 FROM movements x WHERE x.employee_id = m.employee_id AND x.date = m.date AND x.lat IS NOT NULL)
-           ORDER BY m.employee_id, m.date, m.time LIMIT 5000`,
-        )
-        .bind(since, ...sc.params)
-        .all()
-    ).results;
-    const groups = new Map();
-    for (const r of rows) {
-      const k = `${r.id}|${r.date}`;
-      if (!groups.has(k)) groups.set(k, []);
-      groups.get(k).push(r);
+    const SRC = [
+      { kind: 'employee', sql: `SELECT m.employee_id AS id, e.code, e.name, m.date, m.type, m.time, m.lat, m.lng, m.acc, m.offline, c.name AS center, c.lat AS cLat, c.lng AS cLng, c.radius_m AS radius
+         FROM movements m JOIN employees e ON e.id = m.employee_id LEFT JOIN centers c ON c.id = e.center_id
+         WHERE m.date >= ? AND ${sc.sql} AND EXISTS (SELECT 1 FROM movements x WHERE x.employee_id = m.employee_id AND x.date = m.date AND x.lat IS NOT NULL)
+         ORDER BY m.employee_id, m.date, m.time LIMIT 5000`, params: [since, ...sc.params] },
+    ];
+    // مزوّدو الخدمة والمتطوعون: للموارد البشرية والمدير العام والمسؤول (لا نطاق مدير لهم)
+    if (['hr', 'director', 'admin'].includes(user.role)) {
+      SRC.push(
+        { kind: 'provider', sql: `SELECT m.provider_id AS id, p.code, p.name, m.date, m.type, m.time, m.lat, m.lng, m.acc, m.offline, c.name AS center, c.lat AS cLat, c.lng AS cLng, c.radius_m AS radius
+           FROM provider_movements m JOIN providers p ON p.id = m.provider_id LEFT JOIN centers c ON c.id = p.center_id
+           WHERE m.date >= ? AND EXISTS (SELECT 1 FROM provider_movements x WHERE x.provider_id = m.provider_id AND x.date = m.date AND x.lat IS NOT NULL)
+           ORDER BY m.provider_id, m.date, m.time LIMIT 3000`, params: [since] },
+        { kind: 'volunteer', sql: `SELECT m.volunteer_id AS id, 'VL-' || substr('000' || m.volunteer_id, -3) AS code, v.name, m.date, m.type, m.time, m.lat, m.lng, m.acc, m.offline, c.name AS center, c.lat AS cLat, c.lng AS cLng, c.radius_m AS radius
+           FROM volunteer_movements m JOIN volunteers v ON v.id = m.volunteer_id LEFT JOIN centers c ON c.id = v.center_id
+           WHERE m.date >= ? AND EXISTS (SELECT 1 FROM volunteer_movements x WHERE x.volunteer_id = m.volunteer_id AND x.date = m.date AND x.lat IS NOT NULL)
+           ORDER BY m.volunteer_id, m.date, m.time LIMIT 3000`, params: [since] },
+      );
     }
     const days = [];
-    for (const list of groups.values()) {
-      const f = list[0];
-      const center = f.cLat !== null && f.cLng !== null ? { lat: f.cLat, lng: f.cLng, radius: f.radius || 150 } : null;
-      const j = judgeDay(list, center);
-      if (!(j.outside || j.spread || j.partial)) continue;
-      days.push({
-        id: f.id, code: f.code, name: f.name, date: f.date, center: f.center || '—', radius: center?.radius ?? 150, noCenterLocation: !center,
-        flags: { outside: j.outside, spread: j.spread, partial: j.partial }, maxFromCenter: j.maxFromCenter, maxSpread: j.maxSpread,
-        moves: list.map((m) => ({ type: m.type, time: m.time, located: m.lat !== null, offline: !!m.offline, lat: m.lat, lng: m.lng })),
-      });
+    for (const src of SRC) {
+      const rows = (await db.prepare(src.sql).bind(...src.params).all()).results;
+      const groups = new Map();
+      for (const r of rows) {
+        const k = `${r.id}|${r.date}`;
+        if (!groups.has(k)) groups.set(k, []);
+        groups.get(k).push(r);
+      }
+      for (const list of groups.values()) {
+        const f = list[0];
+        const center = f.cLat !== null && f.cLng !== null ? { lat: f.cLat, lng: f.cLng, radius: f.radius || 150 } : null;
+        const j = judgeDay(list, center);
+        if (!(j.outside || j.spread || j.partial)) continue;
+        days.push({
+          kind: src.kind, id: f.id, code: f.code, name: f.name, date: f.date, center: f.center || '—', radius: center?.radius ?? 150, noCenterLocation: !center,
+          flags: { outside: j.outside, spread: j.spread, partial: j.partial }, maxFromCenter: j.maxFromCenter, maxSpread: j.maxSpread,
+          moves: list.map((m) => ({ type: m.type, time: m.time, located: m.lat !== null, offline: !!m.offline, lat: m.lat, lng: m.lng })),
+        });
+      }
     }
     days.sort((a, b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name, 'ar'));
     return json({ ok: true, since, days: days.slice(0, 200), total: days.length });

@@ -349,7 +349,7 @@ function accept(b,d){
   };
   if(geo&&Date.now()-geo.t<300000){rec.lat=geo.lat; rec.lng=geo.lng; rec.acc=Math.round(geo.acc)}
   /* حركة مزوّد الخدمة تذهب إلى النظام الجديد وحده: Google لا يعرف المزوّدين ولا يجوز أن تلوّث جدوله */
-  lastProv=(b.kind==="provider");
+  lastProv=(b.kind==="provider"||b.kind==="volunteer");
   if(!lastProv){pending.push(rec); save(K.pend,pending)}
   if(on2()){pending2.push(rec); save(K.pend2,pending2)}
   log.unshift(rec); log=log.slice(0,300); save(K.log,log);
@@ -518,7 +518,7 @@ function refreshProviderBadges(){
   .then(function(r){return r.json()})
   .then(function(j){
     if(j&&j.ok&&j.badges){
-      pbadges=j.badges.filter(function(x){return x&&x.kind==="provider"});
+      pbadges=j.badges.filter(function(x){return x&&(x.kind==="provider"||x.kind==="volunteer")});
       save(K.pbadges,pbadges); render();
     }
   })
@@ -553,6 +553,7 @@ function localDays(){
   return m;
 }
 function isProvCode(code){for(var i=0;i<pbadges.length;i++)if(pbadges[i].code===code)return true;return false}
+function kindOfCode(code){for(var i=0;i<pbadges.length;i++)if(pbadges[i].code===code)return pbadges[i].kind;return "employee"}
 function uncView(){
   var today=dstr(new Date()), data=unc&&unc.data, ld=localDays(), byDate={}, seen={}, i, d, k, it, key, lx, c;
   var p2={}; for(i=0;i<pending2.length;i++)p2[pending2[i].id]=1;
@@ -576,7 +577,7 @@ function uncView(){
     /* حضور سُجّل هنا: يظهر إن لم يصل الخادم بعد أو لم تُحمَّل القائمة أصلاً (اليوم فقط). غير ذلك يعني أن الخادم يعرف انصرافه أو أنه يوم عطلة */
     var show=!data?c.date===today:(!!p2[c.inId]||!unc.t||unc.t<Date.parse(c.inIso));
     if(!show)continue;
-    (byDate[c.date]=byDate[c.date]||[]).push({kind:isProvCode(c.code)?"provider":"employee",code:c.code,name:c.name,center:c.center,checkIn:c.checkIn,lastType:c.lastType,lastTime:c.lastTime});
+    (byDate[c.date]=byDate[c.date]||[]).push({kind:kindOfCode(c.code),code:c.code,name:c.name,center:c.center,checkIn:c.checkIn,lastType:c.lastType,lastTime:c.lastTime});
   }
   var dates=[], total=0, past=0, days=[];
   for(k in byDate)if(byDate.hasOwnProperty(k))dates.push(k);
@@ -632,6 +633,7 @@ function renderUnc(v){
       var it=D.items[j], li=el("li","unc-row"+(it.lastType==="خروج"?" left":"")), top=el("div","unc-who");
       top.appendChild(el("strong","",it.name));
       if(it.kind==="provider")top.appendChild(el("span","unc-tag","مزوّد خدمة"));
+      else if(it.kind==="volunteer")top.appendChild(el("span","unc-tag","متطوع"));
       if(it.center&&it.center!==(cfg&&cfg.center))top.appendChild(el("span","unc-ctr",it.center));
       li.appendChild(top); li.appendChild(el("div","unc-times",uncLine(it))); ul.appendChild(li);
     }

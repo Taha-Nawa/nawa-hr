@@ -170,9 +170,10 @@ export async function ingestProviderMoves(db, deviceId, good) {
   const rest = good.filter((m) => !byCard.has(m.card));
   const ins = await db
     .prepare(
-      `INSERT OR IGNORE INTO provider_movements (id, provider_id, card, type, date, time, iso, device_id, offline, note)
+      `INSERT OR IGNORE INTO provider_movements (id, provider_id, card, type, date, time, iso, device_id, offline, note, lat, lng, acc)
        SELECT json_extract(value,'$.id'), json_extract(value,'$.pid'), json_extract(value,'$.card'), json_extract(value,'$.type'),
-              json_extract(value,'$.date'), json_extract(value,'$.time'), json_extract(value,'$.iso'), ?2, json_extract(value,'$.offline'), json_extract(value,'$.note')
+              json_extract(value,'$.date'), json_extract(value,'$.time'), json_extract(value,'$.iso'), ?2, json_extract(value,'$.offline'), json_extract(value,'$.note'),
+              json_extract(value,'$.lat'), json_extract(value,'$.lng'), json_extract(value,'$.acc')
          FROM json_each(?1) RETURNING id`,
     )
     .bind(JSON.stringify(mine), deviceId)

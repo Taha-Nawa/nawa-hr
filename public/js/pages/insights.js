@@ -93,7 +93,7 @@ export default async function render({ user }) {
         ? h('div', { class: 'table-wrap' }, h('table', { class: 'tbl' },
           h('thead', null, h('tr', null, ['الموظف', 'اليوم', 'العلامات', 'التفاصيل'].map((t) => h('th', null, t)))),
           h('tbody', null, d.days.map((r) => h('tr', null,
-            h('td', null, h('a', { href: `#/employees/${r.id}` }, `${r.code} — ${r.name}`)),
+            h('td', null, h('a', { href: r.kind === 'provider' ? `#/providers/${r.id}` : r.kind === 'volunteer' ? '#/volunteers' : `#/employees/${r.id}` }, `${r.code} — ${r.name}`), r.kind === 'employee' ? null : h('span', { class: 'chip chip-none' }, r.kind === 'provider' ? 'مزوّد خدمة' : 'متطوع')),
             h('td', null, r.date),
             h('td', null, ...flagChips(r.flags)),
             h('td', { class: 'muted' }, [r.maxFromCenter !== null ? `أبعد حركة ${r.maxFromCenter} م عن ${r.center} (المسموح ${r.radius})` : (r.noCenterLocation ? `موقع ${r.center} غير محدَّد` : ''), r.maxSpread ? `أقصى تباعد بين حركاته ${r.maxSpread} م` : ''].filter(Boolean).join(' — '))))))

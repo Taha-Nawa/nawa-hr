@@ -158,3 +158,37 @@ test('الموقع: يُحفظ مع الحركة، ويُعلَّم الخروج
   assert.equal((await call(env, 'PATCH', '/api/centers/1', { cookie: u.hr.cookie, body: { lat: 200, lng: 0 } })).status, 400);
   assert.equal((await call(env, 'PATCH', '/api/centers/1', { cookie: u.hr.cookie, body: { lat: 31.4, lng: 34.3, radiusM: 150 } })).status, 200);
 });
+
+test('المتطوعون بالمسح: البطاقة تُملأ من المسح تلقائياً، والتصحيح اليدوي يُحمى من الطمس', async () => {
+  const { db, env, u } = await world();
+  const { DEVICE_TOKEN, gatePost, mv } = await import('./helpers/seed.js');
+  const c = await post(env, u.hr, '/api/volunteers', { name: 'متطوع تجريبي', centerId: 1 });
+  assert.equal(c.status, 201);
+  const vid = c.body.id;
+  const card = (await call(env, 'GET', `/api/volunteers/${vid}/card`, { cookie: u.hr.cookie })).body.card;
+  assert.match(card, /^PW-/);
+  assert.equal((await call(env, 'GET', `/api/volunteers/${vid}/card`, { cookie: u.emp.cookie })).status, 403);
+  const mvx = (type, time) => ({ ...mv('VL-001', type, '2026-11-02', time), card, lat: 31.4, lng: 34.3, acc: 10 });
+  let r = await gatePost(env, [mvx('حضور', '09:00'), mvx('انصراف', '13:00')], DEVICE_TOKEN);
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.saved, 2);
+  const day = () => db.prepare("SELECT arrive, depart, updated_by AS by FROM volunteer_days WHERE volunteer_id = ? AND date = '2026-11-02'").bind(vid).first();
+  assert.deepEqual(await day(), { arrive: '09:00', depart: '13:00', by: 'gate' });
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM daily_results').first('n')), 0, 'لا يدخل حساب الموظفين');
+  // تصحيح يدوي من الموارد البشرية ثم مسح لاحق: لا يُطمَس
+  await call(env, 'PUT', `/api/volunteers/${vid}/month`, { cookie: u.hr.cookie, body: { month: '2026-11', days: [{ date: '2026-11-02', arrive: '08:30', depart: '14:00' }] } });
+  r = await gatePost(env, [{ ...mvx('انصراف', '15:00'), id: 'MV-late' }], DEVICE_TOKEN);
+  assert.deepEqual((await day()), { arrive: '08:30', depart: '14:00', by: 'hr@nawaculture.org' });
+});
+
+test('المراكز: إضافة نقطة جديدة وإيقافها وتفعيلها وضبط موقعها', async () => {
+  const { env, u } = await world();
+  const c = await post(env, u.hr, '/api/centers', { name: 'نقطة تعليمية النصيرات' });
+  assert.equal(c.status, 201, JSON.stringify(c.body));
+  const id = c.body.center.id;
+  const patch = (body) => call(env, 'PATCH', `/api/centers/${id}`, { cookie: u.hr.cookie, body });
+  assert.equal((await patch({ active: false })).status, 200);
+  assert.equal((await call(env, 'GET', '/api/centers', { cookie: u.hr.cookie })).body.centers.find((x) => x.id === id).active, 0);
+  assert.equal((await patch({ active: true, lat: 31.45, lng: 34.38, radiusM: 150 })).status, 200);
+  assert.equal((await call(env, 'PATCH', `/api/centers/${id}`, { cookie: u.emp.cookie, body: { active: false } })).status, 403);
+});

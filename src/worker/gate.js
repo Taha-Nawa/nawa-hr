@@ -12,6 +12,7 @@
 import { validLat, validLng } from '../engine/geo.js';
 import { json, sha256hex, isDate, isTime, clip, localDate, nowOf } from './util.js';
 import { gateProviderBadges, ingestProviderMoves } from './providers.js';
+import { gateVolunteerBadges, ingestVolunteerMoves } from './volunteers.js';
 import { gateUnclosed } from './unclosed.js';
 import { loadWorkSettings } from './settings.js';
 import { recomputePairs } from './recompute.js';
@@ -117,6 +118,7 @@ async function badges(db, today) {
   }));
   // مزوّدو الخدمة بعقد ساري: يُمسح عليهم كالموظفين تماماً؛ بانتهاء العقد تختفي بطاقتهم من القائمة
   list.push(...(await gateProviderBadges(db, today)));
+  list.push(...(await gateVolunteerBadges(db)));
   return json({ ok: true, badges: list, count: list.length });
 }
 
@@ -183,9 +185,10 @@ export async function ingestMoves(db, deviceId, moves, { touchDevice = false, on
 
   // 0) بطاقات مزوّدي الخدمة تُحفظ في جدولها الخاص ولا تدخل حساب الموظفين (قرار 3 نوفمبر 2026).
   const prov = await ingestProviderMoves(db, deviceId, good);
-  const rows = prov.rest;
-  out.saved = prov.saved;
-  out.skipped = prov.skipped;
+  const vol = await ingestVolunteerMoves(db, deviceId, prov.rest); // المتطوعون: جدولهم وكشفهم الشهري، لا حساب الموظفين
+  const rows = vol.rest;
+  out.saved = prov.saved + vol.saved;
+  out.skipped = prov.skipped + vol.skipped;
   if (rows.length === 0) {
     await touchNow();
     return out;

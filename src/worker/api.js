@@ -368,7 +368,7 @@ add('PATCH', '/api/centers/:id', async ({ request, db, user, params }) => {
   const { body, error } = await readJson(request);
   if (error) return error;
   const keys = Object.keys(body);
-  if (!keys.length || keys.some((k) => !['name', 'nameEn', 'lat', 'lng', 'radiusM'].includes(k))) return bad('الحقول المسموحة: name و nameEn و lat و lng و radiusM');
+  if (!keys.length || keys.some((k) => !['name', 'nameEn', 'lat', 'lng', 'radiusM', 'active'].includes(k))) return bad('الحقول المسموحة: name و nameEn و lat و lng و radiusM و active');
   const sets = [];
   const vals = [];
   if ('name' in body) {
@@ -388,6 +388,10 @@ add('PATCH', '/api/centers/:id', async ({ request, db, user, params }) => {
       sets.push('lat = ?', 'lng = ?');
       vals.push(body.lat, body.lng);
     } else return bad('إحداثيات غير صالحة');
+  }
+  if ('active' in body) {
+    sets.push('active = ?');
+    vals.push(body.active ? 1 : 0);
   }
   if ('radiusM' in body) {
     const r = Number(body.radiusM);

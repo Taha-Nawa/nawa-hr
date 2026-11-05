@@ -92,6 +92,7 @@ export default async function render() {
         h('td', { class: 'row-actions' },
           data.canEdit ? h('a', { class: 'btn btn-sm btn-primary', href: `#/volunteers/${v.id}/${month}` }, 'إدخال الحضور') : null,
           h('a', { class: 'btn btn-sm', href: `#/volunteers/${v.id}/${month}/print` }, icon('printer'), 'الكشف'),
+          data.canEdit ? h('a', { class: 'btn btn-sm', href: `#/volunteers/${v.id}/card` }, icon('qr'), 'البطاقة') : null,
           data.canEdit ? h('button', { type: 'button', class: 'btn btn-sm', onclick: () => volunteerDialog({ v, centers, onDone: () => go(month) }) }, 'تعديل') : null))))));
   }
 
