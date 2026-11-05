@@ -18,12 +18,15 @@ export default async function render() {
     const lat = h('input', { dir: 'ltr', inputmode: 'decimal', value: c.lat ?? '', placeholder: '31.4167', 'aria-label': 'خط العرض' });
     const lng = h('input', { dir: 'ltr', inputmode: 'decimal', value: c.lng ?? '', placeholder: '34.3500', 'aria-label': 'خط الطول' });
     const rad = h('input', { type: 'number', min: '30', max: '2000', step: '10', value: c.radiusM ?? 150, 'aria-label': 'نصف القطر' });
+    const nameIn = h('input', { value: c.name, maxlength: '120', 'aria-label': 'اسم المركز' });
+    const nameEn = h('input', { value: c.nameEn ?? '', maxlength: '120', dir: 'ltr', 'aria-label': 'الاسم بالإنجليزية' });
     const status = h('span', { class: 'muted' }, c.lat === null ? 'لم يُحدَّد الموقع بعد' : 'محدَّد');
     const save = async (body) => {
       try {
         await patch(c.id, body);
         if ('lat' in body) { c.lat = body.lat; c.lng = body.lng; }
         if ('radiusM' in body) c.radiusM = body.radiusM;
+        if ('name' in body) { c.name = body.name.trim(); c.nameEn = body.nameEn; }
         status.textContent = c.lat === null ? 'لم يُحدَّد الموقع بعد' : 'محدَّد';
         toast('حُفظ');
       } catch (e) {
@@ -39,15 +42,17 @@ export default async function render() {
       }, () => toast('تعذّر تحديد موقعك: اسمح بالموقع في المتصفح', 'err'), { enableHighAccuracy: true, timeout: 20000 });
     } }, 'استخدم موقعي الحالي (وأنا في المركز)');
     return h('div', { class: 'rh-item' },
+      h('div', { class: 'rh-item-f' }, field('اسم المركز', nameIn), field('الاسم بالإنجليزية (للتايم شيت)', nameEn)),
       h('div', null, h('b', null, c.name), c.active ? null : h('span', { class: 'chip chip-none' }, 'موقوف'), h('div', null, status)),
       h('div', { class: 'rh-item-f' }, field('خط العرض', lat), field('خط الطول', lng), field('نصف القطر (م)', rad)),
       here,
       h('button', { type: 'button', class: 'btn btn-sm btn-primary', onclick: () => {
+        const names = { name: nameIn.value, nameEn: nameEn.value.trim() === '' ? null : nameEn.value };
         const a = Number(lat.value);
         const b = Number(lng.value);
-        if (lat.value.trim() === '' && lng.value.trim() === '') return save({ lat: null, lng: null, radiusM: Number(rad.value) });
+        if (lat.value.trim() === '' && lng.value.trim() === '') return save({ ...names, lat: null, lng: null, radiusM: Number(rad.value) });
         if (!Number.isFinite(a) || !Number.isFinite(b)) return toast('أدخل رقمين صحيحين للموقع', 'err');
-        save({ lat: a, lng: b, radiusM: Number(rad.value) });
+        save({ ...names, lat: a, lng: b, radiusM: Number(rad.value) });
       } }, icon('check'), 'حفظ'),
       h('button', { type: 'button', class: 'btn btn-sm', onclick: async () => {
         const to = !c.active;
