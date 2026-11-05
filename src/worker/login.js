@@ -152,7 +152,7 @@ async function lookupDevice(ctx) {
   if (!tokenOk(token)) return null;
   const row = await ctx.db
     .prepare(
-      `SELECT d.id, d.user_id AS userId, d.auto, d.pin_required AS pinRequired, u.email, u.role, e.name AS employeeName, (p.user_id IS NOT NULL) AS hasPin
+      `SELECT d.id, d.user_id AS userId, d.auto, d.pin_required AS pinRequired, u.email, u.role, e.name AS employeeName, e.photo_url AS photo, (p.user_id IS NOT NULL) AS hasPin
        FROM trusted_devices d JOIN users u ON u.id = d.user_id AND u.active = 1
        LEFT JOIN employees e ON e.id = u.employee_id LEFT JOIN user_pins p ON p.user_id = u.id
        WHERE d.token_hash = ? AND d.expires_at >= ?`,
@@ -221,7 +221,7 @@ export function registerLoginRoutes(add, kit) {
     const d = await lookupDevice(ctx);
     if (!d) return json({ ok: true, known: false });
     const pinRequired = !!d.pinRequired && !!d.hasPin;
-    return json({ ok: true, known: true, name: d.employeeName || d.email.split('@')[0], email: d.email, pinRequired, auto: !!d.auto && !pinRequired });
+    return json({ ok: true, known: true, name: d.employeeName || d.email.split('@')[0], email: d.email, photo: d.photo || null, pinRequired, auto: !!d.auto && !pinRequired });
   }, { auth: false });
 
   add('POST', '/api/auth/resume', async (ctx) => {

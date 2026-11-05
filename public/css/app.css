@@ -1085,3 +1085,8 @@ h2 { font-size: 0.95rem; }
   .tbl.stack td:first-child { font-size: 0.95rem; }
   .topbar-title { font-size: 0.95rem; }
 }
+
+/* الصورة الشخصية في الدوائر الصغيرة (الشريط العلوي وبطاقة «مرحباً بعودتك») */
+.avatar { overflow: hidden; }
+.avatar.has-photo { background: #fff; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }

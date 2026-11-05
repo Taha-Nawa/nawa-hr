@@ -319,11 +319,13 @@ test('«تذكّر الجهاز»: كوكي جهاز آمن، يُسجَّل ب�
   // المتصفح بلا جلسة وبكوكي الجهاز فقط
   const info = await call(env, 'GET', '/api/auth/device', { cookie: `${DEVICE_COOKIE}=${token}` });
   assert.deepEqual({ known: info.body.known, auto: info.body.auto, pinRequired: info.body.pinRequired, name: info.body.name }, { known: true, auto: true, pinRequired: false, name: 'amna' });
+  assert.equal(info.body.photo, null, 'حقل الصورة موجود (فارغ لمن لا موظف له)');
   const resumed = await call(env, 'POST', '/api/auth/resume', { cookie: `${DEVICE_COOKIE}=${token}`, body: {} });
   assert.equal(resumed.status, 200);
   const jarR = jar(cookiesOf(resumed));
   const me = await call(env, 'GET', '/api/me', { cookie: jarR });
   assert.equal(me.body.user.via, 'device');
+  assert.equal(me.body.user.photo, null);
   assert.ok(rawSetCookie(resumed, DEVICE_COOKIE), 'الأجل ينزلق مع الاستعمال');
 
   // بلا كوكي أو بكوكي مزوّر: لا شيء

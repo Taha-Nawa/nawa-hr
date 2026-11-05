@@ -3,6 +3,7 @@
 import { h, clear, icon } from './dom.js';
 import { startLogin, requestCode, verifyCode, loginWithPin, resumeDevice } from './auth.js';
 import { isStandalone } from './pwa.js';
+import { withPhoto } from './avatar.js';
 
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
@@ -96,7 +97,7 @@ export function showLogin({ root, message, config, device, onDone }) {
     }
     return [
       h('div', { class: 'welcome' },
-        h('span', { class: 'avatar avatar-lg', 'aria-hidden': 'true' }, (device.name || '؟')[0].toUpperCase()),
+        withPhoto(h('span', { class: 'avatar avatar-lg', 'aria-hidden': 'true' }, (device.name || '؟')[0].toUpperCase()), device.photo),
         h('div', null, h('p', { class: 'welcome-hi' }, 'مرحباً بعودتك'), h('p', { class: 'welcome-name' }, device.name), h('p', { class: 'welcome-mail', dir: 'ltr' }, device.email))),
       body,
       h('button', { type: 'button', class: 'link-btn login-alt', onclick: () => { st.view = 'methods'; st.msg = ''; draw(); } }, 'ليس أنت؟ ادخل بحساب آخر'),

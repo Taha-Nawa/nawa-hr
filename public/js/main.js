@@ -3,6 +3,7 @@ import { get, setUnauthorizedHandler } from './api.js';
 import { hasCallback, finishLogin, logout, authConfig, deviceInfo, resumeDevice } from './auth.js';
 import { showLogin as renderLogin } from './login-ui.js';
 import './pwa.js';
+import { withPhoto } from './avatar.js';
 
 const ROLE_LABEL = { employee: 'موظف', manager: 'مدير مباشر', hr: 'موارد بشرية', director: 'مدير عام', admin: 'مسؤول النظام' };
 const ALL = ['employee', 'manager', 'hr', 'director', 'admin'];
@@ -93,7 +94,7 @@ function openMore() {
     sheet: true,
     content: h('div', null,
       h('div', { class: 'sheet-user' },
-        h('span', { class: 'avatar', 'aria-hidden': 'true' }, initial()),
+        withPhoto(h('span', { class: 'avatar', 'aria-hidden': 'true' }, initial()), me.photo),
         h('div', null, h('div', { class: 'who-name' }, me.employeeName || me.email), h('div', { class: 'who-role' }, ROLE_LABEL[me.role] || me.role))),
       h('div', { class: 'sheet-list' },
         rest.map((p) => h('a', { href: `#/${p.path}`, class: 'sheet-link', onclick: () => sheet.close() }, icon(p.icon), p.title)),
@@ -108,7 +109,7 @@ function showShell() {
       h('header', { class: 'topbar' },
         h('img', { src: '/logo.png', alt: 'جمعية نوى' }),
         h('div', { class: 'topbar-title' }, 'نظام نوى للشؤون الإدارية', h('small', null, 'جمعية نوى للثقافة والفنون')),
-        h('span', { class: 'avatar', 'aria-hidden': 'true' }, initial())),
+        withPhoto(h('span', { class: 'avatar', 'aria-hidden': 'true' }, initial()), me.photo)),
       h('aside', { class: 'side' },
         h('a', { href: '#/today', class: 'brand' }, h('img', { src: '/logo.png', alt: '' }), h('span', null, 'نظام نوى للشؤون الإدارية', h('small', null, 'جمعية نوى للثقافة والفنون'))),
         h('nav', { class: 'nav', 'aria-label': 'التنقل الرئيسي' }, pages.map((p) => h('a', { href: `#/${p.path}`, class: 'nav-link', dataset: { path: p.path } }, icon(p.icon), h('span', null, p.title)))),
