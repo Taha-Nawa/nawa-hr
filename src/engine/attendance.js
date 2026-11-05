@@ -70,6 +70,7 @@ const sum = (a) => a.reduce((s, x) => s + x, 0);
  * @param {{exit?:number,late?:number}} [input.permit]  دقائق أذونات المغادرة والتأخير المعتمدة لهذا اليوم (تُعفى من العجز والتأخير)
  * @param {string} [input.dismissAt]          إخلاء فوري معلَن لهذا اليوم (HH:MM): ينتهي الدوام الفعلي عنده، فلا عجز ولا انصراف مبكر لمن بقي حتى ذلك الوقت،
  *                                            ومن لم يسجّل انصرافه يُعدّ منصرفاً عنده. لا أثر له على يوم عليه إجازة (تُحتسب الإجازة يوماً كاملاً).
+ * @param {boolean} [input.exception]       دوام استثنائي معتمد (work_exceptions.counted = 1) في يوم عطلة
  * @param {object} settings
  */
 export function computeDay(input, settings) {
@@ -108,7 +109,9 @@ export function computeDay(input, settings) {
 
   const netHours = round2(Math.max(0, presenceHours - exitHours));
   const isWork = dayType === DAY_WORK;
-  const requiredHours = isWork ? officialHours(eff) : 0;
+  // دوام استثنائي معتمد في يوم عطلة: يُحتسب ما عمله فعلاً حتى الساعات الرسمية، بلا عجز ولا تأخير ولا انصراف مبكر؛ وما زاد إضافي.
+  const exc = input.exception === true && !isWork;
+  const requiredHours = isWork ? officialHours(eff) : exc ? Math.min(officialHours(settings), netHours) : 0;
 
   // الساعات المعتمدة والإضافي (مطابق لعمودي «الساعات المعتمدة» و«الإضافي» في إكسل):
   //  - بلا إجازة: min(المطلوب، الصافي + دقائق التأخير المسموحة/60)، والباقي إضافي
@@ -148,14 +151,15 @@ export function computeDay(input, settings) {
   const overtimeHours = round2(overtimeRaw);
 
   let status;
-  if (!isWork) status = dayType;
+  if (exc) status = checkIn === null ? dayType : STATUS.PRESENT;
+  else if (!isWork) status = dayType;
   else if (leaveType !== '') status = leaveType;
   else if (checkIn === null) status = STATUS.ABSENT;
   else if (lateMinutes > settings.toleranceMinutes) status = STATUS.LATE;
   else status = STATUS.PRESENT;
 
   let alert = '';
-  if (isWork && leaveType === '') {
+  if ((isWork || exc) && leaveType === '') {
     if (checkIn !== null && departure === null) alert = ALERT.NO_DEPARTURE;
     else if (checkIn === null && departure !== null) alert = ALERT.NO_CHECKIN;
     else if (outs.length !== rets.length) alert = ALERT.EXIT_NO_RETURN;

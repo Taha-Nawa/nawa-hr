@@ -64,9 +64,10 @@ export async function timesheetReport({ db, user, url }) {
       .all(),
     db
       .prepare(
-        `SELECT r.employee_id AS employeeId, r.date, r.day_type AS dayType, r.approved_hours AS approvedHours, o.leave_type AS leaveType
+        `SELECT r.employee_id AS employeeId, r.date, r.day_type AS dayType, r.approved_hours AS approvedHours, o.leave_type AS leaveType, x.employee_id IS NOT NULL AS exceptional
          FROM daily_results r
          LEFT JOIN day_overrides o ON o.employee_id = r.employee_id AND o.date = r.date
+         LEFT JOIN work_exceptions x ON x.employee_id = r.employee_id AND x.date = r.date AND x.counted = 1
          WHERE r.employee_id IN (SELECT value FROM json_each(?1)) AND r.date BETWEEN ?2 AND ?3`,
       )
       .bind(idsJson, first, last)
@@ -88,7 +89,7 @@ export async function timesheetReport({ db, user, url }) {
   const daysBy = new Map();
   for (const d of days.results) {
     if (!daysBy.has(d.employeeId)) daysBy.set(d.employeeId, {});
-    daysBy.get(d.employeeId)[d.date] = { dayType: d.dayType, approvedHours: d.approvedHours, leaveType: d.leaveType || '' };
+    daysBy.get(d.employeeId)[d.date] = { dayType: d.dayType, approvedHours: d.approvedHours, leaveType: d.leaveType || '', exceptional: !!d.exceptional };
   }
 
   const sheets = emps.map((e) => ({

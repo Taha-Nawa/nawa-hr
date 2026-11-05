@@ -264,13 +264,58 @@ export default async function render({ user, params }) {
       } }, field('بطاقة جديدة (بدل فاقدة أو إضافية)', cardInput), h('button', { type: 'submit', class: 'btn' }, 'إضافة البطاقة')));
   }
 
+  const excBox = h('section', { class: 'panel' });
+  const COMP = { none: 'بلا تعويض', paid: 'أجر إضافي', leave: 'يوم إجازة بديل' };
+  async function loadExceptions() {
+    if (!canEdit) return;
+    const { exceptions } = await get(`/api/work-exceptions?employeeId=${id}`);
+    const date = h('input', { type: 'date', required: true, max: today, 'aria-label': 'تاريخ اليوم' });
+    const comp = h('select', { 'aria-label': 'التعويض' }, Object.entries(COMP).map(([v, t]) => h('option', { value: v }, t)));
+    const counted = h('input', { type: 'checkbox', checked: true });
+    const note = h('input', { maxlength: '300', placeholder: 'السبب (اختياري)', 'aria-label': 'السبب' });
+    clear(excBox).append(
+      h('h2', null, 'الدوام الاستثنائي (يوم عطلة)'),
+      h('p', { class: 'muted' }, 'إذا داوم الموظف في عطلة أسبوعية أو رسمية بتكليف: سجّل اليوم هنا فتُحتسب ساعاته المعتمدة في التايم شيت على مشاريعه ويزول تظليل العمود. ألغِ التسجيل لتعود الساعات إضافياً فقط.'),
+      exceptions.length
+        ? h('ul', { class: 'plain' }, exceptions.map((x) => h('li', { class: 'badge-row' },
+          h('strong', null, dmy(x.date)),
+          h('span', { class: `chip ${x.counted ? 'chip-present' : 'chip-absent'}` }, x.counted ? 'محتسب' : 'تسجيل فقط'),
+          h('span', { class: 'muted' }, `${hrs(x.counted ? x.approvedHours : x.overtimeHours)} ساعة · ${COMP[x.comp]}${x.note ? ` · ${x.note}` : ''}`),
+          h('button', { type: 'button', class: 'btn btn-sm btn-danger-ghost', onclick: async () => {
+            if (!(await confirmBox('إلغاء تسجيل هذا اليوم الاستثنائي؟', 'إلغاء التسجيل', true))) return;
+            try {
+              await post('/api/work-exceptions/cancel', { employeeId: id, date: x.date });
+              toast('أُلغي التسجيل');
+              loadExceptions();
+              loadMonth();
+            } catch (e) {
+              toast(e.message, 'err');
+            }
+          } }, 'إلغاء'))))
+        : h('p', { class: 'muted' }, 'لا أيام استثنائية مسجّلة لهذا الموظف.'),
+      h('form', { class: 'inline-form', onsubmit: async (e) => {
+        e.preventDefault();
+        try {
+          await post('/api/work-exceptions', { employeeId: id, date: date.value, counted: counted.checked, comp: comp.value, note: note.value });
+          toast('سُجّل اليوم الاستثنائي');
+          loadExceptions();
+          loadMonth();
+        } catch (ex) {
+          toast(ex.message, 'err');
+        }
+      } }, field('اليوم (عطلة)', date), field('التعويض', comp), field('السبب', note),
+      h('label', { class: 'check' }, counted, ' يُحتسب في التايم شيت'),
+      h('button', { type: 'submit', class: 'btn' }, 'تسجيل')));
+  }
+
   const page = h('div', { class: 'page' },
     hero,
     cards,
     enBox,
     allocBox,
     canEdit ? badgeBox : null,
+    canEdit ? excBox : null,
     h('section', { class: 'panel-plain' }, h('div', { class: 'page-head' }, h('h2', null, 'سجل الدوام'), monthBar), sums, tableBox));
-  await Promise.all([loadMonth(), loadBadges(), loadAllocations().catch(() => {})]);
+  await Promise.all([loadMonth(), loadBadges(), loadExceptions().catch(() => {}), loadAllocations().catch(() => {})]);
   return page;
 }

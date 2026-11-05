@@ -134,12 +134,12 @@ export function buildTimesheet({ year, month, days, allocations, dayHours, confi
     const weights = funders.map((a) => (a.from <= date && date <= a.to ? a.share : 0));
     const t = sum(weights);
     funders.forEach((_, k) => {
-      if (!row || dt === 'عطلة أسبوعية' || t === 0) funderVals[k][i] = null;
+      if (!row || (dt === 'عطلة أسبوعية' && !row.exceptional) || t === 0) funderVals[k][i] = null;
       else funderVals[k][i] = (worked * weights[k]) / t;
     });
 
     if (dt === 'عطلة رسمية') official[i] = hf.full;
-    if (row && dt === 'عمل' && !isSick) {
+    if (row && dt === 'عمل' && !row.exceptional && !isSick) {
       if (wk > 0) {
         const short = hf.attendance - worked;
         annual[i] = short > SHORTFALL_EPS ? short : null;
@@ -175,7 +175,7 @@ export function buildTimesheet({ year, month, days, allocations, dayHours, confi
   // العطلة الرسمية لا تُظلَّل لأن ساعاتها تظهر في صف «Official Holidays»؛ وأي يوم يحمل ساعات يُرفع تظليله.
   const off = dates.map((date, i) => {
     const r = days[date];
-    const weekly = r ? r.dayType === 'عطلة أسبوعية' : [5, 6].includes(new Date(`${date}T00:00:00Z`).getUTCDay());
+    const weekly = r ? r.dayType === 'عطلة أسبوعية' && !r.exceptional : [5, 6].includes(new Date(`${date}T00:00:00Z`).getUTCDay());
     return weekly && totalVals[i] === null;
   });
 

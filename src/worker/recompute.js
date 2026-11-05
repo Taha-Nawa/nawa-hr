@@ -59,7 +59,7 @@ export async function recomputePairs(db, pairs, settings, extraStatements = []) 
     const key = JSON.stringify(chunk);
     const dates = JSON.stringify([...new Set(chunk.map((p) => p.d))]);
 
-    const [mv, ov, hol, pm, rl, em] = await db.batch([
+    const queries = (withExc) => [
       db.prepare(
         `SELECT m.employee_id AS e, m.date AS d, m.type, m.time FROM movements m
          WHERE (m.employee_id, m.date) IN (SELECT json_extract(value,'$.e'), json_extract(value,'$.d') FROM json_each(?))`,
@@ -69,7 +69,13 @@ export async function recomputePairs(db, pairs, settings, extraStatements = []) 
          FROM day_overrides o
          WHERE (o.employee_id, o.date) IN (SELECT json_extract(value,'$.e'), json_extract(value,'$.d') FROM json_each(?))`,
       ).bind(key),
-      db.prepare('SELECT date FROM holidays WHERE date IN (SELECT value FROM json_each(?))').bind(dates),
+      // العطل الرسمية (e فارغ) والدوام الاستثنائي المحتسب (e = الموظف) في استعلام واحد لتبقى ميزانية الاستعلامات
+      db.prepare(
+        `SELECT date, NULL AS e FROM holidays WHERE date IN (SELECT value FROM json_each(?1))${withExc ? `
+         UNION ALL
+         SELECT date, employee_id FROM work_exceptions WHERE counted = 1
+           AND (employee_id, date) IN (SELECT json_extract(value,'$.e'), json_extract(value,'$.d') FROM json_each(?2))` : ''}`,
+      ).bind(...(withExc ? [dates, key] : [dates])),
       // دقائق الأذونات المعتمدة (مغادرة/تأخير) لهذه الأيام
       db.prepare(
         `SELECT r.employee_id AS e, r.from_date AS d, r.kind, SUM(r.minutes) AS m FROM requests r
@@ -87,7 +93,17 @@ export async function recomputePairs(db, pairs, settings, extraStatements = []) 
            AND (em.center_id IS NULL OR em.center_id = x.center_id)
          GROUP BY p.e, p.d`,
       ).bind(key),
-    ]);
+    ];
+    let res;
+    try {
+      res = await db.batch(queries(true));
+    } catch (e) {
+      // الهجرة 0020 لم تُطبَّق بعد: يعمل الحساب بدون الدوام الاستثنائي
+      if (!/no such table: work_exceptions/.test(String(e?.message || e))) throw e;
+      res = await db.batch(queries(false));
+    }
+    const [mv, ov, hol, pm, rl, em] = res;
+    const exceptional = new Set(hol.results.filter((r) => r.e !== null).map((r) => `${r.e}|${r.date}`));
     const dismiss = new Map(em.results.map((r) => [`${r.e}|${r.d}`, r.t]));
     let exempt = true;
     try {
@@ -98,7 +114,7 @@ export async function recomputePairs(db, pairs, settings, extraStatements = []) 
     const permits = new Map();
     if (exempt) for (const r of pm.results) permits.set(`${r.e}|${r.d}`, { ...(permits.get(`${r.e}|${r.d}`) || {}), [r.kind]: r.m });
 
-    const holidays = new Set(hol.results.map((r) => r.date));
+    const holidays = new Set(hol.results.filter((r) => r.e === null).map((r) => r.date));
     const moves = new Map();
     for (const r of mv.results) {
       const k = `${r.e}|${r.d}`;
@@ -119,6 +135,7 @@ export async function recomputePairs(db, pairs, settings, extraStatements = []) 
           leaveType: o?.leave_type || '',
           permit: permits.get(k),
           dismissAt: dismiss.get(k),
+          exception: exceptional.has(k),
         },
         settings,
       );
