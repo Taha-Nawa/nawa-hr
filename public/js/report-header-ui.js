@@ -26,21 +26,25 @@ export function chosenId(header) {
 }
 export const logosOf = (header, id) => header.sets.find((s) => s.id === id)?.logos || [];
 
+// الصورة تُقرأ بـ FileReader كـ data URL لأن سياسة الأمان (CSP) لا تسمح بروابط blob: في img-src.
 function shrink(file) {
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      const k = Math.min(1, MAX_SIDE / Math.max(img.width, img.height));
-      const c = document.createElement('canvas');
-      c.width = Math.max(1, Math.round(img.width * k));
-      c.height = Math.max(1, Math.round(img.height * k));
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(url);
-      resolve(c.toDataURL('image/png')); // PNG يحفظ الشفافية
+    const fr = new FileReader();
+    fr.onerror = () => reject(new Error('تعذّر قراءة الملف'));
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, MAX_SIDE / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.width * k));
+        c.height = Math.max(1, Math.round(img.height * k));
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/png')); // PNG يحفظ الشفافية
+      };
+      img.onerror = () => reject(new Error('تعذّر قراءة الصورة: استعمل PNG أو JPG أو WebP'));
+      img.src = String(fr.result);
     };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('تعذّر قراءة الصورة')); };
-    img.src = url;
+    fr.readAsDataURL(file);
   });
 }
 
