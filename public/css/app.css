@@ -1303,6 +1303,8 @@ h2 { font-size: 0.95rem; }
 .rh-preview .rh-block { width: 100%; }
 .rh-edit-list { display: grid; gap: 10px; margin-bottom: 10px; }
 .rh-item { display: flex; align-items: center; gap: 12px; padding: 10px; border: 1px solid var(--line-2); border-radius: 12px; flex-wrap: wrap; }
+.rh-edit-list > .rh-item:nth-child(odd) { background: var(--surface); }
+.rh-edit-list > .rh-item:nth-child(even) { background: #efe2cb; border-color: var(--line); }
 .rh-item > img { width: 64px; height: 64px; object-fit: contain; background: #fff; border: 1px solid var(--line-2); border-radius: 8px; }
 .rh-item-f { display: flex; gap: 12px; flex: 1; flex-wrap: wrap; }
 .rh-sets { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
