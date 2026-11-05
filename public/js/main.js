@@ -1,3 +1,5 @@
+import { openPalette, bindPaletteShortcut } from './palette.js';
+import { bellButton } from './bell.js';
 import { h, $, clear, toast, icon, dialog } from './dom.js';
 import { get, setUnauthorizedHandler } from './api.js';
 import { hasCallback, finishLogin, logout, authConfig, deviceInfo, resumeDevice } from './auth.js';
@@ -151,10 +153,15 @@ function showShell() {
       h('header', { class: 'topbar' },
         h('img', { src: '/logo.png', alt: 'جمعية نوى' }),
         h('div', { class: 'topbar-title' }, 'نظام نوى للشؤون الإدارية', h('small', null, 'جمعية نوى للثقافة والفنون')),
+        h('button', { type: 'button', class: 'bell', 'aria-label': 'بحث', onclick: () => openPalette(listed()) }, icon('search')),
+        bellButton(me),
         withPhoto(h('span', { class: 'avatar', 'aria-hidden': 'true' }, initial()), me.photo)),
       h('aside', { class: 'side' },
         h('button', { type: 'button', class: 'rail-toggle', id: 'railToggle', 'aria-label': 'إخفاء القائمة الجانبية', 'aria-expanded': 'true', onclick: toggleRail }, h('i')),
         h('a', { href: '#/today', class: 'brand', title: 'نظام نوى للشؤون الإدارية' }, h('img', { src: '/logo.png', alt: '' }), h('span', null, 'نظام نوى للشؤون الإدارية', h('small', null, 'جمعية نوى للثقافة والفنون'))),
+        h('div', { class: 'side-tools' },
+          h('button', { type: 'button', class: 'side-search', 'aria-label': 'بحث عام', title: 'بحث عام (Ctrl+K)', onclick: () => openPalette(listed()) }, icon('search'), h('span', null, 'بحث…')),
+          bellButton(me)),
         navTree(pages),
         h('div', { class: 'who' },
           h('div', { class: 'who-name' }, me.employeeName || me.email),
@@ -166,6 +173,7 @@ function showShell() {
         h('button', { type: 'button', class: 'tab', id: 'tabMore', onclick: openMore }, h('span', { class: 'pill' }, icon('more')), h('span', null, 'المزيد')))),
   );
   applyRail(lsGet('nawa-rail') === '1');
+  if (!window.__palBound) { window.__palBound = true; bindPaletteShortcut(() => (me ? listed() : [])); }
   watchTables($('#view'));
   refreshPending();
 }
