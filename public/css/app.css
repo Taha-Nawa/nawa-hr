@@ -1269,3 +1269,23 @@ h2 { font-size: 0.95rem; }
 .trend-up { color: #1f7a45; font-weight: 700; }
 .trend-down { color: var(--red); font-weight: 700; }
 .bulk-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+
+/* «يومي» للموظف */
+.myday { background: var(--surface); border: 1px solid var(--line-2); border-radius: 16px; padding: 18px; display: grid; gap: 16px; }
+.myday-status .chip { font-size: 1.05rem; padding: 6px 16px; }
+.myday-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin: 0; }
+.myday-grid div { background: var(--canvas); border-radius: 12px; padding: 12px; text-align: center; }
+.myday-grid dt { color: var(--muted); font-size: 0.8rem; }
+.myday-grid dd { margin: 4px 0 0; font-weight: 800; font-size: 1.25rem; }
+.myday-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 860px) { .myday-actions .btn { flex: 1 1 100%; justify-content: center; } }
+
+/* تحميل بهيكل متحرّك بدل نص «جارٍ التحميل» الجامد */
+.loading { position: relative; color: transparent; min-height: 96px; overflow: hidden; border-radius: 12px; background: linear-gradient(90deg, var(--canvas) 25%, var(--surface) 50%, var(--canvas) 75%); background-size: 200% 100%; animation: skel 1.2s linear infinite; }
+@keyframes skel { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .loading { animation: none; } }
+.tour { text-align: center; display: grid; gap: 8px; justify-items: center; }
+.tour-ico { width: 64px; height: 64px; display: grid; place-items: center; border-radius: 50%; background: var(--canvas); color: var(--red); }
+.tour-ico .ic { width: 30px; height: 30px; }
+.tour p { margin: 0; color: var(--muted); }
+.tour .dlg-actions { width: 100%; align-items: center; }

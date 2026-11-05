@@ -113,6 +113,24 @@ export default async function render({ user }) {
         user.role === 'admin' ? h('a', { href: '#/settings' }, 'افتح الإعدادات') : 'اطلب من مسؤول النظام إدخالها.'));
     }
 
+    // الموظف العادي: بطاقة «يومي» بدل لوحة الفريق (هو لا يرى غيره أصلاً)، مصمَّمة للجوال
+    if (user.role === 'employee') {
+      const me = rows.find((r) => r.id === user.employeeId) || rows[0] || null;
+      clear(strip).append(h('section', { class: 'myday' },
+        h('div', { class: 'myday-status' }, statusChip(me?.status ?? null, date === today), me?.alert ? h('div', { class: 'alert-text' }, me.alert) : null),
+        h('dl', { class: 'myday-grid' },
+          [['حضور', me?.checkIn], ['انصراف', me?.departure]].map(([t, v]) => h('div', null, h('dt', null, t), h('dd', null, dash(fmt12(v))))),
+          h('div', null, h('dt', null, 'الصافي'), h('dd', null, me?.netHours ? hrs(me.netHours) : '—')),
+          h('div', null, h('dt', null, 'التأخر'), h('dd', null, me?.lateMinutes ? `${me.lateMinutes} د` : '—'))),
+        h('div', { class: 'myday-actions' },
+          h('a', { class: 'btn btn-primary', href: '#/requests' }, 'طلب إجازة أو إذن'),
+          h('a', { class: 'btn', href: `#/employees/${user.employeeId}` }, 'سجل دوامي'),
+          h('a', { class: 'btn', href: '#/work-log' }, 'ماذا أنجزت اليوم'))));
+      clear(tools);
+      clear(tableBox);
+      return;
+    }
+
     const counts = Object.fromEntries(GROUPS.map((g) => [g.id, 0]));
     for (const r of rows) counts[groupOf(r.status)]++;
 

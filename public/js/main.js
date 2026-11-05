@@ -1,5 +1,6 @@
 import { openPalette, bindPaletteShortcut } from './palette.js';
 import { bellButton } from './bell.js';
+import { maybeTour } from './tour.js';
 import { h, $, clear, toast, icon, dialog } from './dom.js';
 import { get, setUnauthorizedHandler } from './api.js';
 import { hasCallback, finishLogin, logout, authConfig, deviceInfo, resumeDevice } from './auth.js';
@@ -243,7 +244,7 @@ async function route() {
     const node = await mod.default({ user: me, params: found.params });
     if (location.hash.replace(/^#\/?/, '').split('?')[0] === path) {
       clear(view).append(node);
-      if (found.page.path === 'today') maybeTip(view);
+      if (found.page.path === 'today') { maybeTip(view); maybeTour(me.role); }
       view.focus({ preventScroll: true });
       window.scrollTo(0, 0);
     }
