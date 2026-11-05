@@ -356,3 +356,25 @@ test('API: إعداد ساعات التايم شيت — الكتابة للمس
   assert.deepEqual(t.funders.map((f) => f.funder), ['A', 'B', 'C', 'D']);
   assert.deepEqual([t.funders[0].values[0], t.others.values[0], t.emergency.values[0], t.total.values[0]], [3.5, 0.5, null, 7.5]);
 });
+
+test('أعمدة العطلة الأسبوعية: الجمعة والسبت مظلَّلان حتى بلا حساب لليوم', () => {
+  const t = build({});
+  const offDays = t.off.map((v, i) => (v ? i + 1 : null)).filter(Boolean);
+  assert.deepEqual(offDays, [2, 3, 9, 10, 16, 17, 23, 24, 30, 31]);
+  const withRow = build({ [OCT(2)]: day('عمل', 6.5) });
+  assert.equal(withRow.off[1], false, 'يوم مسجّل عملاً لا يُظلَّل');
+});
+
+test('ورقة إكسل: صفوف الممولين بعددهم، وتسمية التبويب، ورقم الموظف رقماً', () => {
+  const two = [{ funder: 'A', share: 0.68, from: '2026-01-01', to: '2030-12-31' }, { funder: 'B', share: 0.32, from: '2026-01-01', to: '2030-12-31' }];
+  const sh = timesheetSheet(build({}, two), { name: 'X', code: 'NW-006', post: 'P', place: 'C', supervisor: 'S', approver: 'M' }, undefined, 'October');
+  assert.equal(sh.name, 'October');
+  assert.equal(sh.cells.A10.v, 'A');
+  assert.equal(sh.cells.A11.v, 'B');
+  assert.equal(sh.cells.A12.v, 'Official Holidays', 'بعد صفّي الممولين مباشرة');
+  assert.equal(sh.cells.A18.v, 'Total');
+  assert.equal(sh.cells.S5.v, 6);
+  assert.equal(sh.cells.A23.v, 'Administration and Finance Department Manager');
+  const one1 = timesheetSheet(build({}), { name: 'X', code: 'NW-006', post: '', place: '', supervisor: '', approver: '' });
+  assert.equal(one1.cells.A11.v, 'Official Holidays', 'ممول واحد: صف واحد');
+});

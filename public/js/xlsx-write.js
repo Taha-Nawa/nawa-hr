@@ -18,6 +18,7 @@ const FONTS = [
   '<font><b/><sz val="9"/><color rgb="FF9C5700"/><name val="Arial"/></font>', // 7 متوقع
   '<font><b/><sz val="9"/><color rgb="FF9C0006"/><name val="Arial"/></font>', // 8 مرفوض
   '<font><sz val="9"/><name val="Arial"/></font>', // 9 صغير
+  '<font><sz val="10"/><color rgb="FFA6A6A6"/><name val="Georgia"/></font>', // 10 تلميح (Date: / Signature:)
 ];
 const FILLS = ['<fill><patternFill patternType="none"/></fill>', '<fill><patternFill patternType="gray125"/></fill>', '<fill><patternFill patternType="solid"><fgColor rgb="FFF2DCDB"/><bgColor indexed="64"/></patternFill></fill>',
   '<fill><patternFill patternType="solid"><fgColor rgb="FFC6EFCE"/><bgColor indexed="64"/></patternFill></fill>', // 3 أخضر
@@ -26,8 +27,12 @@ const FILLS = ['<fill><patternFill patternType="none"/></fill>', '<fill><pattern
   '<fill><patternFill patternType="solid"><fgColor rgb="FFD9D9D9"/><bgColor indexed="64"/></patternFill></fill>', // 6 رمادي
 ];
 const THIN = '<left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/>';
-const BORDERS = ['<border><left/><right/><top/><bottom/><diagonal/></border>', `<border>${THIN}</border>`, '<border><left/><right/><top/><bottom style="thin"><color auto="1"/></bottom><diagonal/></border>'];
-const NUMFMTS = { 164: '0.0#', 165: '0%' };
+const RED = '<color rgb="FF920000"/>';
+const BORDERS = ['<border><left/><right/><top/><bottom/><diagonal/></border>', `<border>${THIN}</border>`, '<border><left/><right/><top/><bottom style="thin"><color auto="1"/></bottom><diagonal/></border>',
+  `<border><left style="thin">${RED}</left><right style="thin">${RED}</right><top style="thin">${RED}</top><bottom style="thin">${RED}</bottom><diagonal/></border>`, // 3 خط الورقة الأحمر الداكن
+  '<border><left/><right/><top style="medium"><color rgb="FFC00000"/></top><bottom style="medium"><color rgb="FFC00000"/></bottom><diagonal/></border>', // 4 خط حقول الترويسة
+];
+const NUMFMTS = { 164: '0.0#', 165: '0%', 166: '0.0' };
 
 // name -> [fontId, fillId, borderId, numFmtId, horizontal, wrap]
 const STYLES = {
@@ -61,6 +66,22 @@ const STYLES = {
   calOff: [9, 6, 1, 0, 'center', false],
   calCell: [9, 0, 1, 0, 'center', false],
   calHead: [9, 2, 1, 0, 'center', true],
+  // التايم شيت الشهري: يطابق شيت «October» في ملف الإدارة (Georgia، خط 920000، 0.0، أعمدة الجمعة والسبت مظلَّلة)
+  tsTitle: [3, 0, 0, 0, 'center', false],
+  tsLabel: [1, 0, 0, 0, 'center', true],
+  tsValue: [2, 0, 4, 0, 'center', false],
+  tsHead: [2, 2, 3, 0, 'center', true],
+  tsDay: [2, 0, 3, 0, 'center', false],
+  tsDayOff: [2, 2, 3, 0, 'center', false],
+  tsItem: [2, 0, 3, 0, 'left', true],
+  tsPct: [2, 0, 3, 165, 'center', false],
+  tsHours: [2, 0, 3, 166, 'center', false],
+  tsHoursOff: [2, 2, 3, 166, 'center', false],
+  tsHoursFill: [2, 2, 3, 166, 'center', false],
+  tsTotalLbl: [2, 2, 3, 0, 'right', true],
+  tsBoxLbl: [2, 2, 3, 0, 'center', true],
+  tsBoxTxt: [2, 0, 3, 0, 'center', true],
+  tsHint: [10, 0, 3, 0, 'left', false],
 };
 const STYLE_IDS = Object.keys(STYLES);
 const styleId = (name) => {
@@ -156,7 +177,7 @@ function drawingXml(img) {
   return (
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
-    `<xdr:oneCellAnchor><xdr:from><xdr:col>${col}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${row}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="${img.size.w * EMU}" cy="${img.size.h * EMU}"/>` +
+    `<xdr:oneCellAnchor><xdr:from><xdr:col>${col}</xdr:col><xdr:colOff>${(img.from.colOffPx || 0) * EMU}</xdr:colOff><xdr:row>${row}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="${img.size.w * EMU}" cy="${img.size.h * EMU}"/>` +
     '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="2" name="logo"/><xdr:cNvPicPr preferRelativeResize="0"/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>' +
     '<xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>'
   );

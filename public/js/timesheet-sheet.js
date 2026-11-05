@@ -1,25 +1,37 @@
-// يحوّل ناتج buildTimesheet إلى ورقة إكسل بتخطيط شيت «monthly timesheet» في ملف الإدارة (عمودا A..AH، صفوف 1..24).
+// يحوّل ناتج buildTimesheet إلى ورقة إكسل تطابق شيت «October» في ملف الإدارة (أعمدة A..AH، الشعار فوق العنوان،
+// صفوف الممولين بعددهم، أعمدة الجمعة والسبت مظلَّلة، ساعات بصيغة 0.0 ونسبة المركز 0%).
 import { colName } from './xlsx-write.js';
 
 const DAY_COL0 = 3; // D
 const LAST_COL = DAY_COL0 + 31 - 1; // AH
 const L = (i) => colName(i);
 const FIRST_FUNDER_ROW = 10;
+const ROW_H = 19.95;
 
-const employeeNumber = (code) => {
+/** رقم الموظف: الجزء الأخير من الكود («NW-006» ← 6) رقماً كما في الشيت الأصلي. */
+export const employeeNumber = (code) => {
   const m = String(code || '').match(/([^-\s]+)\s*$/);
-  return m ? m[1] : '';
+  if (!m) return '';
+  return /^\d+$/.test(m[1]) ? Number(m[1]) : m[1];
 };
+
+/** نص التواقيع الثلاثة كما في الشيت الأصلي (تُستعمل في ورقة إكسل وفي المعاينة المطبوعة). */
+export const SIGN_ROLES = ['Employee', 'Direct Supervisor', 'Administration and Finance Department Manager'];
+
+/** عدد أسطر اسم الممول في عمود A (عرضه نحو 23 حرفاً) لضبط ارتفاع الصف. */
+export const nameLines = (s) => Math.max(1, Math.ceil(String(s || '').length / 24));
 
 /**
  * @param {object} ts      ناتج buildTimesheet
  * @param {{name:string,code:string,post:string,place:string,supervisor:string,approver:string}} info
  * @param {Uint8Array} [logoPng]
+ * @param {string} [sheetName]  اسم التبويب (الافتراضي كود الموظف)
  */
-export function timesheetSheet(ts, info, logoPng) {
+export function timesheetSheet(ts, info, logoPng, sheetName) {
   const cells = {};
   const merges = [];
-  const rowHeights = { 2: 98.25 };
+  const rowHeights = { 1: 110.25, 9: 26.4 };
+  for (let r = 2; r <= 8; r++) rowHeights[r] = ROW_H;
   const put = (ref, v, s = 'default') => {
     cells[ref] = { v, s };
   };
@@ -27,84 +39,81 @@ export function timesheetSheet(ts, info, logoPng) {
     for (let c = c1; c <= c2; c++) put(`${L(c)}${r}`, c === c1 ? v : null, s);
     if (c2 > c1) merges.push(`${L(c1)}${r}:${L(c2)}${r}`);
   };
+  const off = (i) => Boolean(ts.off?.[i]);
 
-  merges.push(`A1:${L(LAST_COL)}1`, 'M2:P2');
-  box(3, 6, 21, 'Monthly Timesheet', 'title');
+  merges.push(`A1:${L(LAST_COL)}1`);
+  box(3, 6, 21, 'Monthly Timesheet', 'tsTitle');
 
   const header = (r, l1, v1, l2, v2) => {
-    box(r, 0, 1, l1, 'labelC');
-    box(r, 2, 11, v1, 'underlined');
-    box(r, 13, 17, l2, 'center');
-    box(r, 18, 29, v2, 'underlined');
+    box(r, 0, 1, l1, 'tsLabel');
+    box(r, 2, 11, v1, 'tsValue');
+    box(r, 13, 17, l2, 'tsLabel');
+    box(r, 18, 29, v2, 'tsValue');
   };
   header(5, 'Name:', info.name, 'Employee Number :', employeeNumber(info.code));
-  header(6, 'Post:', info.post, 'Month :', ts.monthName);
+  header(6, 'Post:', info.post, 'Month : ', ts.monthName);
   header(7, 'Place of Work:', info.place, 'Year :', ts.year);
 
-  put('A9', 'Item', 'head');
-  put('B9', 'Cost Center', 'head');
-  put('C9', 'Work Hours', 'head');
-  for (let d = 1; d <= 31; d++) put(`${L(DAY_COL0 + d - 1)}9`, d, 'headNum');
+  put('A9', 'Item', 'tsHead');
+  put('B9', 'Cost Center', 'tsHead');
+  put('C9', 'Work Hours', 'tsHead');
+  for (let d = 1; d <= 31; d++) put(`${L(DAY_COL0 + d - 1)}9`, d, off(d - 1) ? 'tsDayOff' : 'tsDay');
 
-  const dayCells = (r, values, style) => {
-    for (let i = 0; i < 31; i++) put(`${L(DAY_COL0 + i)}${r}`, i < ts.daysInMonth ? values[i] : null, style);
+  const dayCells = (r, values) => {
+    for (let i = 0; i < 31; i++) put(`${L(DAY_COL0 + i)}${r}`, i < ts.daysInMonth ? values[i] : null, off(i) ? 'tsHoursOff' : 'tsHours');
   };
 
-  // صفوف الممولين: ثلاثة كما في الشيت الأصلي كحد أدنى، وتزيد بعدد المشاريع (ما تحتها يُزاح بالزيادة)
-  const funderRows = Math.max(3, ts.funders.length);
-  const off = funderRows - 3;
+  // صفوف الممولين بعددهم (صف واحد على الأقل) كما في الشيت الأصلي؛ ما تحتها يُزاح بالفرق عن اثنين
+  const funderRows = Math.max(1, ts.funders.length);
   for (let k = 0; k < funderRows; k++) {
     const r = FIRST_FUNDER_ROW + k;
     const f = ts.funders[k];
-    put(`A${r}`, f ? f.funder : '', 'label');
-    put(`B${r}`, f ? f.costCenter : null, 'pct');
-    put(`C${r}`, f ? f.total : null, 'hoursFill');
-    dayCells(r, f ? f.values : new Array(31).fill(null), 'hours');
-    const lines = f ? Math.ceil(f.funder.length / 34) : 1;
-    rowHeights[r] = Math.max(18.75, 13.5 * lines + 4);
+    put(`A${r}`, f ? f.funder : '', 'tsItem');
+    put(`B${r}`, f ? f.costCenter : null, 'tsPct');
+    put(`C${r}`, f ? f.total : null, 'tsHoursFill');
+    dayCells(r, f ? f.values : new Array(31).fill(null));
+    rowHeights[r] = Math.max(ROW_H, 13.2 * nameLines(f?.funder));
   }
   const rest = [ts.official, ts.annual, ts.sick, ts.emergency, ts.others, ts.unpaid];
+  const restRow0 = FIRST_FUNDER_ROW + funderRows;
   rest.forEach((row, i) => {
-    const r = 13 + off + i;
-    put(`A${r}`, row.label, 'label');
-    put(`B${r}`, null, 'pct');
-    put(`C${r}`, row.total, 'hoursFill');
-    dayCells(r, row.values, 'hours');
-    rowHeights[r] = 18.75;
+    const r = restRow0 + i;
+    put(`A${r}`, row.label, 'tsItem');
+    put(`B${r}`, null, 'tsPct');
+    put(`C${r}`, row.total, 'tsHoursFill');
+    dayCells(r, row.values);
+    rowHeights[r] = ROW_H;
   });
 
-  const totalRow = 19 + off;
-  box(totalRow, 0, 1, 'Total', 'labelFill');
-  put(`C${totalRow}`, ts.total.total, 'hoursFill');
-  dayCells(totalRow, ts.total.values, 'hoursFill');
-  rowHeights[totalRow] = 23.25;
+  const totalRow = restRow0 + rest.length;
+  box(totalRow, 0, 1, 'Total', 'tsTotalLbl');
+  put(`C${totalRow}`, ts.total.total, 'tsHoursFill');
+  dayCells(totalRow, ts.total.values);
+  rowHeights[totalRow] = ROW_H;
 
   // التواقيع
-  const signRow = 21 + off;
-  box(signRow, 0, 3, null, 'boxFill');
-  box(signRow, 4, 18, 'Name', 'boxFill');
-  box(signRow, 19, LAST_COL, 'Date & Signature', 'boxFill');
-  const sign = [
-    ['Employee', info.name],
-    ['Direct Supervisor', info.supervisor],
-    ['Administration and Finance Manager', info.approver],
-  ];
-  sign.forEach(([label, name], i) => {
+  const signRow = totalRow + 2;
+  box(signRow, 0, 3, null, 'tsBoxLbl');
+  box(signRow, 4, 18, 'Name', 'tsBoxLbl');
+  box(signRow, 19, LAST_COL, 'Date & Signature', 'tsBoxLbl');
+  const names = [info.name, info.supervisor, info.approver];
+  SIGN_ROLES.forEach((label, i) => {
     const r = signRow + 1 + i;
-    box(r, 0, 3, label, 'boxFill');
-    box(r, 4, 18, name || '', 'boxText');
-    box(r, 19, 25, 'Date:', 'boxLeft');
-    box(r, 26, LAST_COL, 'Signature:', 'boxLeft');
+    box(r, 0, 3, label, 'tsBoxLbl');
+    box(r, 4, 18, names[i] || '', 'tsBoxTxt');
+    box(r, 19, 25, 'Date:', 'tsHint');
+    box(r, 26, LAST_COL, 'Signature:', 'tsHint');
   });
-  for (const r of [signRow, signRow + 1, signRow + 2, signRow + 3]) rowHeights[r] = 22.5;
+  for (let r = totalRow + 1; r <= signRow + 3; r++) rowHeights[r] = ROW_H;
+  rowHeights[signRow + 3] = 26.4; // «Administration and Finance Department Manager» يلتف على سطرين
 
   return {
-    name: info.code,
-    cols: { A: 31.6, B: 9, C: 11, [`D:${L(LAST_COL)}`]: 5.1 },
+    name: sheetName || info.code,
+    cols: { A: 23.3, B: 7.1, C: 6.7, [`D:${L(LAST_COL)}`]: 4.3 },
     rowHeights,
     cells,
     merges,
     landscape: true,
-    image: logoPng ? { png: logoPng, from: { col: 12, row: 1 }, size: { w: 92, h: 92 } } : undefined,
+    image: logoPng ? { png: logoPng, from: { col: 11, row: 0, colOffPx: 31 }, size: { w: 158, h: 140 } } : undefined,
   };
 }

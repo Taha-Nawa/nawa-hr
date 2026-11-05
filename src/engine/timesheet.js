@@ -171,9 +171,17 @@ export function buildTimesheet({ year, month, days, allocations, dayHours, confi
   });
   const grand = sum(fRows.map((r) => r.total)) + sum([rows.official, rows.annual, rows.sick, rows.emergency, rows.others].map((r) => r.total ?? 0));
 
+  // أيام العطلة الأسبوعية (تُظلَّل أعمدتها في الورقة): نوع اليوم في الحساب، وإن لم يوجد حساب فالجمعة والسبت
+  const off = dates.map((date) => {
+    const r = days[date];
+    if (r) return r.dayType === 'عطلة أسبوعية';
+    const w = new Date(`${date}T00:00:00Z`).getUTCDay();
+    return w === 5 || w === 6;
+  });
+
   const notes = [];
   if (overlapping.length === 0) notes.push('no_allocation');
   if (overlapping.length > MAX_FUNDER_ROWS) notes.push('too_many_funders');
 
-  return { year, month, monthName: MONTH_NAMES[month - 1], daysInMonth: dim, dates, funders: fRows, ...rows, total: { label: 'Total', values: totalVals, total: grand }, notes };
+  return { year, month, monthName: MONTH_NAMES[month - 1], daysInMonth: dim, dates, off, funders: fRows, ...rows, total: { label: 'Total', values: totalVals, total: grand }, notes };
 }

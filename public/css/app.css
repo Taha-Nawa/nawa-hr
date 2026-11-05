@@ -1137,3 +1137,31 @@ h2 { font-size: 0.95rem; }
   .ico { transform: scale(0.55); margin: -22px 0; } .slide { padding: 50px 20px 34px; gap: 4px; } .slide p { display: none; } .slide h2 { font-size: 1.2rem; }
 }
 @media (prefers-reduced-motion: reduce) { .login-show *, .login-show *::before, .login-show *::after { animation-duration: 0.01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; } }
+
+/* ------------------------------------------------------------ معاينة التايم شيت الشهري (A4 أفقي، نسخة من شيت October)
+   المقاسات بالبكسل كما في الإكسل ثم يُصغَّر الجدول كاملاً (zoom) ليملأ عرض الورقة. */
+@page tsheet { size: A4 landscape; margin: 0; }
+.ts-paper { page: tsheet; box-sizing: border-box; width: 297mm; height: 209.5mm; padding: 9mm 10mm; background: #fff; color: #000; border: 1px solid #d9d2cc; box-shadow: var(--shadow); overflow: hidden; direction: ltr; text-align: left; }
+.ts-paper + .ts-paper { margin-top: 12px; }
+.ts-fit { zoom: 0.765; width: 1360px; margin-inline: auto; }
+.ts-tbl { width: 1360px; table-layout: fixed; border-collapse: collapse; font: 10pt/1.15 Georgia, "Times New Roman", serif; }
+.ts-tbl td { padding: 0 2px; text-align: center; vertical-align: middle; overflow: hidden; }
+.ts-r { height: 26.6px; }
+.ts-logo { height: 147px; }
+.ts-logo img { height: 140px; width: auto; display: block; margin: 0 auto; }
+.ts-title { font-size: 14pt; font-weight: 700; }
+.ts-lbl { font-size: 11pt; font-weight: 700; }
+.ts-val { border-top: 2.25px solid #c00000; border-bottom: 2.25px solid #c00000; }
+.ts-hd { height: 35px; }
+.ts-h, .ts-d, .ts-c, .ts-item, .ts-tot, .ts-bx { border: 1px solid #920000; }
+.ts-item { text-align: left !important; white-space: normal; }
+.ts-tbl .fill, .ts-tbl .off, .ts-h, .ts-tot { background: #f2dcdb; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.ts-tot { text-align: right !important; padding-inline-end: 3px; }
+.ts-bx.hint { text-align: left; color: #a6a6a6; }
+.ts-r.tall { height: 35px; }
+@media print {
+  .ts-paper { border: 0; box-shadow: none; break-after: page; margin: 0 !important; }
+  .ts-paper:last-child { break-after: auto; }
+}
+.ts-bar { position: sticky; top: 0; z-index: 5; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
+.ts-ok { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }

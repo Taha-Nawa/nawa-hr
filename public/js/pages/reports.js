@@ -2,32 +2,9 @@ import { h, clear, field, select, toast, todayLocal } from '../dom.js';
 import { get } from '../api.js';
 import { buildXlsx } from '../xlsx-write.js';
 import { timesheetSheet } from '../timesheet-sheet.js';
-
-const CHUNK = 25; // الحد الأقصى للموظفين في طلب واحد (يطابق الخادم)
-const NOTE = {
-  no_allocation: 'لا يوجد توزيع على ممول في هذا الشهر — صفوف الممولين فارغة (أضف التوزيع من صفحة الموظف).',
-  too_many_funders: 'أكثر من 6 مشاريع متزامنة في هذا الشهر — يُعرض أول 6 فقط.',
-};
-const fmt = (v) => (v === null || v === undefined ? '' : String(Math.round(v * 100) / 100));
+import { fetchTimesheets, loadLogo, NOTE } from '../timesheet-data.js';
 
 const monthNow = () => todayLocal().slice(0, 7);
-
-function previewTable(sheet) {
-  const ts = sheet.timesheet;
-  const rows = [
-    ...ts.funders.map((f) => ({ label: f.funder, cc: `${Math.round(f.costCenter * 100)}%`, row: f })),
-    ...[ts.official, ts.annual, ts.sick, ts.emergency, ...(ts.others.total ? [ts.others] : [])].map((r) => ({ label: r.label, cc: '', row: r })),
-    { label: 'Total', cc: '', row: ts.total, strong: true },
-  ];
-  return h('div', { class: 'table-wrap', dir: 'ltr' },
-    h('table', { class: 'tbl' },
-      h('thead', null, h('tr', null, h('th', null, 'Item'), h('th', null, 'CC'), h('th', null, 'Hours'), ts.dates.map((d) => h('th', null, Number(d.slice(8)))))),
-      h('tbody', null, rows.map(({ label, cc, row, strong }) => h('tr', null,
-        h('td', { style: { minWidth: '220px', maxWidth: '320px' } }, strong ? h('strong', null, label) : label),
-        h('td', null, cc),
-        h('td', null, h('strong', null, fmt(row.total))),
-        row.values.map((v) => h('td', null, fmt(v))))))));
-}
 
 export default async function render({ user }) {
   const [{ employees }, { centers }] = await Promise.all([get('/api/employees'), get('/api/centers')]);
@@ -46,8 +23,8 @@ export default async function render({ user }) {
   const month = h('input', { type: 'month', value: monthNow(), required: true, max: monthNow() });
   const who = select(options, wanted && active.some((e) => e.id === wanted) ? `e${wanted}` : options[0]?.[0]);
   const out = h('div');
-  const btnPrev = h('button', { type: 'button', class: 'btn' }, 'معاينة');
-  const btnDown = h('button', { type: 'button', class: 'btn btn-primary' }, 'تنزيل ملف إكسل');
+  const btnPrev = h('button', { type: 'button', class: 'btn btn-primary' }, 'معاينة وطباعة');
+  const btnDown = h('button', { type: 'button', class: 'btn' }, 'تنزيل ملف إكسل');
 
   const selected = () => {
     const v = who.value;
@@ -56,40 +33,17 @@ export default async function render({ user }) {
     return active.filter((e) => e.id === Number(v.slice(1)));
   };
 
-  async function fetchSheets(list) {
-    const sheets = [];
-    let approver = '';
-    for (let i = 0; i < list.length; i += CHUNK) {
-      const ids = list.slice(i, i + CHUNK).map((e) => e.id).join(',');
-      const r = await get(`/api/reports/timesheet?month=${encodeURIComponent(month.value)}&employees=${ids}`);
-      sheets.push(...r.sheets);
-      approver = r.approver || approver;
-    }
-    return { sheets, approver };
-  }
+  const fetchSheets = (list) => fetchTimesheets(month.value, list.map((e) => e.id));
 
   const busy = (on) => {
     btnPrev.disabled = on;
     btnDown.disabled = on;
   };
 
-  btnPrev.onclick = async () => {
+  btnPrev.onclick = () => {
     const list = selected();
-    if (!month.value || !list.length) return;
-    busy(true);
-    try {
-      const { sheets } = await fetchSheets(list.slice(0, 1));
-      const s = sheets[0];
-      clear(out).append(h('div', null,
-        h('h3', { class: 'section-title' }, `${s.employee.name} — ${s.timesheet.monthName} ${s.timesheet.year}`),
-        previewTable(s),
-        s.timesheet.notes.map((n) => h('div', { class: 'notice notice-warn' }, NOTE[n])),
-        list.length > 1 ? h('p', { class: 'muted' }, `المعاينة للموظف الأول فقط (${list.length} موظفاً في الملف عند التنزيل).`) : null));
-    } catch (e) {
-      toast(e.message, 'err');
-    } finally {
-      busy(false);
-    }
+    if (!month.value || !list.length) return toast('اختر الشهر والموظفين', 'err');
+    location.hash = `#/timesheet-preview?month=${encodeURIComponent(month.value)}&employees=${list.map((e) => e.id).join(',')}`;
   };
 
   btnDown.onclick = async () => {
@@ -97,11 +51,8 @@ export default async function render({ user }) {
     if (!month.value || !list.length) return toast('اختر الشهر والموظفين', 'err');
     busy(true);
     try {
-      const [{ sheets, approver }, logo] = await Promise.all([
-        fetchSheets(list),
-        fetch('/logo.png').then((r) => (r.ok ? r.arrayBuffer() : null)).then((b) => (b ? new Uint8Array(b) : undefined)).catch(() => undefined),
-      ]);
-      const bytes = buildXlsx({ sheets: sheets.map((s) => timesheetSheet(s.timesheet, { ...s.employee, approver }, logo)) });
+      const [{ sheets, approver }, logo] = await Promise.all([fetchSheets(list), loadLogo()]);
+      const bytes = buildXlsx({ sheets: sheets.map((s) => timesheetSheet(s.timesheet, { ...s.employee, approver }, logo, sheets.length === 1 ? s.timesheet.monthName : undefined)) });
       const label = list.length === 1 ? list[0].code : who.value === 'all' ? 'All' : (centers.find((c) => `c${c.id}` === who.value)?.nameEn || 'Center').replace(/\W+/g, '-');
       const a = h('a', {
         href: URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })),

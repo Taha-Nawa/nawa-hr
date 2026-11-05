@@ -33,6 +33,7 @@ const PAGES = [
   { path: 'employees', title: 'الموظفون', short: 'الموظفون', icon: 'users', tab: true, roles: ALL, load: () => import('./pages/employees.js') },
   { path: 'employees/:id', title: 'الموظف', roles: ALL, nav: 'employees', load: () => import('./pages/employee.js') },
   { path: 'reports', title: 'التقارير', short: 'التقارير', icon: 'report', tab: true, roles: ALL, load: () => import('./pages/reports.js') },
+  { path: 'timesheet-preview', title: 'معاينة التايم شيت', roles: ALL, nav: 'reports', load: () => import('./pages/timesheet-preview.js') },
   { path: 'links', title: 'الروابط', icon: 'link', roles: ALL, load: () => import('./pages/links.js') },
   { path: 'settings', title: 'الإعدادات والعطل', icon: 'sliders', roles: ['hr', 'director', 'admin'], load: () => import('./pages/settings.js') },
   { path: 'import', title: 'الاستيراد من إكسل', icon: 'upload', roles: ['hr', 'admin'], load: () => import('./pages/import.js') },
