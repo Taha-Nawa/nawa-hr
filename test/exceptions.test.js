@@ -132,3 +132,29 @@ test('ترويسات التقرير: مجموعات مسمّاة، قراءة ل
   assert.equal(g.body.header.default, 'b');
   assert.equal(g.body.canEdit, false);
 });
+
+test('الموقع: يُحفظ مع الحركة، ويُعلَّم الخروج عن نطاق المركز وتباعد الحركات، ولا تُعلَّم الحركات المتقاربة', async () => {
+  const { db, env, u } = await world();
+  await db.prepare('UPDATE centers SET lat = 31.4167, lng = 34.3500, radius_m = 150 WHERE id = 1').run();
+  const { DEVICE_TOKEN, gatePost, mv } = await import('./helpers/seed.js');
+  const mk = (code, type, time, lat, lng) => ({ ...mv(code, type, '2026-11-02', time), lat, lng, acc: 12 });
+  // NW-002 (مركز 1): حضور قرب المركز ثم انصراف بعيد 1كم؛ NW-003: حركتان متقاربتان؛ NW-004: حضور بعيد عن المركز
+  const r = await gatePost(env, [
+    mk('NW-002', 'حضور', '08:30', 31.4168, 34.3501), mk('NW-002', 'انصراف', '15:00', 31.4260, 34.3500),
+    mk('NW-003', 'حضور', '08:30', 31.4168, 34.3501), mk('NW-003', 'انصراف', '15:00', 31.4169, 34.3502),
+    mk('NW-004', 'حضور', '08:30', 31.4400, 34.3500),
+  ], DEVICE_TOKEN);
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  const row = await db.prepare("SELECT lat, acc FROM movements WHERE code = 'NW-002' AND type = 'حضور'").first();
+  assert.equal(row.acc, 12);
+  const res = await call(env, 'GET', '/api/insights/locations?days=14', { cookie: u.hr.cookie });
+  assert.equal(res.status, 200, JSON.stringify(res.body));
+  const by = Object.fromEntries(res.body.days.map((d) => [d.code, d.flags]));
+  assert.equal(by['NW-002'].spread, true);
+  assert.equal(by['NW-004'].outside, true);
+  assert.equal(by['NW-003'], undefined, 'متقاربة ضمن النطاق');
+  assert.equal((await call(env, 'GET', '/api/insights/locations', { cookie: u.emp.cookie })).status, 403);
+  // ضبط موقع المركز: إحداثيات مرفوضة وصالحة
+  assert.equal((await call(env, 'PATCH', '/api/centers/1', { cookie: u.hr.cookie, body: { lat: 200, lng: 0 } })).status, 400);
+  assert.equal((await call(env, 'PATCH', '/api/centers/1', { cookie: u.hr.cookie, body: { lat: 31.4, lng: 34.3, radiusM: 150 } })).status, 200);
+});

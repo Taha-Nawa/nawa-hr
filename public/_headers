@@ -3,7 +3,7 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: same-origin
   X-Frame-Options: DENY
-  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Permissions-Policy: camera=(), microphone=(), geolocation=(self)
 
 # بوابة الحضور (تطبيق PWA): تحتاج الكاميرا والاتصال بخدمة Google (المسار المزدوج أثناء التجربة).
 # «!» يفصل الترويسة الموروثة من القاعدة العامة أعلاه ثم نضع بدلها سياسة هذه الصفحة.
@@ -11,7 +11,7 @@
   ! Content-Security-Policy
   ! Permissions-Policy
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; media-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'
-  Permissions-Policy: camera=(self), microphone=(), geolocation=()
+  Permissions-Policy: camera=(self), microphone=(), geolocation=(self)
 
 # ملف الـ Service Worker لا يُخزَّن أبداً كي يصل أي تحديث فوراً.
 /gate/sw.js

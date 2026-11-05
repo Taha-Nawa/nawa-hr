@@ -9,6 +9,7 @@
  * الفرق الأمني عن النسخة القديمة: لكل جهاز رمزه الخاص (يُخزَّن مبصوماً SHA-256) ويُلغى منفرداً،
  * بدل رمز واحد مشترك مكتوب في الشيفرة.
  */
+import { validLat, validLng } from '../engine/geo.js';
 import { json, sha256hex, isDate, isTime, clip, localDate, nowOf } from './util.js';
 import { gateProviderBadges, ingestProviderMoves } from './providers.js';
 import { gateUnclosed } from './unclosed.js';
@@ -23,13 +24,14 @@ const TYPES = new Set(['حضور', 'خروج', 'عودة', 'انصراف']);
 const LAST_SEEN_STALE_MIN = 5;
 
 const INSERT_SQL = `
-INSERT OR IGNORE INTO movements (id, employee_id, card, code, name, center, type, date, time, iso, device_id, offline, note)
-SELECT j.id, COALESCE(b.employee_id, e.id), j.card, j.code, j.name, j.center, j.type, j.date, j.time, j.iso, ?2, j.offline, j.note
+INSERT OR IGNORE INTO movements (id, employee_id, card, code, name, center, type, date, time, iso, device_id, offline, note, lat, lng, acc)
+SELECT j.id, COALESCE(b.employee_id, e.id), j.card, j.code, j.name, j.center, j.type, j.date, j.time, j.iso, ?2, j.offline, j.note, j.lat, j.lng, j.acc
 FROM (
   SELECT json_extract(value,'$.id') AS id, json_extract(value,'$.card') AS card, json_extract(value,'$.code') AS code,
          json_extract(value,'$.name') AS name, json_extract(value,'$.center') AS center, json_extract(value,'$.type') AS type,
          json_extract(value,'$.date') AS date, json_extract(value,'$.time') AS time, json_extract(value,'$.iso') AS iso,
-         json_extract(value,'$.offline') AS offline, json_extract(value,'$.note') AS note
+         json_extract(value,'$.offline') AS offline, json_extract(value,'$.note') AS note,
+         json_extract(value,'$.lat') AS lat, json_extract(value,'$.lng') AS lng, json_extract(value,'$.acc') AS acc
   FROM json_each(?1)
 ) j
 LEFT JOIN badges b ON b.card = j.card
@@ -157,6 +159,10 @@ export async function ingestMoves(db, deviceId, moves, { touchDevice = false, on
         iso: clip(m.iso, 40),
         offline: m.offline ? 1 : 0,
         note: clip(m.note, 300),
+        // موقع الهاتف اختياري؛ قيمة خارج المدى أو غير رقمية تُهمل (لا ترفض الحركة)
+        lat: validLat(m.lat) && validLng(m.lng) ? m.lat : null,
+        lng: validLat(m.lat) && validLng(m.lng) ? m.lng : null,
+        acc: validLat(m.lat) && validLng(m.lng) && Number.isFinite(m.acc) && m.acc >= 0 ? Math.round(m.acc) : null,
       });
     }
   }

@@ -1,6 +1,6 @@
 /* Service worker لبوابة الحضور: يجعل الصفحة تفتح فوراً وبلا اتصال.
    لا يلمس أي طلب لغير ملفات البوابة نفسها (لا Google ولا /api): الحركات تمرّ مباشرة دائماً. */
-const VERSION = 'gate-v6';
+const VERSION = 'gate-v7';
 const SHELL = [
   './', 'gate.css', 'gate.js', 'jsqr.js', 'manifest.webmanifest',
   'fonts/alexandria-arabic.woff2', 'fonts/alexandria-latin.woff2',

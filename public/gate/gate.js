@@ -328,6 +328,15 @@ function reject(code,msg,b){
   showRes(false,msg,code); flashHit(false);
   addFeed({name:msg,time:tstr(new Date()),type:"",ok:false});
 }
+/* موقع الهاتف: يُراقَب باستمرار ويُرفق آخر موقع حديث (حتى ٥ دقائق) بكل حركة؛ لا يمنع المسح إن تعذّر (دون إذن أو دون تغطية) */
+var geo=null;
+function startGeo(){
+  if(!navigator.geolocation)return;
+  try{navigator.geolocation.watchPosition(function(p){
+    geo={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()};
+  },function(){},{enableHighAccuracy:true,maximumAge:30000,timeout:30000})}catch(e){}
+}
+startGeo();
 function accept(b,d){
   beep(true);
   var iso=d.toISOString();
@@ -338,6 +347,7 @@ function accept(b,d){
     type:move, date:dstr(d), time:tstr(d), iso:iso,
     device:cfg.device, offline:!navigator.onLine, note:""
   };
+  if(geo&&Date.now()-geo.t<300000){rec.lat=geo.lat; rec.lng=geo.lng; rec.acc=Math.round(geo.acc)}
   /* حركة مزوّد الخدمة تذهب إلى النظام الجديد وحده: Google لا يعرف المزوّدين ولا يجوز أن تلوّث جدوله */
   lastProv=(b.kind==="provider");
   if(!lastProv){pending.push(rec); save(K.pend,pending)}

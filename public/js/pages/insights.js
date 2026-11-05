@@ -84,6 +84,25 @@ export default async function render({ user }) {
     }
   }
 
+  const locBox = h('div');
+  async function loadLocations() {
+    try {
+      const d = await get('/api/insights/locations?days=14');
+      const flagChips = (f) => [f.outside ? h('span', { class: 'chip chip-absent' }, 'خارج النطاق') : null, f.spread ? h('span', { class: 'chip chip-late' }, 'تغيّر الموقع') : null, f.partial ? h('span', { class: 'chip chip-none' }, 'بعض الحركات بلا موقع') : null];
+      clear(locBox).append(d.days.length
+        ? h('div', { class: 'table-wrap' }, h('table', { class: 'tbl' },
+          h('thead', null, h('tr', null, ['الموظف', 'اليوم', 'العلامات', 'التفاصيل'].map((t) => h('th', null, t)))),
+          h('tbody', null, d.days.map((r) => h('tr', null,
+            h('td', null, h('a', { href: `#/employees/${r.id}` }, `${r.code} — ${r.name}`)),
+            h('td', null, r.date),
+            h('td', null, ...flagChips(r.flags)),
+            h('td', { class: 'muted' }, [r.maxFromCenter !== null ? `أبعد حركة ${r.maxFromCenter} م عن ${r.center} (المسموح ${r.radius})` : (r.noCenterLocation ? `موقع ${r.center} غير محدَّد` : ''), r.maxSpread ? `أقصى تباعد بين حركاته ${r.maxSpread} م` : ''].filter(Boolean).join(' — '))))))
+        : h('div', { class: 'empty' }, h('b', null, 'لا مواقع مشبوهة'), h('p', { class: 'muted' }, 'لا حركات خرجت عن النطاق أو تغيّر موقعها في آخر 14 يوماً.')));
+    } catch (e) {
+      clear(locBox).append(h('div', { class: 'notice notice-err' }, e.message));
+    }
+  }
+
   async function loadIntegrity() {
     try {
       const d = await get('/api/insights/integrity');
@@ -105,8 +124,9 @@ export default async function render({ user }) {
     h('div', { class: 'page-head' }, h('h1', null, full ? 'المراجعة والتسوية' : 'اتجاهات فريقي')),
     h('section', { class: 'panel' }, h('div', { class: 'page-head' }, h('h2', null, 'اتجاهات الدوام'), monthSel), trendBox),
     h('section', { class: 'panel' }, h('h2', null, 'يحتاجون انتباهاً مبكراً'), patBox),
+    h('section', { class: 'panel' }, h('h2', null, 'مراجعة المواقع (آخر 14 يوماً)'), h('p', { class: 'muted' }, 'تُعلَّم الأيام التي خرجت فيها حركة عن نطاق المركز، أو تباعدت فيها حركات الموظف بعضها عن بعض. إن بقي الموقع نفسه فلا علامة.'), locBox),
     full ? h('section', { class: 'panel' }, h('h2', null, 'تسوية الممولين'), h('p', { class: 'muted' }, 'ساعات كل ممول في الشهر المختار أعلاه كما تخرج في التايم شيت نفسه (المعتمدة موزّعة بنسب كل موظف).'), fundBox) : null,
     full ? h('section', { class: 'panel-plain' }, h('h2', null, 'سلامة البيانات'), h('p', { class: 'muted' }, 'نواقص إن تُركت عطّلت التقارير أو الحضور.'), intBox) : null);
-  await Promise.all([loadTrends(), loadPatterns(), full ? loadFunders() : null, full ? loadIntegrity() : null]);
+  await Promise.all([loadTrends(), loadPatterns(), loadLocations(), full ? loadFunders() : null, full ? loadIntegrity() : null]);
   return page;
 }

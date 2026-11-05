@@ -25,6 +25,7 @@ import { registerVolunteerRoutes } from './volunteers.js';
 import { registerProviderRoutes } from './providers.js';
 import { registerUnclosedRoutes } from './unclosed.js';
 import { registerExceptionRoutes } from './exceptions.js';
+import { validLat, validLng } from '../engine/geo.js';
 import { registerInsightRoutes } from './insights.js';
 import { registerReportHeaderRoutes } from './report-header.js';
 import { registerSheetRoutes } from './sheets.js';
@@ -341,7 +342,7 @@ add('GET', '/api/reports/timesheet', timesheetReport);
 
 // ---------------------------------------------------------------- المراكز
 add('GET', '/api/centers', async ({ db }) => {
-  const r = await db.prepare('SELECT id, name, name_en AS nameEn, active FROM centers ORDER BY name').all();
+  const r = await db.prepare('SELECT id, name, name_en AS nameEn, active, lat, lng, radius_m AS radiusM FROM centers ORDER BY name').all();
   return json({ ok: true, centers: r.results });
 });
 
@@ -367,7 +368,7 @@ add('PATCH', '/api/centers/:id', async ({ request, db, user, params }) => {
   const { body, error } = await readJson(request);
   if (error) return error;
   const keys = Object.keys(body);
-  if (!keys.length || keys.some((k) => k !== 'name' && k !== 'nameEn')) return bad('الحقول المسموحة: name و nameEn');
+  if (!keys.length || keys.some((k) => !['name', 'nameEn', 'lat', 'lng', 'radiusM'].includes(k))) return bad('الحقول المسموحة: name و nameEn و lat و lng و radiusM');
   const sets = [];
   const vals = [];
   if ('name' in body) {
@@ -379,6 +380,20 @@ add('PATCH', '/api/centers/:id', async ({ request, db, user, params }) => {
   if ('nameEn' in body) {
     sets.push('name_en = ?');
     vals.push(body.nameEn === null ? null : clip(body.nameEn, 120));
+  }
+  if ('lat' in body || 'lng' in body) {
+    // الموقع يُضبط معاً: إما الاثنان صالحان أو الاثنان null (إلغاء)
+    if (body.lat === null && body.lng === null) sets.push('lat = NULL', 'lng = NULL');
+    else if (validLat(body.lat) && validLng(body.lng)) {
+      sets.push('lat = ?', 'lng = ?');
+      vals.push(body.lat, body.lng);
+    } else return bad('إحداثيات غير صالحة');
+  }
+  if ('radiusM' in body) {
+    const r = Number(body.radiusM);
+    if (!Number.isInteger(r) || r < 30 || r > 2000) return bad('نصف القطر بين 30 و2000 متر');
+    sets.push('radius_m = ?');
+    vals.push(r);
   }
   if (!(await db.prepare('SELECT 1 AS x FROM centers WHERE id = ?').bind(id).first())) return notFound('المركز');
   try {
