@@ -26,6 +26,8 @@
   --surface: #fff;
   --line: #e6dccf;
   --line-2: #f1e9de;
+  --row-alt: #f7efe2;
+  --row-hover: #f0e3cd;
   --radius: 12px;
   --radius-sm: 9px;
   --shadow: 0 1px 0 rgba(162, 16, 8, 0.06), 0 6px 18px -12px rgba(42, 20, 16, 0.25);
@@ -220,7 +222,8 @@ input[type="search"] { min-width: min(300px, 100%); }
 .tbl th { text-align: start; font-size: 0.82rem; font-weight: 700; color: var(--ink-2); padding: 10px 14px; background: #fbf7f0; border-bottom: 1px solid var(--line); white-space: nowrap; }
 .tbl td { padding: 10px 14px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
 .tbl tbody tr:last-child td { border-bottom: 0; }
-.tbl tbody tr:hover { background: #fdfaf5; }
+.tbl tbody tr:nth-child(even) { background: var(--row-alt); }
+.tbl tbody tr:hover { background: var(--row-hover); }
 .tbl .num { text-align: center; white-space: nowrap; }
 .tbl .code { color: var(--muted); font-size: 0.82rem; }
 .tbl .row-off td { color: var(--muted); }
@@ -545,7 +548,7 @@ a.btn.is-disabled { opacity: 0.5; }
   .tbl.stack, .tbl.stack tbody { display: block; }
   .tbl.stack thead { display: none; }
   .tbl.stack tr { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px 12px; padding: 12px 14px; margin-bottom: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
-  .tbl.stack tbody tr:hover { background: var(--surface); }
+  .tbl.stack tbody tr, .tbl.stack tbody tr:nth-child(even), .tbl.stack tbody tr:hover { background: var(--surface); }
   .tbl.stack td { display: block; padding: 0; border: 0; min-width: 0; text-align: start; white-space: normal; }
   .tbl.stack td::before { content: attr(data-label); display: block; font-size: 0.72rem; color: var(--muted); font-weight: 600; }
   .tbl.stack td:first-child { grid-column: 1 / -1; font-size: 1.02rem; }
@@ -677,6 +680,7 @@ table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; w
 .team .who .emp-name { display: block; font-weight: 700; font-size: 0.82rem; }
 .team .who .code { display: block; color: var(--muted); font-size: 0.7rem; font-weight: 500; }
 .team .off { background: #ebe6e0; }
+.team tbody tr:nth-child(even) .who, .team tbody tr:nth-child(even) td:not([class*="cal-"]):not(.off) { background: var(--row-alt); }
 .team thead th.today { box-shadow: inset 0 -3px 0 var(--red); }
 .team td .cell { all: unset; box-sizing: border-box; display: block; width: 100%; height: 100%; min-height: 33px; line-height: 33px; font: inherit; font-size: 0.68rem; font-weight: 700; cursor: pointer; }
 .team td .cell:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
