@@ -171,12 +171,12 @@ export function buildTimesheet({ year, month, days, allocations, dayHours, confi
   });
   const grand = sum(fRows.map((r) => r.total)) + sum([rows.official, rows.annual, rows.sick, rows.emergency, rows.others].map((r) => r.total ?? 0));
 
-  // أيام العطلة الأسبوعية (تُظلَّل أعمدتها في الورقة): نوع اليوم في الحساب، وإن لم يوجد حساب فالجمعة والسبت
-  const off = dates.map((date) => {
+  // الأعمدة المظلَّلة = أيام لا دوام فيها: عطلة أسبوعية (نوع اليوم في الحساب، وإن لم يوجد حساب فالجمعة والسبت) وبلا أي ساعات في عمودها.
+  // العطلة الرسمية لا تُظلَّل لأن ساعاتها تظهر في صف «Official Holidays»؛ وأي يوم يحمل ساعات يُرفع تظليله.
+  const off = dates.map((date, i) => {
     const r = days[date];
-    if (r) return r.dayType === 'عطلة أسبوعية';
-    const w = new Date(`${date}T00:00:00Z`).getUTCDay();
-    return w === 5 || w === 6;
+    const weekly = r ? r.dayType === 'عطلة أسبوعية' : [5, 6].includes(new Date(`${date}T00:00:00Z`).getUTCDay());
+    return weekly && totalVals[i] === null;
   });
 
   const notes = [];
