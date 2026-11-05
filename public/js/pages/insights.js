@@ -11,14 +11,17 @@ function shiftMonth(ym, n) {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
-export default async function render() {
+export default async function render({ user }) {
+  const full = ['hr', 'director', 'admin'].includes(user.role);
   let ym = shiftMonth(todayLocal().slice(0, 7), -1);
   const fundBox = h('div');
   const intBox = h('div');
+  const trendBox = h('div');
+  const patBox = h('div');
   const monthSel = select(
     Array.from({ length: 12 }, (_, i) => shiftMonth(todayLocal().slice(0, 7), -i)).map((m) => [m, m]),
     ym,
-    { 'aria-label': 'الشهر', onchange: (e) => { ym = e.target.value; loadFunders(); } },
+    { 'aria-label': 'الشهر', onchange: (e) => { ym = e.target.value; if (full) loadFunders(); loadTrends(); } },
   );
 
   async function loadFunders() {
@@ -41,6 +44,46 @@ export default async function render() {
     }
   }
 
+  const arrow = (cur, prev, goodUp) => {
+    if (prev === null || prev === undefined || cur === null || cur === undefined) return '';
+    const d = cur - prev;
+    if (Math.abs(d) < 1e-9) return ' ＝';
+    const good = goodUp ? d > 0 : d < 0;
+    return h('span', { class: good ? 'trend-up' : 'trend-down' }, d > 0 ? ' ▲' : ' ▼');
+  };
+  async function loadTrends() {
+    try {
+      const d = await get(`/api/insights/trends?month=${ym}`);
+      clear(trendBox).append(d.rows.length
+        ? h('div', { class: 'table-wrap' }, h('table', { class: 'tbl' },
+          h('thead', null, h('tr', null, ['المركز', 'نسبة الحضور', 'مرات التأخر', 'أيام الغياب', 'ساعات الإضافي'].map((t) => h('th', null, t)))),
+          h('tbody', null, d.rows.map((r) => h('tr', null,
+            h('td', null, r.center),
+            h('td', null, r.rate === null ? '—' : pct(r.rate), arrow(r.rate, r.prevRate, true)),
+            h('td', null, String(r.late), arrow(r.late, r.prevLate, false)),
+            h('td', null, String(r.absent), arrow(r.absent, r.prevAbsent, false)),
+            h('td', null, hrs(r.overtime), arrow(r.overtime, r.prevOvertime, false)))))))
+        : h('div', { class: 'empty' }, h('b', null, 'لا بيانات في هذا الشهر')),
+      h('p', { class: 'muted' }, 'الأسهم مقارنة بالشهر السابق (أخضر = تحسّن). نسبة الحضور = أيام الحضور ÷ (الحضور + الغياب)، والإجازات المعتمدة خارج الحساب.'));
+    } catch (e) {
+      clear(trendBox).append(h('div', { class: 'notice notice-err' }, e.message));
+    }
+  }
+  async function loadPatterns() {
+    try {
+      const d = await get('/api/insights/patterns');
+      clear(patBox).append(d.employees.length
+        ? h('ul', { class: 'plain' }, d.employees.map((p) => h('li', null,
+          h('a', { href: `#/employees/${p.id}` }, `${p.code} — ${p.name}`),
+          p.absentFlag ? h('span', { class: 'chip chip-absent' }, `غياب ${p.absent}`) : null, ' ',
+          p.lateFlag ? h('span', { class: 'chip chip-late' }, `تأخر ${p.late}`) : null)))
+        : h('div', { class: 'empty' }, h('b', null, 'لا أنماط مقلقة'), h('p', { class: 'muted' }, `لا أحد تأخر ${d.thresholds.late} مرات أو غاب ${d.thresholds.absent} في آخر 30 يوماً.`)),
+      h('p', { class: 'muted' }, `من يتأخر ${d.thresholds.late} مرات فأكثر أو يغيب بلا إجازة ${d.thresholds.absent} فأكثر خلال 30 يوماً.`));
+    } catch (e) {
+      clear(patBox).append(h('div', { class: 'notice notice-err' }, e.message));
+    }
+  }
+
   async function loadIntegrity() {
     try {
       const d = await get('/api/insights/integrity');
@@ -59,9 +102,11 @@ export default async function render() {
   }
 
   const page = h('div', { class: 'page' },
-    h('div', { class: 'page-head' }, h('h1', null, 'المراجعة والتسوية')),
-    h('section', { class: 'panel' }, h('div', { class: 'page-head' }, h('h2', null, 'تسوية الممولين'), monthSel), h('p', { class: 'muted' }, 'ساعات كل ممول في الشهر كما تخرج في التايم شيت نفسه (المعتمدة موزّعة بنسب كل موظف).'), fundBox),
-    h('section', { class: 'panel-plain' }, h('h2', null, 'سلامة البيانات'), h('p', { class: 'muted' }, 'نواقص إن تُركت عطّلت التقارير أو الحضور.'), intBox));
-  await Promise.all([loadFunders(), loadIntegrity()]);
+    h('div', { class: 'page-head' }, h('h1', null, full ? 'المراجعة والتسوية' : 'اتجاهات فريقي')),
+    h('section', { class: 'panel' }, h('div', { class: 'page-head' }, h('h2', null, 'اتجاهات الدوام'), monthSel), trendBox),
+    h('section', { class: 'panel' }, h('h2', null, 'يحتاجون انتباهاً مبكراً'), patBox),
+    full ? h('section', { class: 'panel' }, h('h2', null, 'تسوية الممولين'), h('p', { class: 'muted' }, 'ساعات كل ممول في الشهر المختار أعلاه كما تخرج في التايم شيت نفسه (المعتمدة موزّعة بنسب كل موظف).'), fundBox) : null,
+    full ? h('section', { class: 'panel-plain' }, h('h2', null, 'سلامة البيانات'), h('p', { class: 'muted' }, 'نواقص إن تُركت عطّلت التقارير أو الحضور.'), intBox) : null);
+  await Promise.all([loadTrends(), loadPatterns(), full ? loadFunders() : null, full ? loadIntegrity() : null]);
   return page;
 }

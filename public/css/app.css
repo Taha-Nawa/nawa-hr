@@ -1266,3 +1266,5 @@ h2 { font-size: 0.95rem; }
 @media (max-width: 860px) { .topbar .bell { width: 34px; height: 34px; } .side-tools { display: none; } }
 .pal-box input::-webkit-search-cancel-button { display: none; }
 .pal-box kbd { white-space: nowrap; }
+.trend-up { color: #1f7a45; font-weight: 700; }
+.trend-down { color: var(--red); font-weight: 700; }

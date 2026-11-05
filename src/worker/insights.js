@@ -5,7 +5,7 @@
  * قراءة فقط.
  */
 import { json, localDate, addDays } from './util.js';
-import { can } from './authz.js';
+import { can, employeeScope } from './authz.js';
 import { tzOf } from './close.js';
 import { loadWorkSettings } from './settings.js';
 import { toMin } from '../engine/attendance.js';
@@ -13,6 +13,13 @@ import { buildTimesheet, daysInMonth, mergeTimesheetConfig } from '../engine/tim
 
 const MONTH_RE = /^(\d{4})-(0[1-9]|1[0-2])$/;
 const EPS = 0.001;
+const LATE_N = 3; // مرات التأخر في 30 يوماً التي تستدعي تنبيهاً
+const ABSENT_N = 2; // مرات الغياب بلا إجازة في 30 يوماً
+const pad2 = (n) => String(n).padStart(2, '0');
+const prevMonth = (ym) => {
+  const [y, m] = ym.split('-').map(Number);
+  return m === 1 ? `${y - 1}-12` : `${y}-${pad2(m - 1)}`;
+};
 
 export function registerInsightRoutes(add, { bad, forbidden }) {
   add('GET', '/api/insights/funders', async ({ db, user, url }) => {
@@ -118,5 +125,61 @@ export function registerInsightRoutes(add, { bad, forbidden }) {
       { key: 'email', title: 'بلا بريد دخول', why: 'لا يستطيع دخول النظام بنفسه', level: 'low', items: emp(noEmail) },
     ];
     return json({ ok: true, checks, total: checks.reduce((s, c) => s + c.items.length, 0) });
+  });
+
+  // اتجاهات الشهر لكل مركز مقابل الشهر السابق: نسبة الحضور، التأخر، الغياب، الإضافي
+  add('GET', '/api/insights/trends', async ({ db, user, url }) => {
+    if (!['manager', 'hr', 'director', 'admin'].includes(user.role)) return forbidden();
+    const m = MONTH_RE.exec(url.searchParams.get('month') || '');
+    if (!m) return bad('الشهر غير صالح (الصيغة YYYY-MM)');
+    const cur = `${m[1]}-${m[2]}`;
+    const prev = prevMonth(cur);
+    const sc = employeeScope(user, 'e');
+    const stats = async (ym) =>
+      (
+        await db
+          .prepare(
+            `SELECT COALESCE(c.name, 'بلا مركز') AS center,
+                    SUM(CASE WHEN r.day_type = 'عمل' AND r.status IN ('حاضر', 'متأخر') THEN 1 ELSE 0 END) AS present,
+                    SUM(CASE WHEN r.day_type = 'عمل' AND r.status = 'غياب' THEN 1 ELSE 0 END) AS absent,
+                    SUM(CASE WHEN r.status = 'متأخر' THEN 1 ELSE 0 END) AS late,
+                    ROUND(SUM(r.overtime_hours), 1) AS overtime
+             FROM daily_results r JOIN employees e ON e.id = r.employee_id LEFT JOIN centers c ON c.id = e.center_id
+             WHERE r.date LIKE ? AND ${sc.sql} GROUP BY c.id ORDER BY c.name`,
+          )
+          .bind(`${ym}-%`, ...sc.params)
+          .all()
+      ).results;
+    const [a, b] = await Promise.all([stats(cur), stats(prev)]);
+    const rate = (r) => {
+      const base = r.present + r.absent; // الإجازات المعتمدة لا تُحسب غياباً ولا حضوراً
+      return base ? r.present / base : null;
+    };
+    const prevBy = new Map(b.map((r) => [r.center, r]));
+    const rows = a.map((r) => {
+      const p = prevBy.get(r.center);
+      return { center: r.center, rate: rate(r), prevRate: p ? rate(p) : null, late: r.late, prevLate: p?.late ?? null, absent: r.absent, prevAbsent: p?.absent ?? null, overtime: r.overtime || 0, prevOvertime: p?.overtime ?? null };
+    });
+    return json({ ok: true, month: cur, prev, rows });
+  });
+
+  // أنماط تستدعي انتباهاً مبكراً: تأخر متكرر أو غياب متكرر في آخر 30 يوماً (نطاق المدير: فريقه)
+  add('GET', '/api/insights/patterns', async ({ env, db, user }) => {
+    if (!['manager', 'hr', 'director', 'admin'].includes(user.role)) return forbidden();
+    const today = localDate(tzOf(env));
+    const since = addDays(today, -30);
+    const sc = employeeScope(user, 'e');
+    const rows = (
+      await db
+        .prepare(
+          `SELECT e.id, e.code, e.name, SUM(CASE WHEN r.status = 'متأخر' THEN 1 ELSE 0 END) AS late, SUM(CASE WHEN r.day_type = 'عمل' AND r.status = 'غياب' THEN 1 ELSE 0 END) AS absent
+           FROM daily_results r JOIN employees e ON e.id = r.employee_id AND e.status = 'active'
+           WHERE r.date > ? AND r.date < ? AND ${sc.sql}
+           GROUP BY e.id HAVING late >= ${LATE_N} OR absent >= ${ABSENT_N} ORDER BY absent DESC, late DESC LIMIT 100`,
+        )
+        .bind(since, today, ...sc.params)
+        .all()
+    ).results;
+    return json({ ok: true, since, thresholds: { late: LATE_N, absent: ABSENT_N }, employees: rows.map((r) => ({ ...r, lateFlag: r.late >= LATE_N, absentFlag: r.absent >= ABSENT_N })) });
   });
 }

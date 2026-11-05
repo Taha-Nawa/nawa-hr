@@ -89,3 +89,19 @@ test('المراجعة والتسوية: ساعات الممولين وسلام�
   assert.ok(alloc.items.some((x) => x.name.includes('NW-001')), 'موظف بلا توزيع اليوم يُذكر');
   assert.equal((await call(env, 'GET', '/api/insights/integrity', { cookie: u.emp.cookie })).status, 403);
 });
+
+test('الاتجاهات والأنماط: مقارنة مع الشهر السابق، وتنبيه التأخر/الغياب المتكرر، والمدير يرى فريقه فقط', async () => {
+  const { db, env, u } = await world();
+  // موظف 2: غياب يومان وتأخر 3 مرات قبل «اليوم» (2026-11-02)
+  const days = ['2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-25'];
+  for (const d of days.slice(0, 3)) await addOverride(db, 2, d, { manual: { in: '09:30', dep: '15:00' } }); // متأخر
+  assert.equal((await post(env, u.hr, '/api/recompute', { from: '2026-10-25', to: '2026-10-29' })).status, 200);
+  const p = await call(env, 'GET', '/api/insights/patterns', { cookie: u.hr.cookie });
+  assert.equal(p.status, 200, JSON.stringify(p.body));
+  const e2 = p.body.employees.find((x) => x.id === 2);
+  assert.ok(e2 && e2.lateFlag, 'ثلاث مرات تأخر');
+  const t = await call(env, 'GET', '/api/insights/trends?month=2026-10', { cookie: u.hr.cookie });
+  assert.equal(t.status, 200);
+  assert.ok(t.body.rows.length >= 1 && t.body.prev === '2026-09');
+  assert.equal((await call(env, 'GET', '/api/insights/trends?month=2026-10', { cookie: u.emp.cookie })).status, 403);
+});

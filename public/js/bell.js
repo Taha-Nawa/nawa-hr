@@ -21,16 +21,18 @@ async function gather(me) {
   const lead = ['manager', 'hr', 'director', 'admin'].includes(me.role);
   const hr = ['hr', 'admin'].includes(me.role);
   const ins = ['hr', 'director', 'admin'].includes(me.role);
-  const [reqs, plans, unclosed, integ] = await Promise.all([
+  const [reqs, plans, unclosed, pats, integ] = await Promise.all([
     safe('/api/requests/meta', (d) => d.pending || 0),
     lead ? safe('/api/plans/meta', (d) => d.pending || 0) : 0,
     hr ? safe('/api/unclosed?days=7', (d) => d.past || 0) : 0,
+    lead ? safe('/api/insights/patterns', (d) => d.employees.length) : 0,
     ins ? safe('/api/insights/integrity', (d) => d.checks.filter((c) => c.level === 'high').reduce((s, c) => s + c.items.length, 0)) : 0,
   ]);
   return [
     { n: reqs, text: 'طلب بانتظار قرارك', href: '#/requests', level: 'high' },
     { n: plans, text: 'خطة إجازات بانتظار قرارك', href: '#/plans', level: 'high' },
     { n: unclosed, text: 'يوم بلا تسجيل انصراف في آخر 7 أيام', href: '#/today', level: 'mid' },
+    { n: pats, text: 'موظف يحتاج انتباهاً (تأخر أو غياب متكرر)', href: '#/insights', level: 'mid' },
     { n: integ, text: 'ملاحظة مهمة على سلامة البيانات', href: '#/insights', level: 'mid' },
   ].filter((a) => a.n > 0);
 }
