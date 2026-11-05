@@ -1289,3 +1289,18 @@ h2 { font-size: 0.95rem; }
 .tour-ico .ic { width: 30px; height: 30px; }
 .tour p { margin: 0; color: var(--muted); }
 .tour .dlg-actions { width: 100%; align-items: center; }
+
+/* ترويسة الشعارات */
+.rh-block { display: flex; align-items: center; justify-content: space-between; gap: 4mm; width: 162.18mm; margin: 0 auto 3mm; }
+.rh-zone { flex: 1; display: flex; align-items: center; gap: 3mm; min-height: 1mm; }
+.rh-right { justify-content: flex-start; } .rh-center { justify-content: center; } .rh-left { justify-content: flex-end; }
+.rh-block img { display: block; height: auto; max-width: 100%; }
+.rh-preview { background: #fff; border: 1px dashed var(--line); border-radius: 12px; padding: 12px; margin: 10px 0; overflow: hidden; }
+.rh-preview .rh-block { width: 100%; }
+.rh-edit-list { display: grid; gap: 10px; margin-bottom: 10px; }
+.rh-item { display: flex; align-items: center; gap: 12px; padding: 10px; border: 1px solid var(--line-2); border-radius: 12px; flex-wrap: wrap; }
+.rh-item > img { width: 64px; height: 64px; object-fit: contain; background: #fff; border: 1px solid var(--line-2); border-radius: 8px; }
+.rh-item-f { display: flex; gap: 12px; flex: 1; flex-wrap: wrap; }
+.rh-sets { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.rh-set-head { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.rh-pick { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }

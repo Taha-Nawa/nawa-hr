@@ -113,3 +113,22 @@ test('مصفوفة الصلاحيات تُقرأ لمن يقرأ التدقيق 
   assert.deepEqual(r.body.actions['exception.manage'], ['hr', 'admin']);
   assert.equal((await call(env, 'GET', '/api/permissions', { cookie: u.emp.cookie })).status, 403);
 });
+
+test('ترويسات التقرير: مجموعات مسمّاة، قراءة للجميع، كتابة للموارد البشرية بتحقق كامل', async () => {
+  const { env, u } = await world();
+  const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+  const put = (who, body) => call(env, 'PUT', '/api/report-header', { cookie: who.cookie, body });
+  const logo = (o = {}) => ({ name: 'x', data: PNG, pos: 'right', width: 30, ...o });
+  const set = (o = {}) => ({ id: 'a', name: 'رسمية', logos: [logo()], ...o });
+  assert.equal((await put(u.emp, { sets: [] })).status, 403);
+  assert.equal((await put(u.hr, { sets: [set({ logos: [logo({ data: 'http://evil/x.png' })] })] })).status, 400);
+  assert.equal((await put(u.hr, { sets: [set({ logos: [logo({ pos: 'top' })] })] })).status, 400);
+  assert.equal((await put(u.hr, { sets: [set({ logos: [logo({ width: 500 })] })] })).status, 400);
+  assert.equal((await put(u.hr, { sets: [set({ name: '' })] })).status, 400);
+  assert.equal((await put(u.hr, { sets: [set(), set()] })).status, 400, 'معرّف مكرر');
+  assert.equal((await put(u.hr, { sets: [set(), set({ id: 'b', name: 'ممولين', logos: [logo({ pos: 'center' }), logo({ pos: 'left' })] })], default: 'b' })).status, 200);
+  const g = await call(env, 'GET', '/api/report-header', { cookie: u.emp.cookie });
+  assert.deepEqual(g.body.header.sets.map((x) => x.name), ['رسمية', 'ممولين']);
+  assert.equal(g.body.header.default, 'b');
+  assert.equal(g.body.canEdit, false);
+});

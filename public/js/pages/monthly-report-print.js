@@ -3,6 +3,7 @@
 import { h, icon } from '../dom.js';
 import { get } from '../api.js';
 import { fitToScreen, fontNote } from '../print-ui.js';
+import { headerBlock, openHeaderEditor, headerPicker, loadHeader, chosenId, logosOf } from '../report-header-ui.js';
 import { monthLabel, dmy, sortMeetings } from '../monthly-report-lib.js';
 
 const cell = (tag, v, cls = '', extra = {}) => h(tag, { class: cls, ...extra }, v);
@@ -13,7 +14,7 @@ const heads = (cls, ...cols) => h('tr', { class: `mr-colhead ${cls}`.trim() }, c
 const dataRows = (list, make) => (list.length ? list : [null]).map((x, i) => make(x, i));
 
 export default async function render({ params }) {
-  const d = await get(`/api/monthly-reports/${Number(params.id)}/${params.month}`);
+  const [d, hdr] = await Promise.all([get(`/api/monthly-reports/${Number(params.id)}/${params.month}`), loadHeader()]);
   const { employee: e, report: r, month } = d;
   const meetings = sortMeetings(r.meetings);
   const att = r.attachments;
@@ -52,7 +53,8 @@ export default async function render({ params }) {
     h('tr', { class: 'mr-sign' }, td(''), th('توقيع المدير المباشر:', 'mr-start'), td(''), td(''), td('')));
 
   const table = h('table', { class: 'mr-tbl' }, h('colgroup', null, Array.from({ length: 5 }, () => h('col'))), h('tbody', null, rows), tail);
-  const paper = h('article', { class: 'paper mr-paper' }, table);
+  const hdrSlot = h('div', { class: 'rh-slot' }, headerBlock(logosOf(hdr.header, chosenId(hdr.header))));
+  const paper = h('article', { class: 'paper mr-paper' }, hdrSlot, table);
   const frame = h('div', { class: 'paper-frame mr-frame' }, h('div', { class: 'paper-sheet' }, paper));
   fitToScreen(frame);
 
@@ -60,6 +62,8 @@ export default async function render({ params }) {
   return h('div', { class: 'page print-page' },
     h('header', { class: 'page-head no-print' },
       h('div', null, h('a', { href: `#/monthly-report/${e.id}/${month}`, class: 'back' }, 'العودة للتقرير'), h('h1', null, `تقرير ${e.name}`), h('p', { class: 'sub' }, `شهر ${monthLabel(month)}`)),
-      h('div', { class: 'row-actions' }, h('button', { type: 'button', class: 'btn btn-primary', onclick: () => window.print() }, icon('printer'), 'طباعة / حفظ PDF'))),
+      h('div', { class: 'row-actions' }, headerPicker(hdr.header, (logos) => hdrSlot.replaceChildren(headerBlock(logos) || '')),
+        hdr.canEdit ? h('button', { type: 'button', class: 'btn', onclick: () => openHeaderEditor({ header: hdr.header, max: hdr.max, maxSets: hdr.maxSets, onSaved: (nh) => { hdr.header = nh; hdrSlot.replaceChildren(headerBlock(logosOf(nh, chosenId(nh))) || ''); location.reload(); } }) }, icon('upload'), 'إدارة الترويسات') : null,
+        h('button', { type: 'button', class: 'btn btn-primary', onclick: () => window.print() }, icon('printer'), 'طباعة / حفظ PDF'))),
     draftNote, fontNote(), frame);
 }

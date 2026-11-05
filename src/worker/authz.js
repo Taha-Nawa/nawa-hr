@@ -36,6 +36,7 @@ export const ACTIONS = {
   'backup.export': ['admin'], // النسخة الاحتياطية الكاملة (تحوي بيانات شخصية)
   'links.manage': ['admin'],
   'balance.manage': ['hr', 'admin'], // توزيع أرصدة الإجازات على الموظفين
+  'header.manage': ['hr', 'admin'], // ترويسة الشعارات للتقرير الشهري
   'insights.read': ['hr', 'director', 'admin'], // تسوية الممولين وسلامة البيانات (قراءة)
   'exception.manage': ['hr', 'admin'], // تسجيل دوام استثنائي في يوم عطلة وإلغاؤه
   'emergency.manage': ['hr', 'admin'], // إعلان طارئ أثناء الدوام (إخلاء فوري / احتساب اليوم كاملاً) وإلغاؤه
