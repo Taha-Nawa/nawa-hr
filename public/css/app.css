@@ -1027,6 +1027,8 @@ table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; w
 .uc-name:hover { text-decoration: underline; }
 .uc-tag { font-size: 0.72rem; padding: 1px 8px; }
 .uc-fix { margin-inline-start: auto; }
+.uc-skip { margin-inline-start: 6px; }
+.uc-who > :not(.uc-fix) + .uc-skip { margin-inline-start: auto; }
 .uc-center { color: var(--muted); font-size: 0.82rem; }
 .uc-times { flex: 1 1 100%; color: var(--ink-2); font-size: 0.86rem; font-variant-numeric: tabular-nums; }
 .uc-empty { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--olive); }

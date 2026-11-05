@@ -1,7 +1,7 @@
 // أيقونة جانبية في لوحة اليوم تفتح درجاً بـ«لم يسجّلوا الانصراف»: من سجّل حضوره في يوم ولم يسجّل انصرافه، يوماً بيوم.
 // الأسماء تختفي وحدها حين يُسجَّل الانصراف أو يصحّح اليوم (القائمة محسوبة من نتائج الأيام نفسها).
-import { h, clear, icon, select } from '../dom.js';
-import { get } from '../api.js';
+import { h, clear, icon, select, toast } from '../dom.js';
+import { get, post } from '../api.js';
 import { fmt12 } from '../time12.js';
 import { dayLabel, movePhrase, badgeOf } from '../unclosed-lib.js';
 
@@ -28,7 +28,7 @@ export function unclosedPanel({ user, work = null, onChange = () => {} }) {
       closeBtn),
     h('div', { class: 'uc-tools' }, period),
     body,
-    h('p', { class: 'uc-foot' }, 'يختفي الاسم تلقائياً حين يُسجَّل الانصراف أو يُصحَّح اليوم.'));
+    h('p', { class: 'uc-foot' }, 'يختفي الاسم تلقائياً حين يُسجَّل الانصراف أو يُصحَّح اليوم، أو بزر «تجاهل» (للموارد البشرية) إن لم يلزم تصحيح. وبعد الفترة المختارة لا تُعرض الأيام الأقدم.'));
   const back = h('div', { class: 'uc-back no-print', hidden: true, onclick: () => toggle(false) });
   const el = h('div', { class: 'uc-root' }, tab, back, drawer);
 
@@ -47,6 +47,18 @@ export function unclosedPanel({ user, work = null, onChange = () => {} }) {
     openManualDialog({ employees: [{ id: item.id, name: item.name }], date, work, onDone: async () => { await load(); onChange(); } });
   }
 
+  async function skip(item, date, btn) {
+    btn.disabled = true;
+    try {
+      await post('/api/unclosed/dismiss', { kind: item.kind, id: item.id, date });
+      await load();
+      onChange();
+    } catch (e) {
+      btn.disabled = false;
+      toast(e.message, 'err');
+    }
+  }
+
   function row(item, date, isToday) {
     const href = item.kind === 'provider' ? `#/providers/${item.id}` : `#/employees/${item.id}`;
     const left = item.lastType === 'خروج';
@@ -57,6 +69,9 @@ export function unclosedPanel({ user, work = null, onChange = () => {} }) {
         item.center ? h('span', { class: 'uc-center' }, item.center) : null,
         canFix && item.kind === 'employee' && !isToday
           ? h('button', { type: 'button', class: 'btn btn-sm uc-fix', onclick: () => fix(item, date) }, 'صحّح اليوم')
+          : null,
+        canFix && !isToday
+          ? h('button', { type: 'button', class: 'btn btn-sm uc-skip', title: 'إخفاء هذا اليوم من القائمة دون تصحيحه', onclick: (e) => skip(item, date, e.currentTarget) }, 'تجاهل')
           : null),
       h('div', { class: 'uc-times' }, movePhrase(item, fmt12)));
   }

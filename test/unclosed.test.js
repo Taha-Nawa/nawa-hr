@@ -170,3 +170,29 @@ test('البوابة: ?action=unclosed بنطاق الجهاز (مركزه أو 
   assert.equal((await gateGet(env, 'action=unclosed&token=wrong-token-wrong-token-1')).status, 401);
   assert.equal((await gateGet(env, `action=unclosed&days=1&token=${DEVICE_TOKEN}`)).body.days.length, 1, 'days=1 اليوم فقط');
 });
+
+test('تجاهل يوم: الموارد البشرية فقط، لأيام سابقة، ويخرج الاسم من القائمة دون المساس باليوم', async () => {
+  const { db, env, u } = await world();
+  await gatePost(env, [mv('NW-002', 'حضور', THU, '08:30'), mv('NW-003', 'حضور', SUN, '08:30'), mv('NW-003', 'حضور', TODAY, '08:35')]);
+  const dismiss = (who, body) => call(env, 'POST', '/api/unclosed/dismiss', { cookie: who.cookie, body });
+  assert.equal((await dismiss(u.mgr, { kind: 'employee', id: 2, date: THU })).status, 403, 'المدير لا يتجاهل');
+  assert.equal((await dismiss(u.hr, { kind: 'employee', id: 2, date: TODAY })).status, 400, 'اليوم الحاضر لا يُتجاهل');
+  assert.equal((await dismiss(u.hr, { kind: 'employee', id: 2, date: '2026-09-01' })).status, 400, 'أقدم من الفترة');
+  assert.equal((await dismiss(u.hr, { kind: 'x', id: 2, date: THU })).status, 400);
+  assert.equal((await dismiss(u.hr, { kind: 'employee', id: 999, date: THU })).status, 404);
+  const ok = await dismiss(u.hr, { kind: 'employee', id: 2, date: THU });
+  assert.equal(ok.status, 200, JSON.stringify(ok.body));
+  assert.equal((await dismiss(u.hr, { kind: 'employee', id: 2, date: THU })).status, 200, 'تكرار الطلب آمن');
+  assert.deepEqual(names((await api(env, u.hr, '/api/unclosed')).body), [`${TODAY}:NW-003`, `${SUN}:NW-003`]);
+  const row = await db.prepare("SELECT alert FROM daily_results WHERE employee_id = 2 AND date = ?").bind(THU).first();
+  assert.equal(row.alert, 'انصراف غير مسجّل', 'حساب اليوم لم يتغيّر');
+  const log = await db.prepare("SELECT actor FROM audit_log WHERE action = 'unclosed.dismiss'").all();
+  assert.equal(log.results.length, 2, 'كل طلب ناجح يُدقَّق');
+});
+
+test('قبل تطبيق هجرة التجاهل تبقى القائمة تعمل', async () => {
+  const { db, env, u } = await world();
+  await gatePost(env, [mv('NW-002', 'حضور', THU, '08:30')]);
+  await db.prepare('DROP TABLE unclosed_dismissed').run();
+  assert.deepEqual(names((await api(env, u.hr, '/api/unclosed')).body), [`${THU}:NW-002`]);
+});

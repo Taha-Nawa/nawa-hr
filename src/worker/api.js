@@ -78,7 +78,7 @@ registerUserBulk(add, { bad, forbidden, readJson, auditStmt });
 registerGateRoutes(add, { forbidden });
 registerVolunteerRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 registerProviderRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
-registerUnclosedRoutes(add);
+registerUnclosedRoutes(add, { bad, readJson, auditStmt });
 registerSheetRoutes(add, { bad });
 registerBackupRoutes(add, { bad, readJson, auditStmt });
 registerMonthlyReportRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
