@@ -52,13 +52,11 @@ a { color: var(--red); text-underline-offset: 3px; }
 .ic { width: 1.25em; height: 1.25em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ------------------------------------------------------------ الدخول */
-.login { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: max(32px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom)); background: var(--red); }
-.arch {
-  width: min(430px, 100%); background: var(--surface); text-align: center;
-  padding: 64px 36px 40px; border-radius: 215px 215px 14px 14px; box-shadow: 0 0 0 6px var(--red-d) inset, 0 0 0 10px var(--rose) inset;
-  display: flex; flex-direction: column; align-items: center; gap: 12px;
-}
-.arch-logo { width: 150px; height: auto; margin-bottom: 4px; }
+/* الدخول: نموذج على اليمين وشرائح حيّة على اليسار (على الجوال تصير الشرائح شريطاً علوياً) */
+.login { min-height: 100vh; min-height: 100dvh; display: grid; grid-template-columns: minmax(380px, 1fr) 1.05fr; background: #fffdf9; }
+.login-side { display: grid; place-items: center; padding: max(28px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom)); }
+.login-card { width: min(360px, 100%); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 11px; }
+.arch-logo { width: 84px; height: auto; margin-bottom: 2px; }
 .arch h1 { font-size: 1.5rem; }
 .arch-sub { color: var(--ink-2); max-width: 26ch; }
 .login-msg { color: var(--red-d); background: var(--red-soft); border-radius: 8px; padding: 8px 12px; font-size: 0.92rem; }
@@ -70,10 +68,11 @@ a { color: var(--red); text-underline-offset: 3px; }
 .ms-logo i:nth-child(3) { background: #00a4ef; } .ms-logo i:nth-child(4) { background: #ffb900; }
 
 /* شاشة الدخول: ثلاث طرق (حساب Microsoft، رمز البريد، PIN) وبطاقة «مرحباً بعودتك» */
-.login-card { gap: 10px; padding: 60px 32px 30px; }
 .login-card h1 { font-size: 1.45rem; }
 .login-card .arch-sub { max-width: none; margin-top: -8px; font-size: 0.9rem; color: var(--muted); }
 .login-card .login-msg { align-self: stretch; text-align: start; }
+.login-card .btn-ms { background: var(--red); border-color: var(--red); color: #fff; margin-top: 0; }
+.login-card .btn-ms:hover:not(:disabled) { background: var(--red-d); }
 .login-tabs { align-self: stretch; display: flex; gap: 4px; padding: 4px; background: #ece4d8; border-radius: 12px; margin-top: 8px; }
 .login-tab { flex: 1 1 0; min-width: 0; border: 0; background: transparent; font: inherit; font-size: 0.78rem; font-weight: 600; color: var(--ink-2); padding: 7px 2px; border-radius: 9px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; line-height: 1.35; touch-action: manipulation; }
 .login-tab .ic { width: 1.2rem; height: 1.2rem; }
@@ -509,8 +508,9 @@ a.btn.is-disabled { opacity: 0.5; }
   .page { gap: 14px; }
   .panel { padding: 16px; }
   .weekdays { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .arch { padding-top: 56px; border-radius: 160px 160px 14px 14px; }
-  .login-card { padding: 54px 22px 26px; }
+  .login { grid-template-columns: 1fr; grid-template-rows: 230px auto; }
+  .login-show { order: -1; }
+  .login-side { align-items: start; padding-top: 22px; }
   .tip { flex-wrap: wrap; }
   .toasts { inset-block-end: calc(var(--tab-h) + 14px + env(safe-area-inset-bottom)); inset-inline: 12px; max-width: none; }
 
@@ -1090,3 +1090,50 @@ h2 { font-size: 0.95rem; }
 .avatar { overflow: hidden; }
 .avatar.has-photo { background: #fff; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* شرائح الدخول */
+.login-show { position: relative; overflow: hidden; color: #fff; background: var(--red); min-height: 230px; }
+.show-brand { position: absolute; top: 16px; inset-inline: 0; z-index: 4; display: flex; justify-content: center; align-items: center; gap: 8px; font-weight: 700; font-size: 0.8rem; }
+.show-brand img { width: 30px; height: auto; filter: brightness(0) invert(1); }
+.slide { position: absolute; inset: 0; opacity: 0; visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 56px 34px 56px; }
+.slide.act { visibility: visible; animation: sl-in 0.9s var(--ease) forwards; }
+.slide.leave { visibility: visible; animation: sl-out 0.7s var(--ease) forwards; }
+@keyframes sl-in { from { opacity: 0; transform: translateX(70px); } to { opacity: 1; transform: none; } }
+@keyframes sl-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(-70px); } }
+.slide h2 { font-size: 1.45rem; font-weight: 800; }
+.slide p { font-weight: 300; max-width: 30ch; line-height: 1.8; }
+.slide.g1 { background: linear-gradient(160deg, #b8180e, #6e0a04); } .slide.g2 { background: linear-gradient(160deg, #4d6d2c, #27390f); }
+.slide.g3 { background: linear-gradient(160deg, #c48d00, #6f4a00); } .slide.g4 { background: linear-gradient(160deg, #34557d, #1c3253); }
+.dn { position: absolute; bottom: 20px; inset-inline: 0; display: flex; gap: 8px; justify-content: center; z-index: 4; }
+.dn i { height: 6px; width: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.45); transition: width 0.4s var(--ease); overflow: hidden; position: relative; }
+.dn i.act { width: 34px; background: rgba(255, 255, 255, 0.35); }
+.dn i.act::after { content: ""; position: absolute; inset: 0; background: #fff; transform-origin: right; animation: sl-prog 3.8s linear forwards; }
+@keyframes sl-prog { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.ico { width: 130px; height: 130px; position: relative; display: grid; place-items: center; margin-bottom: 6px; }
+.ico::before, .ico::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.35); }
+.act .ico::before { animation: sl-ping 2.6s ease-out infinite; } .act .ico::after { animation: sl-ping 2.6s 1.3s ease-out infinite; }
+@keyframes sl-ping { from { transform: scale(0.7); opacity: 0.9; } to { transform: scale(1.5); opacity: 0; } }
+.ico svg { width: 100px; height: 100px; fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; overflow: visible; position: relative; }
+.ico .fill { fill: rgba(255, 255, 255, 0.18); stroke: none; }
+.ico .d { stroke-dasharray: var(--l, 200); stroke-dashoffset: var(--l, 200); }
+.act .ico .d { animation: sl-draw 1.1s var(--dl, 0.2s) var(--ease) forwards; }
+@keyframes sl-draw { to { stroke-dashoffset: 0; } }
+.ico .hand { transform-origin: 32px 32px; }
+.act .ico .hm { animation: sl-spin 5s linear infinite; } .act .ico .hh { animation: sl-spin 30s linear infinite; }
+@keyframes sl-spin { to { transform: rotate(360deg); } }
+.ico .badge { transform-origin: 52px 50px; transform: scale(0); }
+.act .ico .badge { animation: sl-pop 0.6s 1.2s var(--ease) forwards; }
+@keyframes sl-pop { 70% { transform: scale(1.2); } to { transform: scale(1); } }
+.ico .dot { opacity: 0; } .act .ico .dot { animation: sl-fade 0.4s var(--dl) forwards; }
+@keyframes sl-fade { to { opacity: 1; } }
+.ico .bar1 { transform-origin: bottom; transform: scaleY(0); transform-box: fill-box; }
+.act .ico .bar1 { animation: sl-grow 0.8s var(--dl) var(--ease) forwards; }
+@keyframes sl-grow { to { transform: scaleY(1); } }
+.ico .seg { transform: rotate(-90deg); transform-origin: 32px 32px; stroke-dasharray: 0 126; fill: none; }
+.ico .seg.r1 { transform: rotate(90deg); } .ico .seg.r2 { transform: rotate(198deg); }
+.act .ico .seg { animation: sl-seg 1.2s var(--dl) var(--ease) forwards; }
+@keyframes sl-seg { to { stroke-dasharray: var(--s) 126; } }
+@media (max-width: 760px) {
+  .ico { transform: scale(0.55); margin: -22px 0; } .slide { padding: 50px 20px 34px; gap: 4px; } .slide p { display: none; } .slide h2 { font-size: 1.2rem; }
+}
+@media (prefers-reduced-motion: reduce) { .login-show *, .login-show *::before, .login-show *::after { animation-duration: 0.01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; } }

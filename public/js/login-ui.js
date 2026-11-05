@@ -4,6 +4,7 @@ import { h, clear, icon } from './dom.js';
 import { startLogin, requestCode, verifyCode, loginWithPin, resumeDevice } from './auth.js';
 import { isStandalone } from './pwa.js';
 import { withPhoto } from './avatar.js';
+import { loginShow } from './login-show.js';
 
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
@@ -42,8 +43,8 @@ export function showLogin({ root, message, config, device, onDone }) {
   let timer = 0;
   let focusSel = null;
 
-  const card = h('section', { class: 'arch login-card' });
-  clear(root).append(h('main', { class: 'login' }, card));
+  const card = h('section', { class: 'login-card' });
+  clear(root).append(h('main', { class: 'login' }, h('div', { class: 'login-side' }, card), loginShow()));
 
   const fail = (box, e) => {
     box.textContent = e.message || 'تعذّر الدخول، حاول مرة أخرى.';
