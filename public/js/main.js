@@ -10,38 +10,38 @@ const ALL = ['employee', 'manager', 'hr', 'director', 'admin'];
 
 // tab: تظهر في شريط الأزرار السفلي على الجوال؛ الباقي في ورقة «المزيد».
 const PAGES = [
-  { path: 'today', title: 'لوحة اليوم', short: 'اليوم', icon: 'today', tab: true, roles: ALL, load: () => import('./pages/today.js') },
-  { path: 'requests', title: 'الطلبات', short: 'الطلبات', icon: 'inbox', tab: true, roles: ALL, load: () => import('./pages/requests.js') },
+  { path: 'today', group: 'main', title: 'لوحة اليوم', short: 'اليوم', icon: 'today', tab: true, roles: ALL, load: () => import('./pages/today.js') },
+  { path: 'requests', group: 'main', title: 'الطلبات', short: 'الطلبات', icon: 'inbox', tab: true, roles: ALL, load: () => import('./pages/requests.js') },
   { path: 'requests/:id/print', title: 'طباعة النموذج', roles: ALL, nav: 'requests', load: () => import('./pages/request-print.js') },
-  { path: 'plans', title: 'الإجازات المتوقعة', icon: 'calendar', roles: ALL, load: () => import('./pages/plans.js') },
-  { path: 'balances', title: 'أرصدة الإجازات', icon: 'calendar', roles: ['manager', 'hr', 'director', 'admin'], load: () => import('./pages/balances.js') },
-  { path: 'manual', title: 'الحضور اليدوي', icon: 'clock', roles: ['hr', 'admin'], load: () => import('./pages/manual.js') },
-  { path: 'attendance-sheet', title: 'كشف الحضور الأسبوعي', icon: 'printer', roles: ['manager', 'hr', 'director', 'admin'], load: () => import('./pages/attendance-sheet.js') },
-  { path: 'volunteers', title: 'المتطوعون', icon: 'users', roles: ['hr', 'director', 'admin'], load: () => import('./pages/volunteers.js') },
+  { path: 'plans', group: 'main', title: 'الإجازات المتوقعة', icon: 'calendar', roles: ALL, load: () => import('./pages/plans.js') },
+  { path: 'balances', group: 'main', title: 'أرصدة الإجازات', icon: 'calendar', roles: ['manager', 'hr', 'director', 'admin'], load: () => import('./pages/balances.js') },
+  { path: 'employees', group: 'main', title: 'الموظفون', short: 'الموظفون', icon: 'users', tab: true, roles: ALL, load: () => import('./pages/employees.js') },
+  { path: 'employees/:id', title: 'الموظف', roles: ALL, nav: 'employees', load: () => import('./pages/employee.js') },
+  { path: 'manual', group: 'work', title: 'الحضور اليدوي', icon: 'clock', roles: ['hr', 'admin'], load: () => import('./pages/manual.js') },
+  { path: 'attendance-sheet', group: 'work', title: 'كشف الحضور الأسبوعي', icon: 'printer', roles: ['manager', 'hr', 'director', 'admin'], load: () => import('./pages/attendance-sheet.js') },
+  { path: 'monthly-report', group: 'work', title: 'التقرير الشهري', icon: 'report', roles: ALL, load: () => import('./pages/monthly-reports.js') },
+  { path: 'monthly-report/:id/:month', title: 'التقرير الشهري', roles: ALL, nav: 'monthly-report', load: () => import('./pages/monthly-report.js') },
+  { path: 'monthly-report/:id/:month/print', title: 'طباعة التقرير الشهري', roles: ALL, nav: 'monthly-report', load: () => import('./pages/monthly-report-print.js') },
+  { path: 'work-log', group: 'work', title: 'ماذا أنجزت اليوم', icon: 'check', roles: ALL, load: () => import('./pages/work-log.js') },
+  { path: 'work-log/:month', title: 'ماذا أنجزت اليوم', roles: ALL, nav: 'work-log', load: () => import('./pages/work-log.js') },
+  { path: 'reports', group: 'work', title: 'التقارير', short: 'التقارير', icon: 'report', tab: true, roles: ALL, load: () => import('./pages/reports.js') },
+  { path: 'timesheet-preview', title: 'معاينة التايم شيت', roles: ALL, nav: 'reports', load: () => import('./pages/timesheet-preview.js') },
+  { path: 'volunteers', group: 'work', title: 'المتطوعون', icon: 'users', roles: ['hr', 'director', 'admin'], load: () => import('./pages/volunteers.js') },
   { path: 'volunteers/:id/:month', title: 'حضور متطوع', roles: ['hr', 'director', 'admin'], nav: 'volunteers', load: () => import('./pages/volunteer-month.js') },
   { path: 'volunteers/:id/:month/print', title: 'كشف المتطوع', roles: ['hr', 'director', 'admin'], nav: 'volunteers', load: () => import('./pages/volunteer-print.js') },
-  { path: 'providers', title: 'مزوّدو الخدمة', icon: 'briefcase', roles: ['manager', 'hr', 'director', 'admin'], load: () => import('./pages/providers.js') },
+  { path: 'providers', group: 'work', title: 'مزوّدو الخدمة', icon: 'briefcase', roles: ['manager', 'hr', 'director', 'admin'], load: () => import('./pages/providers.js') },
   { path: 'providers/:id/card', title: 'بطاقة مزوّد الخدمة', roles: ['hr', 'admin'], nav: 'providers', load: () => import('./pages/provider-card.js') },
   { path: 'providers/:id/:month/print', title: 'كشف مزوّد الخدمة', roles: ['manager', 'hr', 'director', 'admin'], nav: 'providers', load: () => import('./pages/provider-print.js') },
   { path: 'providers/:id', title: 'مزوّد الخدمة', roles: ['manager', 'hr', 'director', 'admin'], nav: 'providers', load: () => import('./pages/provider.js') },
   { path: 'providers/:id/:month', title: 'حضور مزوّد الخدمة', roles: ['manager', 'hr', 'director', 'admin'], nav: 'providers', load: () => import('./pages/provider.js') },
-  { path: 'work-log', title: 'ماذا أنجزت اليوم', icon: 'check', roles: ALL, load: () => import('./pages/work-log.js') },
-  { path: 'work-log/:month', title: 'ماذا أنجزت اليوم', roles: ALL, nav: 'work-log', load: () => import('./pages/work-log.js') },
-  { path: 'monthly-report', title: 'التقرير الشهري', icon: 'report', roles: ALL, load: () => import('./pages/monthly-reports.js') },
-  { path: 'monthly-report/:id/:month', title: 'التقرير الشهري', roles: ALL, nav: 'monthly-report', load: () => import('./pages/monthly-report.js') },
-  { path: 'monthly-report/:id/:month/print', title: 'طباعة التقرير الشهري', roles: ALL, nav: 'monthly-report', load: () => import('./pages/monthly-report-print.js') },
-  { path: 'employees', title: 'الموظفون', short: 'الموظفون', icon: 'users', tab: true, roles: ALL, load: () => import('./pages/employees.js') },
-  { path: 'employees/:id', title: 'الموظف', roles: ALL, nav: 'employees', load: () => import('./pages/employee.js') },
-  { path: 'reports', title: 'التقارير', short: 'التقارير', icon: 'report', tab: true, roles: ALL, load: () => import('./pages/reports.js') },
-  { path: 'timesheet-preview', title: 'معاينة التايم شيت', roles: ALL, nav: 'reports', load: () => import('./pages/timesheet-preview.js') },
-  { path: 'links', title: 'الروابط', icon: 'link', roles: ALL, load: () => import('./pages/links.js') },
-  { path: 'settings', title: 'الإعدادات والعطل', icon: 'sliders', roles: ['hr', 'director', 'admin'], load: () => import('./pages/settings.js') },
-  { path: 'import', title: 'الاستيراد من إكسل', icon: 'upload', roles: ['hr', 'admin'], load: () => import('./pages/import.js') },
-  { path: 'devices', title: 'أجهزة البوابة', icon: 'tablet', roles: ['admin'], load: () => import('./pages/devices.js') },
-  { path: 'users', title: 'المستخدمون', icon: 'shield', roles: ['admin'], load: () => import('./pages/users.js') },
-  { path: 'backup', title: 'النسخ الاحتياطي', icon: 'download', roles: ['admin'], load: () => import('./pages/backup.js') },
-  { path: 'audit', title: 'سجل التدقيق', icon: 'audit', roles: ['hr', 'director', 'admin'], load: () => import('./pages/audit.js') },
-  { path: 'account', title: 'حسابي والأمان', icon: 'key', roles: ALL, load: () => import('./pages/account.js') },
+  { path: 'settings', group: 'admin', title: 'الإعدادات والعطل', icon: 'sliders', roles: ['hr', 'director', 'admin'], load: () => import('./pages/settings.js') },
+  { path: 'import', group: 'admin', title: 'الاستيراد من إكسل', icon: 'upload', roles: ['hr', 'admin'], load: () => import('./pages/import.js') },
+  { path: 'devices', group: 'admin', title: 'أجهزة البوابة', icon: 'tablet', roles: ['admin'], load: () => import('./pages/devices.js') },
+  { path: 'users', group: 'admin', title: 'المستخدمون', icon: 'shield', roles: ['admin'], load: () => import('./pages/users.js') },
+  { path: 'backup', group: 'admin', title: 'النسخ الاحتياطي', icon: 'download', roles: ['admin'], load: () => import('./pages/backup.js') },
+  { path: 'audit', group: 'admin', title: 'سجل التدقيق', icon: 'audit', roles: ['hr', 'director', 'admin'], load: () => import('./pages/audit.js') },
+  { path: 'links', group: 'me', title: 'الروابط', icon: 'link', roles: ALL, load: () => import('./pages/links.js') },
+  { path: 'account', group: 'me', title: 'حسابي والأمان', icon: 'key', roles: ALL, load: () => import('./pages/account.js') },
 ];
 
 const root = document.getElementById('app');
@@ -65,7 +65,7 @@ async function showLogin(message, known) {
 }
 
 // ---------------------------------------------------------------- الإطار
-const listed = () => PAGES.filter((p) => !p.path.includes(':') && p.roles.includes(me.role));
+const listed = () => PAGES.filter((p) => p.icon && !p.path.includes(':') && p.roles.includes(me.role));
 const initial = () => ((me.employeeName || me.email || '؟').trim()[0] || '؟').toUpperCase();
 
 async function signOut() {
@@ -103,6 +103,46 @@ function openMore() {
   });
 }
 
+const GROUPS = [['main', 'الرئيسية'], ['work', 'المتابعة والتقارير'], ['admin', 'الإدارة والإعدادات'], ['me', 'حسابي']];
+const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch { /* التخزين غير متاح */ } };
+const closedGroups = () => { try { return new Set(JSON.parse(lsGet('nawa-nav-closed') || '[]')); } catch { return new Set(); } };
+
+/** القائمة الجانبية مجمَّعة بالأهمية: كل مجموعة تُطوى وتُفتح وتُحفظ حالتها على الجهاز. */
+function navTree(pages) {
+  const closed = closedGroups();
+  return h('nav', { class: 'nav', 'aria-label': 'التنقل الرئيسي' }, GROUPS.map(([key, label]) => {
+    const list = pages.filter((p) => p.group === key);
+    if (!list.length) return null;
+    const body = h('div', { class: 'nav-items', id: `navg-${key}` }, list.map((p) => h('a', { href: `#/${p.path}`, class: 'nav-link', title: p.title, dataset: { path: p.path, icon: p.icon } }, icon(p.icon), h('span', null, p.title))));
+    const head = h('button', { type: 'button', class: 'nav-head', 'aria-controls': `navg-${key}`, 'aria-expanded': String(!closed.has(key)), onclick: () => setGroup(key, head.getAttribute('aria-expanded') === 'true') }, h('span', null, label));
+    const grp = h('div', { class: 'nav-group', dataset: { group: key } }, head, body);
+    if (closed.has(key)) grp.classList.add('shut');
+    return grp;
+  }));
+}
+
+function setGroup(key, shut) {
+  const grp = document.querySelector(`.nav-group[data-group="${key}"]`);
+  if (!grp) return;
+  grp.classList.toggle('shut', shut);
+  grp.querySelector('.nav-head').setAttribute('aria-expanded', String(!shut));
+  const set = closedGroups();
+  if (shut) set.add(key); else set.delete(key);
+  lsSet('nawa-nav-closed', JSON.stringify([...set]));
+}
+
+function applyRail(on) {
+  document.querySelector('.shell')?.classList.toggle('rail', on);
+  const b = document.getElementById('railToggle');
+  if (b) { b.setAttribute('aria-expanded', String(!on)); b.setAttribute('aria-label', on ? 'إظهار القائمة الجانبية' : 'إخفاء القائمة الجانبية'); }
+}
+function toggleRail() {
+  const on = !document.querySelector('.shell')?.classList.contains('rail');
+  lsSet('nawa-rail', on ? '1' : '0');
+  applyRail(on);
+}
+
 function showShell() {
   const pages = listed();
   clear(root).append(
@@ -112,17 +152,19 @@ function showShell() {
         h('div', { class: 'topbar-title' }, 'نظام نوى للشؤون الإدارية', h('small', null, 'جمعية نوى للثقافة والفنون')),
         withPhoto(h('span', { class: 'avatar', 'aria-hidden': 'true' }, initial()), me.photo)),
       h('aside', { class: 'side' },
-        h('a', { href: '#/today', class: 'brand' }, h('img', { src: '/logo.png', alt: '' }), h('span', null, 'نظام نوى للشؤون الإدارية', h('small', null, 'جمعية نوى للثقافة والفنون'))),
-        h('nav', { class: 'nav', 'aria-label': 'التنقل الرئيسي' }, pages.map((p) => h('a', { href: `#/${p.path}`, class: 'nav-link', dataset: { path: p.path } }, icon(p.icon), h('span', null, p.title)))),
+        h('button', { type: 'button', class: 'rail-toggle', id: 'railToggle', 'aria-label': 'إخفاء القائمة الجانبية', 'aria-expanded': 'true', onclick: toggleRail }, h('i')),
+        h('a', { href: '#/today', class: 'brand', title: 'نظام نوى للشؤون الإدارية' }, h('img', { src: '/logo.png', alt: '' }), h('span', null, 'نظام نوى للشؤون الإدارية', h('small', null, 'جمعية نوى للثقافة والفنون'))),
+        navTree(pages),
         h('div', { class: 'who' },
           h('div', { class: 'who-name' }, me.employeeName || me.email),
           h('div', { class: 'who-role' }, ROLE_LABEL[me.role] || me.role),
-          h('button', { type: 'button', class: 'link-btn', onclick: signOut }, 'تسجيل الخروج'))),
+          h('button', { type: 'button', class: 'link-btn', title: 'تسجيل الخروج', onclick: signOut }, icon('out'), h('span', null, 'تسجيل الخروج')))),
       h('main', { class: 'main', id: 'view', tabindex: '-1' }),
       h('nav', { class: 'tabbar', 'aria-label': 'التنقل السريع' },
         pages.filter((p) => p.tab).map((p) => h('a', { href: `#/${p.path}`, class: 'tab', dataset: { path: p.path } }, h('span', { class: 'pill' }, icon(p.icon)), h('span', null, p.short))),
         h('button', { type: 'button', class: 'tab', id: 'tabMore', onclick: openMore }, h('span', { class: 'pill' }, icon('more')), h('span', null, 'المزيد')))),
   );
+  applyRail(lsGet('nawa-rail') === '1');
   watchTables($('#view'));
   refreshPending();
 }
@@ -181,6 +223,8 @@ async function route() {
   }
   const active = found.page.nav || found.page.path;
   document.querySelectorAll('.nav-link, .tab[data-path]').forEach((a) => a.classList.toggle('on', a.dataset.path === active));
+  const g = document.querySelector(`.nav-link[data-path="${active}"]`)?.closest('.nav-group');
+  if (g?.classList.contains('shut')) setGroup(g.dataset.group, false); // الصفحة الحالية لا تُخفى داخل مجموعة مطوية
   $('#tabMore')?.classList.toggle('on', !PAGES.some((p) => p.tab && p.path === active));
   document.title = `${found.page.title} — نظام نوى للشؤون الإدارية`;
   clear(view).append(h('p', { class: 'loading' }, 'جارٍ التحميل…'));
