@@ -52,7 +52,7 @@ function installSection(user) {
   const appUrl = `${location.origin}/`;
   const gateUrl = `${location.origin}/gate/`;
   const showGate = STAFF_ROLES.includes(user.role);
-  const targets = [{ title: 'نظام الحضور والطلبات', url: appUrl }, ...(showGate ? [{ title: 'بوابة الحضور (جهاز المدخل)', url: gateUrl }] : [])];
+  const targets = [{ title: 'نظام نوى للشؤون الإدارية', url: appUrl }, ...(showGate ? [{ title: 'بوابة الحضور (جهاز المدخل)', url: gateUrl }] : [])];
 
   const qrRow = h('div', { class: 'qr-row' });
   for (const t of targets) {

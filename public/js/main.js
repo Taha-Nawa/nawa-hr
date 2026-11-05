@@ -107,10 +107,10 @@ function showShell() {
     h('div', { class: 'shell' },
       h('header', { class: 'topbar' },
         h('img', { src: '/logo.png', alt: 'جمعية نوى' }),
-        h('div', { class: 'topbar-title' }, 'الحضور والطلبات', h('small', null, 'جمعية نوى للثقافة والفنون')),
+        h('div', { class: 'topbar-title' }, 'نظام نوى للشؤون الإدارية', h('small', null, 'جمعية نوى للثقافة والفنون')),
         h('span', { class: 'avatar', 'aria-hidden': 'true' }, initial())),
       h('aside', { class: 'side' },
-        h('a', { href: '#/today', class: 'brand' }, h('img', { src: '/logo.png', alt: '' }), h('span', null, 'الحضور والطلبات', h('small', null, 'جمعية نوى للثقافة والفنون'))),
+        h('a', { href: '#/today', class: 'brand' }, h('img', { src: '/logo.png', alt: '' }), h('span', null, 'نظام نوى للشؤون الإدارية', h('small', null, 'جمعية نوى للثقافة والفنون'))),
         h('nav', { class: 'nav', 'aria-label': 'التنقل الرئيسي' }, pages.map((p) => h('a', { href: `#/${p.path}`, class: 'nav-link', dataset: { path: p.path } }, icon(p.icon), h('span', null, p.title)))),
         h('div', { class: 'who' },
           h('div', { class: 'who-name' }, me.employeeName || me.email),
@@ -180,7 +180,7 @@ async function route() {
   const active = found.page.nav || found.page.path;
   document.querySelectorAll('.nav-link, .tab[data-path]').forEach((a) => a.classList.toggle('on', a.dataset.path === active));
   $('#tabMore')?.classList.toggle('on', !PAGES.some((p) => p.tab && p.path === active));
-  document.title = `${found.page.title} — الحضور والطلبات`;
+  document.title = `${found.page.title} — نظام نوى للشؤون الإدارية`;
   clear(view).append(h('p', { class: 'loading' }, 'جارٍ التحميل…'));
   try {
     const mod = await found.page.load();

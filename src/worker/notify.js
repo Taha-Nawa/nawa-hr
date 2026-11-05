@@ -42,12 +42,12 @@ export function message(event, r, origin, note, extra = null) {
   }
   if (note && event !== 'submitted' && event !== 'released') rows.push([event === 'rejected' ? 'سبب الرفض' : 'ملاحظة', note]);
   const link = `${origin}/#/requests?open=${r.id}`;
-  const text = `${subject}\n\n${rows.map(([k, v]) => `${k}: ${v}`).join('\n')}\n\nافتح الطلب: ${link}\n— نظام الحضور والطلبات، جمعية نوى للثقافة والفنون`;
+  const text = `${subject}\n\n${rows.map(([k, v]) => `${k}: ${v}`).join('\n')}\n\nافتح الطلب: ${link}\n— نظام نوى للشؤون الإدارية، جمعية نوى للثقافة والفنون`;
   const html = `<div dir="rtl" lang="ar" style="font-family:Segoe UI,Tahoma,Arial,sans-serif;max-width:480px;margin:auto;padding:22px;border:1px solid #e6dccf;border-radius:14px;color:#2a1410">
 <p style="margin:0 0 12px;font-weight:700;font-size:16px">${esc(subject)}</p>
 <table style="border-collapse:collapse;width:100%;margin:0 0 16px">${rows.map(([k, v]) => `<tr><td style="padding:5px 0;color:#72655f;width:34%;vertical-align:top">${esc(k)}</td><td style="padding:5px 0">${esc(v)}</td></tr>`).join('')}</table>
 <p style="margin:0 0 16px"><a href="${esc(link)}" style="display:inline-block;background:#a21008;color:#fff;text-decoration:none;padding:9px 18px;border-radius:9px;font-weight:700">فتح الطلب</a></p>
-<p style="margin:0;color:#72655f;font-size:12px">نظام الحضور والطلبات — جمعية نوى للثقافة والفنون</p></div>`;
+<p style="margin:0;color:#72655f;font-size:12px">نظام نوى للشؤون الإدارية — جمعية نوى للثقافة والفنون</p></div>`;
   return { subject, text, html };
 }
 
@@ -185,12 +185,12 @@ export function planMessage(event, p, days, origin) {
     if (p.decision_note) rows.push(['ملاحظة المسؤول', p.decision_note]);
   }
   const link = `${origin}/#/plans?open=${p.id}`;
-  const text = `${subject}\n\n${rows.map(([k, v]) => `${k}: ${v}`).join('\n')}\n\nافتح الخطة: ${link}\n— نظام الحضور والطلبات، جمعية نوى للثقافة والفنون`;
+  const text = `${subject}\n\n${rows.map(([k, v]) => `${k}: ${v}`).join('\n')}\n\nافتح الخطة: ${link}\n— نظام نوى للشؤون الإدارية، جمعية نوى للثقافة والفنون`;
   const html = `<div dir="rtl" lang="ar" style="font-family:Segoe UI,Tahoma,Arial,sans-serif;max-width:480px;margin:auto;padding:22px;border:1px solid #e6dccf;border-radius:14px;color:#2a1410">
 <p style="margin:0 0 12px;font-weight:700;font-size:16px">${esc(subject)}</p>
 <table style="border-collapse:collapse;width:100%;margin:0 0 16px">${rows.map(([k, v]) => `<tr><td style="padding:5px 0;color:#72655f;width:34%;vertical-align:top">${esc(k)}</td><td style="padding:5px 0">${esc(v)}</td></tr>`).join('')}</table>
 <p style="margin:0 0 16px"><a href="${esc(link)}" style="display:inline-block;background:#a21008;color:#fff;text-decoration:none;padding:9px 18px;border-radius:9px;font-weight:700">فتح الخطة</a></p>
-<p style="margin:0;color:#72655f;font-size:12px">نظام الحضور والطلبات — جمعية نوى للثقافة والفنون</p></div>`;
+<p style="margin:0;color:#72655f;font-size:12px">نظام نوى للشؤون الإدارية — جمعية نوى للثقافة والفنون</p></div>`;
   return { subject, text, html };
 }
 

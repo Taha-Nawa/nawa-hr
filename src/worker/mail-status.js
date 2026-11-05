@@ -53,9 +53,9 @@ export function registerMailStatus(add, kit) {
     // لا أكثر من رسالة تجريبية كل 30 ثانية (حماية من الضغط المتكرر)
     const recent = await db.prepare("SELECT 1 FROM audit_log WHERE action IN ('mail.test', 'mail.test.failed') AND actor = ? AND at > datetime('now', '-30 seconds') LIMIT 1").bind(user.email).first();
     if (recent) return json({ ok: false, error: 'انتظر نصف دقيقة قبل تجربة أخرى.' }, 429);
-    const subject = 'رسالة تجريبية — نظام الحضور والطلبات';
-    const text = 'وصلتك هذه الرسالة لأن إرسال البريد في نظام الحضور والطلبات (جمعية نوى) يعمل. لا إجراء مطلوب.';
-    const html = '<div dir="rtl" lang="ar" style="font-family:Segoe UI,Tahoma,Arial,sans-serif;max-width:420px;margin:auto;padding:22px;border:1px solid #e6dccf;border-radius:14px;color:#2a1410"><p style="margin:0 0 8px;font-weight:700">إرسال البريد يعمل ✓</p><p style="margin:0;color:#5a4a45">هذه رسالة تجريبية من نظام الحضور والطلبات — جمعية نوى للثقافة والفنون. لا إجراء مطلوب.</p></div>';
+    const subject = 'رسالة تجريبية — نظام نوى للشؤون الإدارية';
+    const text = 'وصلتك هذه الرسالة لأن إرسال البريد في نظام نوى للشؤون الإدارية (جمعية نوى) يعمل. لا إجراء مطلوب.';
+    const html = '<div dir="rtl" lang="ar" style="font-family:Segoe UI,Tahoma,Arial,sans-serif;max-width:420px;margin:auto;padding:22px;border:1px solid #e6dccf;border-radius:14px;color:#2a1410"><p style="margin:0 0 8px;font-weight:700">إرسال البريد يعمل ✓</p><p style="margin:0;color:#5a4a45">هذه رسالة تجريبية من نظام نوى للشؤون الإدارية — جمعية نوى للثقافة والفنون. لا إجراء مطلوب.</p></div>';
     try {
       await mailer.send({ to: user.email, subject, text, html });
     } catch (e) {

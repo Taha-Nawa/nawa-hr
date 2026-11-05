@@ -142,12 +142,12 @@ function reminderMessage(info, origin) {
     ? 'بيانات الحضور محفوظة في Cloudflare فقط، ولا توجد نسخة عندكم خارجها.'
     : `آخر نسخة احتياطية أُخذت قبل ${info.daysSince} يوماً (${String(info.last.at).slice(0, 10)}).`;
   const link = `${origin}/#/backup`;
-  const text = `${subject}\n\n${body}\nافتح صفحة «النسخ الاحتياطي» ونزّل نسخة كاملة (دقيقة واحدة): ${link}\n— نظام الحضور والطلبات، جمعية نوى للثقافة والفنون`;
+  const text = `${subject}\n\n${body}\nافتح صفحة «النسخ الاحتياطي» ونزّل نسخة كاملة (دقيقة واحدة): ${link}\n— نظام نوى للشؤون الإدارية، جمعية نوى للثقافة والفنون`;
   const html = `<div dir="rtl" lang="ar" style="font-family:Segoe UI,Tahoma,Arial,sans-serif;max-width:480px;margin:auto;padding:22px;border:1px solid #e6dccf;border-radius:14px;color:#2a1410">
 <p style="margin:0 0 12px;font-weight:700;font-size:16px">${esc(subject)}</p>
 <p style="margin:0 0 14px;color:#5a4a45">${esc(body)}</p>
 <p style="margin:0 0 16px"><a href="${esc(link)}" style="display:inline-block;background:#a21008;color:#fff;text-decoration:none;padding:9px 18px;border-radius:9px;font-weight:700">تنزيل نسخة كاملة</a></p>
-<p style="margin:0;color:#72655f;font-size:12px">نظام الحضور والطلبات — جمعية نوى للثقافة والفنون</p></div>`;
+<p style="margin:0;color:#72655f;font-size:12px">نظام نوى للشؤون الإدارية — جمعية نوى للثقافة والفنون</p></div>`;
   return { subject, text, html };
 }
 

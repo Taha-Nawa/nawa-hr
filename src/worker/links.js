@@ -18,7 +18,7 @@ export const DEFAULT_LINKS = [
   { id: 'kiosk', group: 'البوابة', title: 'صفحة تسجيل الحضور (تُفتح على جهاز البوابة)', url: 'https://tahaat.github.io/nawa-attendance/', note: 'الصفحة نفسها على كل أجهزة المراكز. الإعدادات ⚙ فيها: رابط Google ورمزه، ورابط النظام الجديد ورمز الجهاز.', audience: 'staff' },
   { id: 'badges', group: 'البوابة', title: 'طباعة بطاقات الموظفين', url: 'https://tahaat.github.io/nawa-attendance/badges.html', note: 'تقرأ قائمة الموظفين وتطبع بطاقات QR.', audience: 'staff' },
   { id: 'repo-gate', group: 'التقنية', title: 'مستودع صفحة البوابة (GitHub)', url: 'https://github.com/tahaat/nawa-attendance', note: 'حساب tahaat. أي تعديل على index.html ينشر فوراً على الأجهزة.', audience: 'admin' },
-  { id: 'repo-hr', group: 'التقنية', title: 'مستودع نظام الحضور (GitHub)', url: 'https://github.com/Taha-Nawa/nawa-hr', note: 'الدفع إلى main يشغّل الاختبارات ثم النشر التلقائي.', audience: 'admin' },
+  { id: 'repo-hr', group: 'التقنية', title: 'مستودع نظام نوى للشؤون الإدارية (GitHub)', url: 'https://github.com/Taha-Nawa/nawa-hr', note: 'الدفع إلى main يشغّل الاختبارات ثم النشر التلقائي.', audience: 'admin' },
 ];
 
 export function visibleTo(role, link) {

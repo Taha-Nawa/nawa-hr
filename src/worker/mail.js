@@ -82,10 +82,10 @@ export async function logMailFailure(db, what, id, err) {
 
 /** رسالة الرمز: عنوانها يحمل الرمز كي يظهر في إشعار الهاتف دون فتح الرسالة. */
 export function codeMessage(code, minutes) {
-  const subject = `رمز الدخول ${code} — الحضور والطلبات`;
-  const text = `رمز الدخول إلى نظام الحضور والطلبات (جمعية نوى): ${code}\nصالح لمدة ${minutes} دقائق ويُستعمل مرة واحدة.\nإن لم تطلبه فتجاهل هذه الرسالة ولا تُشارك الرمز مع أحد.`;
+  const subject = `رمز الدخول ${code} — نظام نوى للشؤون الإدارية`;
+  const text = `رمز الدخول إلى نظام نوى للشؤون الإدارية (جمعية نوى): ${code}\nصالح لمدة ${minutes} دقائق ويُستعمل مرة واحدة.\nإن لم تطلبه فتجاهل هذه الرسالة ولا تُشارك الرمز مع أحد.`;
   const html = `<div dir="rtl" lang="ar" style="font-family:Segoe UI,Tahoma,Arial,sans-serif;max-width:420px;margin:auto;padding:24px;border:1px solid #e6dccf;border-radius:14px;color:#2a1410">
-<p style="margin:0 0 6px;font-weight:700">الحضور والطلبات — جمعية نوى للثقافة والفنون</p>
+<p style="margin:0 0 6px;font-weight:700">نظام نوى للشؤون الإدارية — جمعية نوى للثقافة والفنون</p>
 <p style="margin:0 0 14px;color:#5a4a45">رمز الدخول الخاص بك:</p>
 <p style="margin:0 0 14px;font-size:34px;letter-spacing:8px;font-weight:800;color:#a21008;direction:ltr;text-align:center">${code}</p>
 <p style="margin:0 0 6px;color:#5a4a45">صالح لمدة ${minutes} دقائق ويُستعمل مرة واحدة.</p>

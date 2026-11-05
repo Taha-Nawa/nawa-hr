@@ -18,7 +18,7 @@ const DEFAULT_ORIGIN = 'https://nawa-hr.nawa-attendance.workers.dev';
 const MAX_MAILS = 10;
 const SILENT_MIN = 20;
 const ADMIN = { role: 'admin', email: 'system' };
-const FOOT = '— نظام الحضور والطلبات، جمعية نوى للثقافة والفنون';
+const FOOT = '— نظام نوى للشؤون الإدارية، جمعية نوى للثقافة والفنون';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -34,7 +34,7 @@ export function alertMessage(items, origin) {
 <ul style="margin:0 0 14px;padding-inline-start:20px">${lines.map((l) => `<li style="margin:4px 0">${esc(l)}</li>`).join('')}</ul>
 <p style="margin:0 0 14px;color:#5a4a45">إن كان قد حضر ولم يُسجَّل فيمكن إضافة حضوره يدوياً من ملفه.</p>
 <p style="margin:0 0 16px"><a href="${esc(link)}" style="display:inline-block;background:#a21008;color:#fff;text-decoration:none;padding:9px 18px;border-radius:9px;font-weight:700">لوحة المزوّدين</a></p>
-<p style="margin:0;color:#72655f;font-size:12px">نظام الحضور والطلبات — جمعية نوى للثقافة والفنون</p></div>`;
+<p style="margin:0;color:#72655f;font-size:12px">نظام نوى للشؤون الإدارية — جمعية نوى للثقافة والفنون</p></div>`;
   return { subject, text, html };
 }
 

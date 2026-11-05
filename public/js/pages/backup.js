@@ -100,7 +100,7 @@ export default async function render() {
       code('node tools/backup.mjs sql nawa-hr-backup-2026-11-02.json.gz > restore.sql\nnpx wrangler d1 execute nawa-hr --remote --file restore.sql')));
 
   const page = h('div', { class: 'page' },
-    h('header', { class: 'page-head' }, h('div', null, h('h1', null, 'النسخ الاحتياطي'), h('p', { class: 'sub' }, 'نسخة من بيانات الحضور والطلبات تحتفظ بها الجمعية خارج Cloudflare.'))),
+    h('header', { class: 'page-head' }, h('div', null, h('h1', null, 'النسخ الاحتياطي'), h('p', { class: 'sub' }, 'نسخة من بيانات نظام نوى للشؤون الإدارية تحتفظ بها الجمعية خارج Cloudflare.'))),
     statusBox, actionBox, help);
 
   try {

@@ -65,13 +65,13 @@ function alertMessage(problems, origin) {
     : `${p.name || p.id} (${p.center || 'بلا مركز'}): لم تسجّل أي حركة اليوم ولا نبض منها`));
   const subject = problems.length === 1 ? `تنبيه: بوابة ${problems[0].name || problems[0].id} غير متصلة` : `تنبيه: ${problems.length} بوابات غير متصلة`;
   const link = `${origin}/#/devices`;
-  const text = `${subject}\n\n${lines.join('\n')}\n\nالحركات تُحفظ على جهاز البوابة وتُرسل عند عودة الاتصال، لكن لا تُحتسب قبل ذلك.\nراجع الأجهزة: ${link}\n— نظام الحضور والطلبات، جمعية نوى للثقافة والفنون`;
+  const text = `${subject}\n\n${lines.join('\n')}\n\nالحركات تُحفظ على جهاز البوابة وتُرسل عند عودة الاتصال، لكن لا تُحتسب قبل ذلك.\nراجع الأجهزة: ${link}\n— نظام نوى للشؤون الإدارية، جمعية نوى للثقافة والفنون`;
   const html = `<div dir="rtl" lang="ar" style="font-family:Segoe UI,Tahoma,Arial,sans-serif;max-width:480px;margin:auto;padding:22px;border:1px solid #e6dccf;border-radius:14px;color:#2a1410">
 <p style="margin:0 0 12px;font-weight:700;font-size:16px">${esc(subject)}</p>
 <ul style="margin:0 0 14px;padding-inline-start:18px">${lines.map((l) => `<li style="margin:4px 0">${esc(l)}</li>`).join('')}</ul>
 <p style="margin:0 0 14px;color:#5a4a45">الحركات تُحفظ على جهاز البوابة وتُرسل عند عودة الاتصال، لكن لا تُحتسب قبل ذلك.</p>
 <p style="margin:0 0 14px"><a href="${esc(link)}" style="display:inline-block;background:#a21008;color:#fff;text-decoration:none;padding:9px 18px;border-radius:9px;font-weight:700">مراجعة الأجهزة</a></p>
-<p style="margin:0;color:#72655f;font-size:12px">نظام الحضور والطلبات — جمعية نوى للثقافة والفنون</p></div>`;
+<p style="margin:0;color:#72655f;font-size:12px">نظام نوى للشؤون الإدارية — جمعية نوى للثقافة والفنون</p></div>`;
   return { subject, text, html };
 }
 

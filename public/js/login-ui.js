@@ -26,7 +26,7 @@ const mm = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')
  * onDone: يُستدعى بعد نجاح الدخول (الجلسة صارت كوكي في المتصفح).
  */
 export function showLogin({ root, message, config, device, onDone }) {
-  document.title = 'الدخول — نظام الحضور والطلبات';
+  document.title = 'الدخول — نظام نوى للشؤون الإدارية';
   const available = ['microsoft', 'code', 'pin'].filter((m) => (m === 'microsoft' ? config.sso : m === 'code' ? config.code : config.pin));
   const saved = store.get(METHOD);
   const st = {
@@ -219,7 +219,7 @@ export function showLogin({ root, message, config, device, onDone }) {
     focusSel = null;
     const kids = [
       h('img', { src: '/logo.png', alt: 'جمعية نوى للثقافة والفنون', class: 'arch-logo' }),
-      h('h1', null, 'الحضور والطلبات'),
+      h('h1', null, 'نظام نوى للشؤون الإدارية'),
       h('p', { class: 'arch-sub' }, 'جمعية نوى للثقافة والفنون'),
       st.msg ? h('p', { class: 'login-msg', role: 'alert' }, st.msg) : null,
       ...(st.view === 'welcome' ? welcome() : available.length ? methods() : [h('p', { class: 'login-msg', role: 'alert' }, 'لا توجد طريقة دخول مفعّلة. راجع مسؤول النظام.')]),

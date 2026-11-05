@@ -19,7 +19,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_MAILS = 25;
 const MAX_FAILS = 3;
 const MAX_NAMES = 30;
-const FOOT = '— نظام الحضور والطلبات، جمعية نوى للثقافة والفنون';
+const FOOT = '— نظام نوى للشؤون الإدارية، جمعية نوى للثقافة والفنون';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
@@ -30,7 +30,7 @@ function frame({ subject, paras, names = null, link, linkLabel }) {
 ${paras.map((p) => `<p style="margin:0 0 12px;color:#5a4a45">${esc(p)}</p>`).join('\n')}
 ${names ? `<ul style="margin:0 0 14px;padding-inline-start:20px">${names.map((n) => `<li style="margin:2px 0">${esc(n)}</li>`).join('')}</ul>` : ''}
 <p style="margin:0 0 16px"><a href="${esc(link)}" style="display:inline-block;background:#a21008;color:#fff;text-decoration:none;padding:9px 18px;border-radius:9px;font-weight:700">${esc(linkLabel)}</a></p>
-<p style="margin:0;color:#72655f;font-size:12px">نظام الحضور والطلبات — جمعية نوى للثقافة والفنون</p></div>`;
+<p style="margin:0;color:#72655f;font-size:12px">نظام نوى للشؤون الإدارية — جمعية نوى للثقافة والفنون</p></div>`;
   return { subject, text, html };
 }
 
