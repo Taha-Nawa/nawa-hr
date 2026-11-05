@@ -26,6 +26,7 @@ const PAGES = [
   { path: 'work-log/:month', title: 'ماذا أنجزت اليوم', roles: ALL, nav: 'work-log', load: () => import('./pages/work-log.js') },
   { path: 'reports', group: 'work', title: 'التقارير', short: 'التقارير', icon: 'report', tab: true, roles: ALL, load: () => import('./pages/reports.js') },
   { path: 'timesheet-preview', title: 'معاينة التايم شيت', roles: ALL, nav: 'reports', load: () => import('./pages/timesheet-preview.js') },
+  { path: 'insights', group: 'work', title: 'المراجعة والتسوية', icon: 'check', roles: ['hr', 'director', 'admin'], load: () => import('./pages/insights.js') },
   { path: 'volunteers', group: 'work', title: 'المتطوعون', icon: 'users', roles: ['hr', 'director', 'admin'], load: () => import('./pages/volunteers.js') },
   { path: 'volunteers/:id/:month', title: 'حضور متطوع', roles: ['hr', 'director', 'admin'], nav: 'volunteers', load: () => import('./pages/volunteer-month.js') },
   { path: 'volunteers/:id/:month/print', title: 'كشف المتطوع', roles: ['hr', 'director', 'admin'], nav: 'volunteers', load: () => import('./pages/volunteer-print.js') },

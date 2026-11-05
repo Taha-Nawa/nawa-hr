@@ -74,3 +74,18 @@ test('التايم شيت: اليوم الاستثنائي يدخل صفوف ا�
   assert.equal(ts.off[29], false);
   assert.equal(ts.off[30], true, 'السبت المجاور يبقى مظللاً');
 });
+
+test('المراجعة والتسوية: ساعات الممولين وسلامة البيانات، والموظف العادي ممنوع', async () => {
+  const { db, env, u } = await world();
+  await db.prepare("INSERT INTO employee_projects (employee_id, funder, share, from_date, to_date) VALUES (2, 'GIZ', 0.6, '2026-10-01', '2026-10-31'), (2, 'EU', 0.4, '2026-10-01', '2026-10-31')").run();
+  await addOverride(db, 2, '2026-10-26', { manual: { in: '08:30', dep: '15:00' } });
+  assert.equal((await post(env, u.hr, '/api/recompute', { from: '2026-10-26', to: '2026-10-26' })).status, 200);
+  const f = await call(env, 'GET', '/api/insights/funders?month=2026-10', { cookie: u.hr.cookie });
+  assert.equal(f.status, 200, JSON.stringify(f.body));
+  assert.deepEqual(f.body.funders.map((x) => [x.funder, x.hours]), [['GIZ', 3.9], ['EU', 2.6]]);
+  const i = await call(env, 'GET', '/api/insights/integrity', { cookie: u.hr.cookie });
+  assert.equal(i.status, 200);
+  const alloc = i.body.checks.find((c) => c.key === 'allocation');
+  assert.ok(alloc.items.some((x) => x.name.includes('NW-001')), 'موظف بلا توزيع اليوم يُذكر');
+  assert.equal((await call(env, 'GET', '/api/insights/integrity', { cookie: u.emp.cookie })).status, 403);
+});
