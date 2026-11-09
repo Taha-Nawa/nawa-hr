@@ -14,9 +14,11 @@ export default async function render({ user }) {
   const { employees } = await get('/api/employees');
   const empName = new Map(employees.map((e) => [e.id, `${e.name} (${e.code})`]));
   const body = h('div', { class: 'table-wrap' });
+  let existing = [];
 
   async function load() {
     const { users } = await get('/api/users');
+    existing = users;
     const admins = users.filter((u) => u.role === 'admin' && u.active).length;
     clear(body).append(
       admins < 2 ? h('div', { class: 'notice notice-warn' }, `يوجد ${admins === 1 ? 'مسؤول نظام فعّال واحد' : 'لا مسؤول نظام فعّال'} فقط. أضف مسؤولاً ثانياً (زر «مستخدم جديد» ثم الدور «مسؤول النظام») حتى لا يتوقف النظام إن فُقد هذا الحساب.`) : null,
@@ -89,10 +91,15 @@ export default async function render({ user }) {
     const email = h('input', { type: 'text', inputmode: 'email', autocapitalize: 'off', autocomplete: 'off', spellcheck: 'false', list: isNew ? listId : null, required: true, dir: 'ltr', value: u?.email || '', disabled: !isNew, placeholder: `name@${domain}` });
     const fullMail = (v) => { const t = v.trim().toLowerCase(); return t && !t.includes('@') ? `${t}@${domain}` : t; };
     if (isNew) {
+      // الاقتراحات من بريد الموظفين المسجّل في بطاقاتهم (من لا حساب له بعد)، ثم إكمال الاسم بالنطاق
+      const taken = new Set(existing.map((x) => x.email.toLowerCase()));
       email.addEventListener('input', () => {
         const t = email.value.trim().toLowerCase();
         clear(sug);
-        if (t && !t.includes('@')) sug.append(h('option', { value: `${t}@${domain}` }));
+        if (!t) return;
+        const hits = employees.filter((e) => e.email && !taken.has(e.email.toLowerCase()) && (e.email.toLowerCase().includes(t) || e.name.includes(t))).slice(0, 8);
+        for (const e of hits) sug.append(h('option', { value: e.email.toLowerCase(), label: e.name }));
+        if (!t.includes('@') && !hits.some((e) => e.email.toLowerCase() === `${t}@${domain}`)) sug.append(h('option', { value: `${t}@${domain}` }));
       });
     }
     const role = select(ROLES, u?.role || 'employee');
