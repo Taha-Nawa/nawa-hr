@@ -192,3 +192,16 @@ test('المراكز: إضافة نقطة جديدة وإيقافها وتفعي
   assert.equal((await patch({ active: true, lat: 31.45, lng: 34.38, radiusM: 150 })).status, 200);
   assert.equal((await call(env, 'PATCH', `/api/centers/${id}`, { cookie: u.emp.cookie, body: { active: false } })).status, 403);
 });
+
+test('سلامة البيانات: مركز يمسح موظفوه على بوابة مركز آخر لا يُعدّ بلا بوابة', async () => {
+  const { db, env, u } = await world();
+  const gate = async () => (await call(env, 'GET', '/api/insights/integrity', { cookie: u.hr.cookie })).body.checks.find((c) => c.key === 'gate').items;
+  const before = await gate();
+  assert.ok(before.length > 0, 'مراكز بلا جهاز تُنبَّه أصلاً');
+  const target = before[0];
+  const day = new Date().toISOString().slice(0, 10); // المعالج يقرأ تاريخ اليوم الحقيقي لا __NOW
+  const emp = await db.prepare("SELECT id, code, name FROM employees WHERE center_id = ? AND status = 'active' LIMIT 1").bind(target.id).first();
+  assert.ok(emp, 'للمركز موظف فعّال');
+  await db.prepare("INSERT INTO movements (id, employee_id, card, code, name, center, type, date, time, iso, device_id) VALUES ('g1', ?, 'C1', ?, ?, 'مركز آخر', 'حضور', ?, '09:00', ?, 'DEV-01')").bind(emp.id, emp.code, emp.name, day, `${day}T09:00:00+02:00`).run();
+  assert.ok(!(await gate()).some((x) => x.id === target.id), 'يختفي الإنذار بعد حركة لموظفيه');
+});

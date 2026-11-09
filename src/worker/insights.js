@@ -110,7 +110,10 @@ export function registerInsightRoutes(add, { bad, forbidden }) {
       q(`SELECT c.id, c.name, MAX(d.last_seen) AS lastSeen FROM centers c
          JOIN employees e ON e.center_id = c.id AND e.status = 'active'
          LEFT JOIN devices d ON d.center_id = c.id AND d.active = 1
-         GROUP BY c.id HAVING lastSeen IS NULL OR lastSeen < datetime('now', '-2 day') ORDER BY c.name`),
+         GROUP BY c.id
+         HAVING (lastSeen IS NULL OR lastSeen < datetime('now', '-2 day'))
+            AND NOT EXISTS (SELECT 1 FROM movements m JOIN employees x ON x.id = m.employee_id WHERE x.center_id = c.id AND m.date >= ?1)
+         ORDER BY c.name`, addDays(today, -2)),
       q(`SELECT e.id, e.code, e.name, COUNT(*) AS n FROM daily_results r JOIN employees e ON e.id = r.employee_id
          WHERE r.alert = 'انصراف غير مسجّل' AND r.date >= ?1 AND r.date < ?2 AND e.status = 'active'
          GROUP BY e.id HAVING n >= 3 ORDER BY n DESC`, since, today),
@@ -122,7 +125,7 @@ export function registerInsightRoutes(add, { bad, forbidden }) {
       { key: 'unclosed', title: 'أيام متراكمة بلا تسجيل انصراف (3 فأكثر في 31 يوماً)', why: 'تعني نسيان المسح أو بطاقة تالفة', level: 'mid', items: emp(unclosed, (r) => `${r.n} أيام`) },
       { key: 'manager', title: 'بلا مدير مباشر', why: 'لا يصل طلباته أحد للاعتماد', level: 'mid', items: emp(noMgr) },
       { key: 'badge', title: 'بلا بطاقة سارية', why: 'لا يستطيع تسجيل الحضور على البوابة', level: 'mid', items: emp(noBadge) },
-      { key: 'gate', title: 'مركز بلا بوابة متصلة منذ يومين', why: 'لا حركات تصل من هذا المركز', level: 'high', items: devices.map((d) => ({ id: d.id, name: d.name, detail: d.lastSeen ? `آخر اتصال ${d.lastSeen}` : 'لا بوابة مرتبطة' })) },
+      { key: 'gate', title: 'مركز بلا بوابة متصلة منذ يومين', why: 'لا حركات تصل من هذا المركز (لا يُعدّ هنا مركزٌ يمسح موظفوه على بوابة مركز آخر في المبنى نفسه)', level: 'high', items: devices.map((d) => ({ id: d.id, name: d.name, detail: d.lastSeen ? `آخر اتصال ${d.lastSeen}` : 'لا بوابة مرتبطة' })) },
       { key: 'email', title: 'بلا بريد دخول', why: 'لا يستطيع دخول النظام بنفسه', level: 'low', items: emp(noEmail) },
     ];
     return json({ ok: true, checks, total: checks.reduce((s, c) => s + c.items.length, 0) });
