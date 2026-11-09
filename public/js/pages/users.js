@@ -82,7 +82,19 @@ export default async function render({ user }) {
 
   function form(u) {
     const isNew = !u;
-    const email = h('input', { type: 'email', required: true, dir: 'ltr', value: u?.email || '', disabled: !isNew, placeholder: 'name@nawaculture.org' });
+    // النطاق المؤسسي يُستنتج من بريد من يضيف المستخدم؛ الاقتراح يكمل الاسم بالنطاق، وإن اكتفى المدير بالاسم يُكمَّل عند الحفظ
+    const domain = (user.email.split('@')[1] || 'nawaculture.org').toLowerCase();
+    const listId = `mail-sug-${Math.random().toString(36).slice(2, 7)}`;
+    const sug = h('datalist', { id: listId });
+    const email = h('input', { type: 'text', inputmode: 'email', autocapitalize: 'off', autocomplete: 'off', spellcheck: 'false', list: isNew ? listId : null, required: true, dir: 'ltr', value: u?.email || '', disabled: !isNew, placeholder: `name@${domain}` });
+    const fullMail = (v) => { const t = v.trim().toLowerCase(); return t && !t.includes('@') ? `${t}@${domain}` : t; };
+    if (isNew) {
+      email.addEventListener('input', () => {
+        const t = email.value.trim().toLowerCase();
+        clear(sug);
+        if (t && !t.includes('@')) sug.append(h('option', { value: `${t}@${domain}` }));
+      });
+    }
     const role = select(ROLES, u?.role || 'employee');
     const emp = select([['', 'بلا ربط'], ...employees.map((e) => [e.id, `${e.name} (${e.code})`])], u?.employeeId ?? '');
     const active = select([['1', 'فعّال'], ['0', 'موقوف']], u ? String(u.active) : '1');
@@ -99,7 +111,7 @@ export default async function render({ user }) {
         e.preventDefault();
         const employeeId = emp.value === '' ? null : Number(emp.value);
         try {
-          if (isNew) await post('/api/users', { email: email.value, role: role.value, employeeId, medical: medical.checked });
+          if (isNew) await post('/api/users', { email: fullMail(email.value), role: role.value, employeeId, medical: medical.checked });
           else await patch(`/api/users/${u.id}`, { role: role.value, employeeId, active: active.value === '1', medical: medical.checked });
           toast('حُفظ');
           dlg.close();
@@ -109,7 +121,8 @@ export default async function render({ user }) {
           err.hidden = false;
         }
       } },
-      field('البريد المؤسسي', email, 'يجب أن يطابق حساب Microsoft للشخص'),
+      field('البريد المؤسسي', email, `اكتب الاسم فقط (مثل salem) ويُكمَّل بـ @${domain}؛ ويجب أن يطابق حساب Microsoft للشخص`),
+      sug,
       field('الدور', role),
       field('الموظف المرتبط', emp, 'يحدد «نفسه» و«فريقه» في الصلاحيات'),
       isNew ? null : field('الحالة', active, 'إيقاف الحساب ينهي جلساته فوراً'),
