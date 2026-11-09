@@ -59,9 +59,10 @@ function showDetails(d) {
 }
 
 export default async function render() {
-  const { centers } = await get('/api/centers');
+  const centersReq = get('/api/centers'); // يُطلب مع قائمة الأجهزة لا قبلها
   const body = h('div', { class: 'table-wrap' });
 
+  let centers = [];
   async function load() {
     const [{ devices }, st] = await Promise.all([get('/api/devices'), get('/api/gates/status').catch(() => ({ devices: [] }))]);
     const state = new Map((st.devices || []).map((d) => [d.id, d.state]));
@@ -134,6 +135,6 @@ export default async function render() {
       h('div', null, h('h1', null, 'أجهزة البوابة'), h('p', { class: 'sub' }, 'لكل جهاز رمزه الخاص؛ إيقاف جهاز مفقود لا يمس بقية الأجهزة.')),
       h('button', { type: 'button', class: 'btn btn-primary', onclick: create }, 'جهاز جديد')),
     body);
-  await load();
+  await Promise.all([centersReq.then((r) => { centers = r.centers; }), load()]);
   return page;
 }

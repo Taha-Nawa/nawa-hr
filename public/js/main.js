@@ -257,9 +257,9 @@ async function route() {
 }
 
 // ---------------------------------------------------------------- الإقلاع
-async function startApp() {
+async function startApp(known = null) {
   try {
-    me = (await get('/api/me')).user;
+    me = known || (await get('/api/me')).user;
   } catch {
     me = null;
   }
@@ -300,11 +300,13 @@ async function boot() {
     else location.hash = '#/today';
   }
 
+  // وحدة الصفحة المطلوبة تُحمَّل أثناء انتظار /api/me بدل أن تنتظر نتيجته (توفير رحلة كاملة)
+  try { match((location.hash.replace(/^#\/?/, '') || 'today').split('?')[0])?.page.load().catch(() => {}); } catch { /* تحسين اختياري */ }
   let user = null;
   try {
     user = (await get('/api/me')).user;
   } catch { /* لا جلسة */ }
-  if (user) return startApp();
+  if (user) return startApp(user);
 
   // بلا جلسة: جهاز متذكَّر يدخل تلقائياً، وإلا نعرض شاشة الدخول (مع «متابعة كـ…» إن عُرف الجهاز).
   const dev = await deviceInfo();

@@ -37,7 +37,15 @@ export default async function render({ user }) {
   let q = '';
   let center = '';
 
-  const settings = ['hr', 'director', 'admin'].includes(user.role) ? await get('/api/settings').catch(() => null) : null;
+  // كل الطلبات تنطلق معاً من أول لحظة: كل طلب يكلّف رحلة ذهاب وإياب كاملة، فتسلسلها كان يضاعف زمن الفتح
+  const settingsReq = ['hr', 'director', 'admin'].includes(user.role) ? get('/api/settings').catch(() => null) : Promise.resolve(null);
+  const dayReq = get(`/api/day?date=${date}`);
+  dayReq.catch(() => {}); // الخطأ يُعالَج في go()
+  const gatesReq = get('/api/gates/status').catch(() => null);
+  const boardReq = ['manager', 'hr', 'director', 'admin'].includes(user.role) ? get('/api/providers/board').catch(() => null) : null;
+  const dueReq = user.employeeId != null ? get('/api/monthly-reports/due').catch(() => null) : null;
+  const backupReq = user.role === 'admin' ? get('/api/backup/status').catch(() => null) : null;
+  const settings = await settingsReq;
 
   const head = h('header', { class: 'page-head' });
   const notice = h('div');
@@ -53,12 +61,12 @@ export default async function render({ user }) {
   let backup = null;
   let due = [];
   let noShows = []; // مزوّدو خدمة تجاوزوا مهلة بداية حصتهم دون مسح بطاقة
-  async function go(d) {
+  async function go(d, pre = null) {
     date = d;
     dateInput.value = d;
     clear(tableBox).append(h('p', { class: 'loading' }, 'جارٍ التحميل…'));
     try {
-      rows = (await get(`/api/day?date=${d}`)).rows;
+      rows = (await (pre || get(`/api/day?date=${d}`))).rows;
     } catch (e) {
       clear(tableBox).append(h('div', { class: 'notice notice-err' }, e.message));
       return;
@@ -178,13 +186,11 @@ export default async function render({ user }) {
         h('td', null, statusChip(r.status, date === today), r.alert ? h('div', { class: 'alert-text' }, r.alert) : null))))));
   }
 
-  // حالة البوابات (لمن يملك الصلاحية): لا تعطّل اللوحة إن تعذّرت
-  try { gates = (await get('/api/gates/status')).problems || []; draw(); } catch { /* غير متاح */ }
-  if (['manager', 'hr', 'director', 'admin'].includes(user.role)) {
-    try { noShows = (await get('/api/providers/board')).items.filter((i) => i.state === 'noshow'); draw(); } catch { /* غير متاح */ }
-  }
-  if (user.employeeId != null) { try { due = (await get('/api/monthly-reports/due')).items; draw(); } catch { /* غير متاح */ } }
-  if (user.role === 'admin') { try { backup = await get('/api/backup/status'); draw(); } catch { /* غير متاح */ } }
-  await go(date);
+  // حالة البوابات وغيرها (لمن يملك الصلاحية): لا تعطّل اللوحة إن تعذّرت، وتُرسم عند وصولها دون انتظار
+  gatesReq.then((r) => { if (r) { gates = r.problems || []; draw(); } });
+  boardReq?.then((r) => { if (r) { noShows = r.items.filter((i) => i.state === 'noshow'); draw(); } });
+  dueReq?.then((r) => { if (r) { due = r.items; draw(); } });
+  backupReq?.then((r) => { if (r) { backup = r; draw(); } });
+  await go(date, dayReq);
   return root;
 }

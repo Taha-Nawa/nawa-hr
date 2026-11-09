@@ -31,6 +31,11 @@ function avatarEl(emp) {
 
 export default async function render({ user, params }) {
   const id = Number(params.id);
+  // سجل الشهر الحالي يُطلب مع قائمة الموظفين معاً بدل أن ينتظرها (رحلة ذهاب وإياب أقل)
+  const ym0 = todayLocal().slice(0, 7);
+  const r0 = monthRange(ym0);
+  let firstDays = get(`/api/employees/${id}/days?from=${r0.from}&to=${r0.to}`);
+  firstDays.catch(() => {});
   const { employees } = await get('/api/employees');
   const emp = employees.find((e) => e.id === id);
   if (!emp) return h('div', { class: 'notice notice-err' }, 'الموظف غير موجود أو لا تملك صلاحية عرضه.');
@@ -133,7 +138,9 @@ export default async function render({ user, params }) {
     clear(tableBox).append(h('p', { class: 'loading' }, 'جارٍ التحميل…'));
     let days;
     try {
-      days = (await get(`/api/employees/${id}/days?from=${from}&to=${to}`)).days;
+      const pre = firstDays && ym === ym0 ? firstDays : null;
+      firstDays = null;
+      days = (await (pre || get(`/api/employees/${id}/days?from=${from}&to=${to}`))).days;
     } catch (e) {
       clear(tableBox).append(h('div', { class: 'notice notice-err' }, e.message));
       return;
