@@ -289,6 +289,13 @@ async function recover() {
 }
 
 async function boot() {
+  // نافذة Microsoft المنبثقة لإذن دليل الأشخاص: تُسلّم النتيجة للصفحة الأم وتُغلق دون أن تدخل التطبيق
+  if (window.opener && /[#&]state=graph\./.test(location.hash)) {
+    try { window.opener.postMessage({ type: 'nawa-graph', hash: location.hash }, location.origin); } catch { /* الصفحة الأم أُغلقت */ }
+    history.replaceState(null, '', location.pathname);
+    window.close();
+    return;
+  }
   setUnauthorizedHandler(recover);
   window.addEventListener('hashchange', route);
   window.addEventListener('requests:changed', refreshPending);

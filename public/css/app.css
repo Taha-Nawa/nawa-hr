@@ -1310,3 +1310,14 @@ h2 { font-size: 0.95rem; }
 .rh-sets { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
 .rh-set-head { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
 .rh-pick { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+
+/* قائمة اقتراح البريد (دليل Microsoft وبطاقات الموظفين) */
+.mail-wrap { position: relative; }
+.mail-sug { position: absolute; inset-inline: 0; top: 64px; z-index: 30; margin: 0; padding: 4px; list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); box-shadow: 0 12px 28px -12px rgba(42, 20, 16, 0.4); max-height: 320px; overflow-y: auto; }
+.mail-sug li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+.mail-sug li:hover, .mail-sug li:focus { background: var(--row-alt); }
+.mail-av { flex: none; width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+.mail-av-t { display: grid; place-items: center; background: var(--leave-soft); color: var(--leave); font-weight: 800; }
+.mail-tx { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
+.mail-tx b { font-weight: 700; }
+.mail-tx small { color: var(--muted); direction: ltr; text-align: start; overflow: hidden; text-overflow: ellipsis; }

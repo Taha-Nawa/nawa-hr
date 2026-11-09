@@ -1,4 +1,5 @@
 import { h, clear, dialog, field, select, toast, dash, confirmBox } from '../dom.js';
+import { connectGraph, graphReady, searchDirectory, photoOf } from '../graph.js';
 import { get, post, patch } from '../api.js';
 
 const ROLES = [
@@ -15,6 +16,7 @@ export default async function render({ user }) {
   const empName = new Map(employees.map((e) => [e.id, `${e.name} (${e.code})`]));
   const body = h('div', { class: 'table-wrap' });
   let existing = [];
+  let graphTried = false;
 
   async function load() {
     const { users } = await get('/api/users');
@@ -84,31 +86,64 @@ export default async function render({ user }) {
 
   function form(u) {
     const isNew = !u;
-    // النطاق المؤسسي يُستنتج من بريد من يضيف المستخدم؛ الاقتراح يكمل الاسم بالنطاق، وإن اكتفى المدير بالاسم يُكمَّل عند الحفظ
+    // النطاق المؤسسي يُستنتج من بريد من يضيف المستخدم؛ إن اكتفى المدير بالاسم يُكمَّل عند الحفظ
     const domain = (user.email.split('@')[1] || 'nawaculture.org').toLowerCase();
-    const listId = `mail-sug-${Math.random().toString(36).slice(2, 7)}`;
-    const sug = h('datalist', { id: listId });
-    const email = h('input', { type: 'text', inputmode: 'email', autocapitalize: 'off', autocomplete: 'off', spellcheck: 'false', list: isNew ? listId : null, required: true, dir: 'ltr', value: u?.email || '', disabled: !isNew, placeholder: `name@${domain}` });
+    const email = h('input', { type: 'text', inputmode: 'email', autocapitalize: 'off', autocomplete: 'off', spellcheck: 'false', required: true, dir: 'ltr', value: u?.email || '', disabled: !isNew, placeholder: `name@${domain}` });
     const fullMail = (v) => { const t = v.trim().toLowerCase(); return t && !t.includes('@') ? `${t}@${domain}` : t; };
-    if (isNew) {
-      // الاقتراحات من بريد الموظفين المسجّل في بطاقاتهم (من لا حساب له بعد)، ثم إكمال الاسم بالنطاق
-      const taken = new Set(existing.map((x) => x.email.toLowerCase()));
-      email.addEventListener('input', () => {
-        const t = email.value.trim().toLowerCase();
-        clear(sug);
-        if (!t) return;
-        const hits = employees.filter((e) => e.email && !taken.has(e.email.toLowerCase()) && (e.email.toLowerCase().includes(t) || e.name.includes(t))).slice(0, 8);
-        for (const e of hits) sug.append(h('option', { value: e.email.toLowerCase(), label: e.name }));
-        if (!t.includes('@') && !hits.some((e) => e.email.toLowerCase() === `${t}@${domain}`)) sug.append(h('option', { value: `${t}@${domain}` }));
-      });
-    }
     const role = select(ROLES, u?.role || 'employee');
     const emp = select([['', 'بلا ربط'], ...employees.map((e) => [e.id, `${e.name} (${e.code})`])], u?.employeeId ?? '');
+    const sug = h('ul', { class: 'mail-sug', role: 'listbox', hidden: true });
+    const hintLine = h('span', { class: 'field-hint' });
+    const avatar = (name, src) => (src
+      ? h('img', { class: 'mail-av', src, alt: '' })
+      : h('span', { class: 'mail-av mail-av-t', 'aria-hidden': 'true' }, (name || '?').trim().charAt(0).toUpperCase()));
+    function pick(addr) {
+      email.value = addr;
+      sug.hidden = true;
+      const e = employees.find((x) => x.email && x.email.toLowerCase() === addr);
+      if (e && emp.value === '') emp.value = String(e.id); // يربط بالموظف تلقائياً إن طابق بريده بطاقة
+    }
+    function draw(items) {
+      clear(sug);
+      sug.hidden = items.length === 0;
+      for (const it of items) {
+        const li = h('li', { role: 'option', tabindex: '-1', onmousedown: (ev) => { ev.preventDefault(); pick(it.email); } },
+          avatar(it.name, null), h('span', { class: 'mail-tx' }, h('b', null, it.name), h('small', { dir: 'ltr' }, it.email)));
+        sug.append(li);
+        if (it.id && graphReady()) photoOf(it.id).then((src) => { if (src) li.firstChild.replaceWith(avatar(it.name, src)); });
+      }
+    }
+    let seq = 0;
+    async function suggest() {
+      const t = email.value.trim().toLowerCase();
+      const mine = ++seq;
+      if (!t || t.includes('@') && t.endsWith(`@${domain}`)) { sug.hidden = true; return; }
+      const taken = new Set(existing.map((x) => x.email.toLowerCase()));
+      const cards = employees.filter((e) => e.email && !taken.has(e.email.toLowerCase()) && (e.email.toLowerCase().includes(t) || e.name.includes(t)))
+        .slice(0, 8).map((e) => ({ name: e.name, email: e.email.toLowerCase() }));
+      let dir = [];
+      if (graphReady()) { try { dir = (await searchDirectory(t)).filter((d) => !taken.has(d.email)); } catch { dir = []; } }
+      if (mine !== seq) return;
+      const seen = new Set(dir.map((d) => d.email));
+      const items = [...dir, ...cards.filter((c) => !seen.has(c.email))];
+      if (!t.includes('@') && !items.some((i) => i.email === `${t}@${domain}`)) items.push({ name: 'إكمال الاسم بالنطاق', email: `${t}@${domain}` });
+      draw(items.slice(0, 8));
+    }
     const active = select([['1', 'فعّال'], ['0', 'موقوف']], u ? String(u.active) : '1');
     const medical = h('input', { type: 'checkbox', checked: !!u?.medical });
     const err = h('div', { class: 'notice notice-err', hidden: true, role: 'alert' });
-    // مستخدم جديد: اختيار الموظف يملأ بريده المسجّل في بطاقته إن كان الحقل فارغاً (يبقى قابلاً للتعديل)
     if (isNew) {
+      const note = (msg) => { hintLine.textContent = msg; };
+      email.addEventListener('keydown', () => {
+        // الاتصال بدليل Microsoft يحتاج حدث مستخدم لفتح النافذة؛ يُطلب مرة واحدة لكل تحميل للصفحة
+        if (graphReady() || graphTried) return;
+        graphTried = true;
+        connectGraph(user.email).then(() => { note('تبحث القائمة الآن في دليل Microsoft 365'); suggest(); })
+          .catch((ex) => note(`بحث الدليل غير متاح: ${ex.message}. تبقى الاقتراحات من بطاقات الموظفين.`));
+      });
+      email.addEventListener('input', suggest);
+      email.addEventListener('blur', () => { setTimeout(() => { sug.hidden = true; }, 150); });
+      email.addEventListener('focus', () => { if (email.value.trim()) suggest(); });
       const mail = new Map(employees.map((e) => [String(e.id), e.email]));
       emp.addEventListener('change', () => { if (!email.value && mail.get(emp.value)) email.value = mail.get(emp.value); });
     }
@@ -128,8 +163,7 @@ export default async function render({ user }) {
           err.hidden = false;
         }
       } },
-      field('البريد المؤسسي', email, `اكتب الاسم فقط (مثل salem) ويُكمَّل بـ @${domain}؛ ويجب أن يطابق حساب Microsoft للشخص`),
-      sug,
+      (() => { const f = field('البريد المؤسسي', email, `اكتب الاسم فقط (مثل salem) ويُكمَّل بـ @${domain}؛ ويجب أن يطابق حساب Microsoft للشخص`); f.classList.add('mail-wrap'); f.append(sug, hintLine); return f; })(),
       field('الدور', role),
       field('الموظف المرتبط', emp, 'يحدد «نفسه» و«فريقه» في الصلاحيات'),
       isNew ? null : field('الحالة', active, 'إيقاف الحساب ينهي جلساته فوراً'),
