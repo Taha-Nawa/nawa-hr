@@ -133,15 +133,19 @@ export default async function render({ user }) {
     const medical = h('input', { type: 'checkbox', checked: !!u?.medical });
     const err = h('div', { class: 'notice notice-err', hidden: true, role: 'alert' });
     if (isNew) {
-      const note = (msg) => { hintLine.textContent = msg; };
-      email.addEventListener('keydown', () => {
-        // الاتصال بدليل Microsoft يحتاج حدث مستخدم لفتح النافذة؛ يُطلب مرة واحدة لكل تحميل للصفحة
-        if (graphReady() || graphTried) return;
+      const note = (msg) => { clear(hintLine).append(msg); };
+      // الاتصال بدليل Microsoft يحتاج حدث مستخدم لفتح النافذة (ضغط مفتاح أو نقر)؛ يُطلب مرة واحدة لكل تحميل للصفحة، وزر يدوي احتياطاً
+      const link = (manual) => {
         graphTried = true;
         connectGraph(user.email).then(() => { note('تبحث القائمة الآن في دليل Microsoft 365'); suggest(); })
-          .catch((ex) => note(`بحث الدليل غير متاح: ${ex.message}. تبقى الاقتراحات من بطاقات الموظفين.`));
-      });
-      email.addEventListener('input', suggest);
+          .catch((ex) => { note(`بحث الدليل غير متاح: ${ex.message}. `); hintLine.append(h('button', { type: 'button', class: 'link-btn', onclick: () => link(true) }, 'إعادة المحاولة')); });
+        if (manual) note('جارٍ الاتصال بدليل Microsoft…');
+      };
+      const kick = () => { if (!graphReady() && !graphTried) link(false); };
+      if (graphReady()) note('تبحث القائمة في دليل Microsoft 365');
+      else note(h('button', { type: 'button', class: 'link-btn', onclick: () => link(true) }, 'تفعيل البحث في دليل Microsoft 365 (أسماء وصور)'));
+      email.addEventListener('keydown', kick);
+      email.addEventListener('input', () => { kick(); suggest(); });
       email.addEventListener('blur', () => { setTimeout(() => { sug.hidden = true; }, 150); });
       email.addEventListener('focus', () => { if (email.value.trim()) suggest(); });
       const mail = new Map(employees.map((e) => [String(e.id), e.email]));
