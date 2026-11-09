@@ -11,9 +11,33 @@ const safe = async (path, pick) => {
 };
 
 /** يُرجع قائمة تنبيهات [{n, text, href, level}] لدور المستخدم */
+// ذاكرتان: وعد مشترك لمدة 30 ثانية (الجرسان في الصفحة)، ونسخة في sessionStorage لعشر دقائق
+// فلا تُعاد الاستعلامات الثقيلة (الأنماط والمواقع وسلامة البيانات) مع كل فتح أو تحديث للصفحة.
+const TTL = 10 * 60 * 1000;
+const SKEY = 'nawa-bell';
+const stored = (me) => {
+  try {
+    const v = JSON.parse(sessionStorage.getItem(SKEY) || 'null');
+    return v && v.role === me.role && Date.now() - v.at < TTL ? v.alerts : null;
+  } catch {
+    return null;
+  }
+};
 let cache = null;
-export function collectAlerts(me) {
-  if (!cache || Date.now() - cache.at > 30000) cache = { at: Date.now(), p: gather(me) };
+export function collectAlerts(me, force = false) {
+  if (!force) {
+    const hit = stored(me);
+    if (hit) return Promise.resolve(hit);
+  }
+  if (!cache || Date.now() - cache.at > 30000) {
+    cache = {
+      at: Date.now(),
+      p: gather(me).then((alerts) => {
+        try { sessionStorage.setItem(SKEY, JSON.stringify({ at: Date.now(), role: me.role, alerts })); } catch { /* التخزين اختياري */ }
+        return alerts;
+      }),
+    };
+  }
   return cache.p;
 }
 
@@ -43,8 +67,8 @@ export function bellButton(me) {
   const badge = h('b', { class: 'count', hidden: true });
   const btn = h('button', { type: 'button', class: 'bell no-print', 'aria-label': 'التنبيهات', onclick: open }, icon('bell'), badge);
   let alerts = [];
-  async function refresh() {
-    alerts = await collectAlerts(me);
+  async function refresh(force = false) {
+    alerts = await collectAlerts(me, force);
     const total = alerts.reduce((s, a) => s + a.n, 0);
     badge.hidden = total === 0;
     badge.textContent = total > 99 ? '99+' : String(total);
@@ -57,9 +81,11 @@ export function bellButton(me) {
       ? h('ul', { class: 'bell-list' }, alerts.map((a) => h('li', null, h('a', { href: a.href, onclick: () => d.close() }, h('b', { class: `chip ${a.level === 'high' ? 'chip-absent' : 'chip-late'}` }, String(a.n)), h('span', null, a.text)))))
       : h('div', { class: 'empty' }, h('b', null, 'لا شيء ينتظرك'), h('p', { class: 'muted' }, 'كل شيء على ما يرام الآن.')));
     draw();
-    refresh().then(draw);
+    refresh(true).then(draw);
   }
-  refresh();
-  setInterval(refresh, 5 * 60 * 1000);
+  // بعد أن تستقر الصفحة: الجرس لا يجوز أن ينافس محتوى الصفحة على الاتصال في الثواني الأولى
+  if (stored(me)) refresh();
+  else setTimeout(refresh, 4000);
+  setInterval(() => { if (!document.hidden) refresh(true); }, TTL);
   return btn;
 }
