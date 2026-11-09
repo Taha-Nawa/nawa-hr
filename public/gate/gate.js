@@ -710,8 +710,25 @@ if(cfg&&cfg.url2){
   var _u2=cleanUrl2(cfg.url2);
   if(_u2!==cfg.url2&&validUrl2(_u2)){cfg.url2=_u2; save(K.cfg,cfg);}
 }
+/* رابط الإعداد الجاهز: #cfg=… (يولّده مدير النظام من صفحة أجهزة البوابة). الجزء بعد # لا يُرسل إلى أي خادم،
+   ويُمسح من العنوان فور تطبيقه. لا يُقبل إلا إذا كان رابط الخدمة من نطاق الصفحة نفسها (حتى لا يحوّل رابط مفخخ الحركات إلى خادم آخر). يضبط المركز والمعرّف ورابط النظام الجديد ورمزه، ولا يمس إعدادات Google المحفوظة. */
+var _imported=false;
+try{
+  var _m=/^#cfg=([A-Za-z0-9_-]+)$/.exec(location.hash||"");
+  if(_m){
+    var _j=JSON.parse(decodeURIComponent(escape(atob(_m[1].replace(/-/g,"+").replace(/_/g,"/")))));
+    if(_j&&typeof _j.u==="string"&&cleanUrl2(_j.u)===sameOriginGate()&&validUrl2(cleanUrl2(_j.u))&&typeof _j.t==="string"&&_j.t.length>=16&&_j.t.length<=80&&/^[A-Z0-9][A-Z0-9-]{1,19}$/.test(_j.d||"")){
+      cfg=cfg||{center:"",device:"",url:"",token:"",url2:"",token2:""};
+      if(typeof _j.c==="string"&&_j.c&&_j.c.length<=120)cfg.center=_j.c;
+      cfg.device=_j.d; cfg.url2=cleanUrl2(_j.u); cfg.token2=_j.t;
+      save(K.cfg,cfg); _imported=true;
+    }
+    history.replaceState(null,"",location.pathname+location.search);
+  }
+}catch(e){}
 rebuildFeed();
 if(cfg&&cfg.url)openMain(); else openSetup(true);
+if(_imported){toast(cfg.url?"طُبّقت إعدادات الجهاز من الرابط":"طُبّقت إعدادات النظام الجديد — أضف رابط Google ورمزه ثم احفظ",6000);if(cfg.url){refreshBadges();sync2()}}
 setInterval(function(){render();sync();sync2()},20000);
 setInterval(updateWarn,60000);
 setInterval(clockTick,5000);

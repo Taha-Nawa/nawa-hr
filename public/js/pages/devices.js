@@ -17,8 +17,20 @@ const when = (s) => {
   return fmtStamp(s);
 };
 
-function showToken(deviceId, token) {
+const setupLink = (deviceId, token, center) => {
+  const json = JSON.stringify({ d: deviceId, u: `${location.origin}/api/gate`, t: token, ...(center ? { c: center } : {}) });
+  const b64 = btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `${location.origin}/gate/#cfg=${b64}`;
+};
+
+const copyRow = (label, value) => h('div', null,
+  h('p', { class: 'field-label' }, label),
+  h('div', { class: 'secret-row' }, h('code', { class: 'secret', dir: 'ltr' }, value || '—'),
+    value ? h('button', { type: 'button', class: 'btn btn-sm', onclick: () => copyText(value) }, 'نسخ') : null));
+
+function showToken(deviceId, token, center) {
   const url = `${location.origin}/api/gate`;
+  const link = setupLink(deviceId, token, center);
   const secret = h('code', { class: 'secret', dir: 'ltr' }, token);
   return dialog({
     title: `رمز الجهاز ${deviceId}`,
@@ -26,8 +38,23 @@ function showToken(deviceId, token) {
       h('div', { class: 'notice notice-warn' }, 'انسخ الرمز الآن. لا يمكن عرضه مرة أخرى؛ إن ضاع، أنشئ رمزاً جديداً وسيتوقف القديم.'),
       h('p', { class: 'field-label' }, 'الرمز'), h('div', { class: 'secret-row' }, secret, h('button', { type: 'button', class: 'btn btn-sm', onclick: () => copyText(token) }, 'نسخ')),
       h('p', { class: 'field-label' }, 'رابط الخدمة'), h('div', { class: 'secret-row' }, h('code', { class: 'secret', dir: 'ltr' }, url), h('button', { type: 'button', class: 'btn btn-sm', onclick: () => copyText(url) }, 'نسخ')),
-      h('p', { class: 'muted' }, 'يُدخلان في إعدادات تطبيق البوابة على هذا الجهاز: رابط الخدمة والرمز.'),
+      h('p', { class: 'field-label' }, 'رابط الإعداد الجاهز'), h('div', { class: 'secret-row' }, h('code', { class: 'secret', dir: 'ltr' }, link), h('button', { type: 'button', class: 'btn btn-sm', onclick: () => copyText(link) }, 'نسخ')),
+      h('p', { class: 'muted' }, 'افتح «رابط الإعداد الجاهز» على جهاز المركز فيُضبط المركز والمعرّف ورابط النظام ورمزه تلقائياً، أو أدخل الرابط والرمز يدوياً في إعدادات البوابة. الرمز داخل الرابط، فلا ترسله إلا لمن يجهّز الجهاز.'),
       h('div', { class: 'dlg-actions' }, h('button', { type: 'button', class: 'btn btn-primary', onclick: (e) => e.target.closest('dialog').close() }, 'نسختُ الرمز'))),
+  });
+}
+
+function showDetails(d) {
+  return dialog({
+    title: `بيانات الجهاز ${d.id}`,
+    content: h('div', null,
+      copyRow('معرّف الجهاز', d.id),
+      copyRow('المركز', d.center),
+      copyRow('رابط الخدمة (النظام الجديد)', `${location.origin}/api/gate`),
+      copyRow('صفحة البوابة', `${location.origin}/gate/`),
+      h('div', { class: 'notice' }, 'رمز الجهاز محفوظ مشفّراً ولا يمكن عرضه. إن نسيته اضغط «رمز جديد» فيظهر رمز جديد مرة واحدة مع رابط إعداد جاهز للنسخ.'),
+      h('div', { class: 'notice' }, 'رابط Google ورمزه غير محفوظين في النظام: هما في إعدادات السكربت وعلى الجهاز نفسه. ويُعدَّلان من إعدادات البوابة بالترس.'),
+      h('div', { class: 'dlg-actions' }, h('button', { type: 'button', class: 'btn btn-primary', onclick: (e) => e.target.closest('dialog').close() }, 'إغلاق'))),
   });
 }
 
@@ -54,11 +81,12 @@ export default async function render() {
           ? h('span', { class: `chip ${STATE[state.get(d.id)][1]}` }, STATE[state.get(d.id)][0])
           : h('span', { class: `chip ${d.active ? 'chip-present' : 'chip-absent'}` }, d.active ? 'فعّال' : 'موقوف')),
         h('td', { class: 'row-actions' },
+          h('button', { type: 'button', class: 'btn btn-sm', onclick: () => showDetails(d) }, 'البيانات'),
           h('button', { type: 'button', class: 'btn btn-sm', onclick: async () => {
             if (!(await confirmBox(`إنشاء رمز جديد للجهاز ${d.id}؟ سيتوقف الرمز الحالي فوراً حتى تُدخل الجديد في الجهاز.`, 'رمز جديد'))) return;
             try {
               const r = await post(`/api/devices/${encodeURIComponent(d.id)}/rotate`);
-              showToken(d.id, r.token);
+              showToken(d.id, r.token, d.center);
               load();
             } catch (e) {
               toast(e.message, 'err');
@@ -88,7 +116,7 @@ export default async function render() {
         try {
           const r = await post('/api/devices', { id: id.value, name: name.value || null, centerId: center.value === '' ? null : Number(center.value) });
           dlg.close();
-          showToken(r.device.id, r.token);
+          showToken(r.device.id, r.token, (centers.find((c) => String(c.id) === center.value) || {}).name);
           load();
         } catch (ex) {
           err.textContent = ex.message;
