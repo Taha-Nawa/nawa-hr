@@ -4,7 +4,7 @@ var $=function(s){return document.querySelector(s)};
 var K={cfg:"nawa_cfg",badges:"nawa_badges",pend:"nawa_pending",log:"nawa_log",
        sok:"nawa_last_sync_ok",bok:"nawa_last_badges_ok",
        pend2:"nawa_pending2",sok2:"nawa_last_sync2_ok",
-       pbadges:"nawa_pbadges",unc:"nawa_unclosed"};
+       pbadges:"nawa_pbadges",unc:"nawa_unclosed",centers:"nawa_centers"};
 var syncErr=0, lastSyncOk=0, lastBadgeOk=0, warnedAt=0;
 var cfg=null, badges=[], pending=[], pending2=[], log=[], move="حضور";
 var syncErr2=0, lastSyncOk2=0, warnedAt2=0;
@@ -45,6 +45,29 @@ function tstr(d){return pad(d.getHours())+":"+pad(d.getMinutes())}
 /* العرض بنظام 12 ساعة (ص/م)؛ المخزَّن والمُرسَل إلى الخادم وجوجل يبقى HH:MM بنظام 24 ساعة */
 function t12(s){var m=/^(\d{1,2}):(\d{2})/.exec(String(s||"")); if(!m||+m[1]>23||+m[2]>59)return s||""; var h=+m[1]; return (h%12||12)+":"+m[2]+" "+(h<12?"ص":"م")}
 /* ---------- الإعدادات ---------- */
+/* قائمة المراكز: تُجلب من النظام الجديد وتُخزَّن على الجهاز؛ دونها تبقى القائمة المضمّنة في الصفحة */
+function fillCenters(list){
+  var sel=$("#cfgCenter"), cur=sel.value||(cfg&&cfg.center)||"", i, o;
+  if(!list||!list.length)return;
+  sel.innerHTML="";
+  list.forEach(function(n){o=document.createElement("option");o.value=o.textContent=n;sel.appendChild(o)});
+  if(cur&&list.indexOf(cur)<0){o=document.createElement("option");o.value=cur;o.textContent=cur+" (محفوظ سابقاً)";sel.appendChild(o)}
+  sel.value=cur||list[0];
+}
+function fetchCenters(){
+  var u=cleanUrl2($("#cfgUrl2").value), t=$("#cfgToken2").value.trim();
+  if(!u||!validUrl2(u)||t.length<16||!navigator.onLine)return;
+  fetch(u+"?action=centers&token="+encodeURIComponent(t)).then(function(r){return r.json()}).then(function(j){
+    if(j&&j.ok&&j.centers&&j.centers.length){save(K.centers,j.centers);fillCenters(j.centers)}
+  }).catch(function(){});
+}
+document.addEventListener("click",function(e){
+  var b=e.target.closest&&e.target.closest(".eye"); if(!b)return;
+  var i=document.getElementById(b.getAttribute("data-for")), on=i.classList.toggle("show");
+  b.textContent=on?"إخفاء":"إظهار";
+});
+$("#cfgToken2").addEventListener("input",fetchCenters);
+$("#cfgUrl2").addEventListener("change",fetchCenters);
 function openSetup(first){
   $("#main").classList.add("hide"); $("#setup").classList.remove("hide");
   $("#btnBack").classList.toggle("hide",!!first);
@@ -57,6 +80,7 @@ function openSetup(first){
     $("#cfgUrl").value=cfg.url; $("#cfgToken").value=cfg.token;
     $("#cfgUrl2").value=cfg.url2||""; $("#cfgToken2").value=cfg.token2||""}
   if(!$("#cfgUrl2").value)$("#cfgUrl2").value=sameOriginGate();
+  fillCenters(load(K.centers,null)); fetchCenters();
   $("#cacheInfo").textContent="البطاقات المخزّنة على الجهاز: "+badges.length+
     (pbadges.length?"  |  مزوّدو خدمة: "+pbadges.length:"")+
     (pending.length?"  |  حركات بانتظار الإرسال: "+pending.length:"")+

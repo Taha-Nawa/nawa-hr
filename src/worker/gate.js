@@ -90,6 +90,10 @@ async function route(request, env, execCtx) {
       await env.DB.prepare("UPDATE devices SET last_ping = datetime('now') WHERE id = ? AND (last_ping IS NULL OR last_ping < datetime('now', '-4 minutes'))").bind(device.id).run();
       return json({ ok: true, msg: 'الخدمة تعمل', device: device.id });
     }
+    if (action === 'centers') {
+      const r = await env.DB.prepare('SELECT name FROM centers WHERE active = 1 ORDER BY id').all();
+      return json({ ok: true, centers: r.results.map((x) => x.name) });
+    }
     if (action === 'badges') return badges(env.DB, localDate(env.TIMEZONE || 'Asia/Hebron', nowOf(env)));
     if (action === 'unclosed') return json(await gateUnclosed(env, device, url.searchParams.get('days')));
     return json({ ok: false, error: 'إجراء غير معروف' }, 400);

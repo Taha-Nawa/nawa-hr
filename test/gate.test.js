@@ -263,3 +263,13 @@ test('آخر ظهور للجهاز يُحدَّث ولا يُكتب في كل ط
   await gatePost(env, [mv('NW-001', 'انصراف', '2026-03-02', '15:05', { id: 'b' })]);
   assert.equal(await db.prepare("SELECT last_seen FROM devices WHERE id='DEV-01'").first('last_seen'), stamp);
 });
+
+test('الإجراء centers: المراكز الفعّالة فقط وبرمز جهاز صحيح', async () => {
+  const { env, db } = await freshEnv();
+  await db.prepare("INSERT INTO centers (name, active) VALUES ('نقطة موقوفة', 0), ('نقطة جديدة', 1)").run();
+  const r = await gateGet(env, `action=centers&token=${DEVICE_TOKEN}`);
+  assert.equal(r.body.ok, true);
+  assert.ok(r.body.centers.includes('نقطة جديدة'));
+  assert.ok(!r.body.centers.includes('نقطة موقوفة'));
+  assert.equal((await gateGet(env, 'action=centers&token=bad')).status, 401);
+});

@@ -62,15 +62,15 @@
         <label class="f"><span>معرّف الجهاز</span><input id="cfgDevice" dir="ltr" placeholder="DEV-01"></label>
       </fieldset>
       <fieldset class="grp">
-        <legend>Google (المسار الحالي)</legend>
-        <label class="f"><span>رابط الخدمة (Web app URL)</span><input id="cfgUrl" dir="ltr" placeholder="https://script.google.com/macros/s/.../exec"></label>
-        <label class="f"><span>رمز الحماية (Token)</span><input id="cfgToken" dir="ltr" placeholder="الرمز نفسه الموجود في السكربت"></label>
+        <legend>النظام الجديد <em class="ok">الأساسي</em></legend>
+        <label class="f"><span>رابط الخدمة</span><input id="cfgUrl2" dir="ltr" placeholder="https://.../api/gate"></label>
+        <label class="f"><span>رمز الجهاز (Token)</span><span class="secret"><input id="cfgToken2" class="mask" dir="ltr" autocomplete="off" spellcheck="false" placeholder="رمز الجهاز من النظام الجديد"><button type="button" class="eye" data-for="cfgToken2" aria-label="إظهار الرمز أو إخفاؤه">إظهار</button></span></label>
+        <p class="help">تُرسل كل حركة إلى النظام الجديد، ومعها إلى Google إن كان مسار Google معبّأً أدناه. تُحدَّث قائمة المراكز في الأعلى من النظام تلقائياً عند اكتمال الرابط والرمز.</p>
       </fieldset>
       <fieldset class="grp">
-        <legend>النظام الجديد <em>اختياري</em></legend>
-        <label class="f"><span>رابط الخدمة</span><input id="cfgUrl2" dir="ltr" placeholder="https://.../api/gate"></label>
-        <label class="f"><span>رمز الجهاز (Token)</span><input id="cfgToken2" dir="ltr" placeholder="رمز الجهاز من النظام الجديد"></label>
-        <p class="help">عند تعبئته تُرسل كل حركة إلى Google وإلى النظام الجديد معاً، وتبقى Google تعمل حتى لو تعطل النظام الجديد.</p>
+        <legend>Google <em>المسار القديم</em></legend>
+        <label class="f"><span>رابط الخدمة (Web app URL)</span><input id="cfgUrl" dir="ltr" placeholder="https://script.google.com/macros/s/.../exec"></label>
+        <label class="f"><span>رمز الحماية (Token)</span><span class="secret"><input id="cfgToken" class="mask" dir="ltr" autocomplete="off" spellcheck="false" placeholder="الرمز نفسه الموجود في السكربت"><button type="button" class="eye" data-for="cfgToken" aria-label="إظهار الرمز أو إخفاؤه">إظهار</button></span></label>
       </fieldset>
     </div>
     <div class="acts">

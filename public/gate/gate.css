@@ -209,6 +209,12 @@ button{font-family:inherit}
 .grp{margin:0;min-width:0;padding:.35rem .95rem .95rem;border:2px solid var(--line);border-radius:1.1rem 1.1rem .7rem .7rem;background:rgba(255,255,255,.93)}
 .grp legend{padding:0 .5rem;font-weight:800;font-size:.95rem;color:var(--red);display:flex;align-items:center;gap:.5rem}
 .grp legend em{font-style:normal;font-size:.7rem;font-weight:700;color:var(--muted);background:var(--line-2);padding:.05rem .55rem;border-radius:99px}
+.grp legend em.ok{background:var(--olive-soft,#e6eedc);color:var(--olive,#3f5a24)}
+.secret{position:relative;display:block}
+.secret input{padding-inline-end:4.4rem}
+input.mask{-webkit-text-security:disc;text-security:disc}
+input.mask.show{-webkit-text-security:none;text-security:none}
+.eye{position:absolute;inset-block:.3rem;inset-inline-end:.3rem;border:0;border-radius:.5rem;padding:0 .7rem;background:var(--line-2);color:var(--red);font:inherit;font-size:.78rem;font-weight:800;cursor:pointer}
 .grp .help{margin:.55rem 0 0;font-size:.78rem;color:var(--muted);line-height:1.65}
 .f{display:flex;flex-direction:column;gap:.3rem;margin-top:.6rem}
 .f>span{font-weight:700;font-size:.86rem}
