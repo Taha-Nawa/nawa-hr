@@ -13,9 +13,12 @@ export const MAX_LINKS = 60;
 
 const STAFF = new Set(['hr', 'director', 'admin']);
 
+export const GATE_URL = 'https://nawa-hr.nawa-attendance.workers.dev/gate/';
+const OLD_GATE_URL = 'https://tahaat.github.io/nawa-attendance/';
+
 /** روابط عامة وغير حساسة تظهر قبل أن يعدّل المسؤول أي شيء. */
 export const DEFAULT_LINKS = [
-  { id: 'kiosk', group: 'البوابة', title: 'صفحة تسجيل الحضور (تُفتح على جهاز البوابة)', url: 'https://tahaat.github.io/nawa-attendance/', note: 'الصفحة نفسها على كل أجهزة المراكز. الإعدادات ⚙ فيها: رابط Google ورمزه، ورابط النظام الجديد ورمز الجهاز.', audience: 'staff' },
+  { id: 'kiosk', group: 'البوابة', title: 'صفحة تسجيل الحضور (تُفتح على جهاز البوابة)', url: GATE_URL, note: 'بوابة النظام الجديد: افتحها على جهاز المركز ثم أضفها إلى الشاشة الرئيسية. تعمل للموظفين ومزوّدي الخدمة والمتطوعين.', audience: 'staff' },
   { id: 'badges', group: 'البوابة', title: 'طباعة بطاقات الموظفين', url: 'https://tahaat.github.io/nawa-attendance/badges.html', note: 'تقرأ قائمة الموظفين وتطبع بطاقات QR.', audience: 'staff' },
   { id: 'repo-gate', group: 'التقنية', title: 'مستودع صفحة البوابة (GitHub)', url: 'https://github.com/tahaat/nawa-attendance', note: 'حساب tahaat. أي تعديل على index.html ينشر فوراً على الأجهزة.', audience: 'admin' },
   { id: 'repo-hr', group: 'التقنية', title: 'مستودع نظام نوى للشؤون الإدارية (GitHub)', url: 'https://github.com/Taha-Nawa/nawa-hr', note: 'الدفع إلى main يشغّل الاختبارات ثم النشر التلقائي.', audience: 'admin' },
@@ -65,7 +68,8 @@ export async function loadLinks(db) {
   if (!row) return DEFAULT_LINKS;
   try {
     const v = validateLinks(JSON.parse(row.value));
-    return v.links ?? DEFAULT_LINKS;
+    // رابط البوابة القديم المحفوظ سابقاً يُستبدل تلقائياً برابط بوابة النظام الجديد
+    return v.links?.map((l) => (l.id === 'kiosk' && l.url === OLD_GATE_URL ? { ...l, url: GATE_URL, note: DEFAULT_LINKS[0].note } : l)) ?? DEFAULT_LINKS;
   } catch {
     return DEFAULT_LINKS;
   }
