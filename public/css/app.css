@@ -1321,3 +1321,5 @@ h2 { font-size: 0.95rem; }
 .mail-tx { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
 .mail-tx b { font-weight: 700; }
 .mail-tx small { color: var(--muted); direction: ltr; text-align: start; overflow: hidden; text-overflow: ellipsis; }
+
+.retype-list{grid-column:1/-1;max-height:45vh;overflow:auto}

@@ -24,6 +24,8 @@ import { dayTypeOf, DAY_WORK, toMin } from '../engine/attendance.js';
 const MAX_EMPLOYEES = 100;
 const MAX_DAYS = 31;
 const MAX_PAIRS = 200;
+const MAX_RETYPE = 300;
+const RETYPES = new Set(['حضور', 'خروج', 'عودة', 'انصراف']);
 const MAX_BACK_DAYS = 366;
 const TIME_KEYS = { in: 'in_time', out: 'out_time', ret: 'ret_time', dep: 'dep_time' };
 const PAIRS_IN = `(employee_id, date) IN (SELECT json_extract(value,'$.e'), json_extract(value,'$.d') FROM json_each(?1))`;
@@ -189,5 +191,85 @@ export function registerManualRoutes(add, kit) {
       await notifyRelease({ env, db, url, defer }, released);
     }
     return json({ ok: true, employees: ids.length, days: useDays.length, pairs: pairs.length, skippedOffDays: skippedOff, releasedLeaveDays: releasedDays });
+  });
+
+  /**
+   * تصحيح نوع الحركات بالجملة: يعالج خطأ الحارس حين يترك البوابة على «انصراف» فيسجّل الموظفون انصرافاً بدل الحضور.
+   *  - بلا ids: معاينة فقط (لا تُكتب أي تغييرات) بقائمة الحركات المطابقة وما سُجّل معها لكل موظف في اليوم نفسه.
+   *  - مع ids: تُغيَّر هذه الحركات تحديداً (بشرط أن تبقى مطابقة: اليوم ونوعها الحالي) ويُعاد حساب أيامها ويُدوَّن السبب في التدقيق وفي ملاحظة الحركة.
+   *  - لموظفي الجمعية فقط؛ حركات المزوّدين والمتطوعين لها مساراتها.
+   */
+  add('POST', '/api/movements/retype', async ({ env, db, user, request }) => {
+    if (!can(user, 'day.correct')) return forbidden();
+    const { body, error } = await readJson(request);
+    if (error) return error;
+    const today = localDate(tzOf(env), nowOf(env));
+    const { date, from, to } = body;
+    if (!isDate(date) || date > today) return bad('اختر يوماً صالحاً (اليوم أو ما قبله)');
+    if (date < addDays(today, -MAX_DAYS)) return bad(`التصحيح بالجملة لآخر ${MAX_DAYS} يوماً فقط`);
+    if (!RETYPES.has(from) || !RETYPES.has(to) || from === to) return bad('اختر نوعين مختلفين: الحالي والصحيح');
+    const device = body.device ? clip(body.device, 80) : '';
+    const center = body.center ? clip(body.center, 80) : '';
+    const fromTime = body.fromTime || '00:00';
+    const toTime = body.toTime || '23:59';
+    if (!isTime(fromTime) || !isTime(toTime) || fromTime > toTime) return bad('نطاق الوقت غير صالح');
+
+    const found = (
+      await db
+        .prepare(
+          `SELECT m.id, m.employee_id AS e, e.name, m.time, m.center, m.device_id AS device, m.note
+           FROM movements m JOIN employees e ON e.id = m.employee_id
+           WHERE m.date = ?1 AND m.type = ?2 AND m.time BETWEEN ?3 AND ?4
+             AND (?5 = '' OR m.device_id = ?5) AND (?6 = '' OR m.center = ?6)
+           ORDER BY m.time LIMIT ${MAX_RETYPE + 1}`,
+        )
+        .bind(date, from, fromTime, toTime, device, center)
+        .all()
+    ).results;
+    if (found.length > MAX_RETYPE) return bad(`النتائج أكثر من ${MAX_RETYPE} حركة. ضيّق نطاق الوقت أو الجهاز.`);
+
+    const ids = body.ids;
+    if (ids === undefined) {
+      // المعاينة: لكل موظف ما سُجّل له في اليوم من حركات أخرى كي يرى التعارض قبل التطبيق
+      const emps = JSON.stringify([...new Set(found.map((f) => f.e))]);
+      const others = (
+        await db
+          .prepare(`SELECT employee_id AS e, type, time FROM movements WHERE date = ?1 AND employee_id IN (SELECT value FROM json_each(?2)) ORDER BY time`)
+          .bind(date, emps)
+          .all()
+      ).results;
+      const byEmp = new Map();
+      for (const o of others) (byEmp.get(o.e) || byEmp.set(o.e, []).get(o.e)).push({ type: o.type, time: o.time });
+      return json({
+        ok: true,
+        preview: true,
+        count: found.length,
+        items: found.map((f) => ({ id: f.id, employeeId: f.e, name: f.name, time: f.time, center: f.center, device: f.device, day: byEmp.get(f.e) || [] })),
+      });
+    }
+
+    if (!Array.isArray(ids) || !ids.length || !ids.every((x) => typeof x === 'string')) return bad('اختر الحركات المراد تصحيحها');
+    const reason = clip(body.reason, 300);
+    if (!reason || reason.length < 3) return bad('اكتب سبب التصحيح (يُحفظ في سجل التدقيق)');
+    const allowed = new Map(found.map((f) => [f.id, f]));
+    const chosen = [...new Set(ids)].filter((id) => allowed.has(id));
+    if (!chosen.length) return bad('لا توجد حركات مطابقة: ربما تغيّرت. أعد المعاينة.', 409);
+
+    const settings = await loadWorkSettings(db);
+    if (!settings) return bad('إعدادات الدوام غير مكتملة', 409);
+    const rows = chosen.map((id) => allowed.get(id));
+    const mark = `صُحّح من «${from}» إلى «${to}»`;
+    await db.batch([
+      db
+        .prepare(`UPDATE movements SET type = ?2, note = CASE WHEN note IS NULL OR note = '' THEN ?3 ELSE note || ' | ' || ?3 END WHERE id IN (SELECT value FROM json_each(?1)) AND date = ?4 AND type = ?5`)
+        .bind(JSON.stringify(chosen), to, mark, date, from),
+      auditStmt(db, user, 'movements.retype', 'movements', null, {
+        date, from, to, count: chosen.length, reason, device: device || undefined, center: center || undefined,
+        prev: rows.slice(0, 30).map((r) => ({ id: r.id, e: r.e, t: r.time })),
+      }),
+    ]);
+    const pairs = [...new Set(rows.map((r) => r.e))].map((e) => ({ e, d: date }));
+    await recomputePairs(db, pairs, settings);
+    return json({ ok: true, changed: chosen.length, employees: pairs.length });
   });
 }

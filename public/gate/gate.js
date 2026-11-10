@@ -177,19 +177,36 @@ var TYPE={"حضور":{c:"in",i:"i-sun"},"خروج":{c:"out",i:"i-out"},"عودة
 function ico(id,cls){return '<svg class="ic'+(cls?' '+cls:'')+'" aria-hidden="true"><use href="#'+id+'"/></svg>'}
 function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
 /* يظهر نوع الحركة الحالي داخل القوس نفسه حتى لا يُسجَّل «حضور» بالخطأ مكان «انصراف» */
+var modeDay=dstr(new Date()), warnAt={}, lateTap=0;
+function morning(){return new Date().getHours()<11}
 function setMove(t){
-  move=t;
+  move=t; modeDay=dstr(new Date());
   [].forEach.call(document.querySelectorAll(".mv"),function(x){
     x.setAttribute("aria-pressed", x.dataset.t===t?"true":"false")});
   var m=$("#mode"), ty=TYPE[t]||TYPE["حضور"];
   m.className="mode t-"+ty.c;
   m.innerHTML=ico(ty.i)+'<span id="modeLbl"></span>';
   $("#modeLbl").textContent=lbl(t);
+  /* انصراف/خروج/عودة في الصباح: تنبيه دائم على الوضع نفسه حتى لا تبقى البوابة على وضع خاطئ */
+  if(t!=="حضور"&&morning()){
+    m.classList.add("warn");
+    var w=el("span","wn"," — تأكد: الوقت صباحاً"); m.appendChild(w);
+  }
 }
 $("#grid").addEventListener("click",function(e){
   var b=e.target.closest(".mv"); if(!b)return;
-  setMove(b.dataset.t);
+  var t=b.dataset.t;
+  /* «انصراف» قبل الحادية عشرة صباحاً غالباً خطأ: نقرة ثانية خلال ٥ ثوانٍ للتأكيد */
+  if(t==="انصراف"&&morning()&&move!=="انصراف"){
+    if(Date.now()-lateTap>5000){lateTap=Date.now(); toast("الوقت صباحاً — اضغط «انصراف» مرة أخرى للتأكيد",4500); return}
+  }
+  lateTap=0; setMove(t);
 });
+/* يوم جديد: تعود البوابة إلى «حضور» وحدها (لا يبقى وضع الأمس) */
+setInterval(function(){
+  if(dstr(new Date())!==modeDay&&move!=="حضور"){setMove("حضور"); toast("يوم جديد: عادت البوابة إلى وضع «حضور»",5000)}
+  else if(dstr(new Date())!==modeDay){modeDay=dstr(new Date())}
+},60000);
 /* ---------- الكاميرا ---------- */
 function startCam(){
   if(stream)return;
@@ -295,7 +312,25 @@ function onCode(code){
       if(now-new Date(L.iso).getTime()<180000){ reject(code,"مسح مكرر خلال ٣ دقائق",b); return }
     }
   }
+  if(move!=="حضور"&&!b.kind&&!hasCheckIn(b.code,today)){
+    if(!warnAt[b.code]||now-warnAt[b.code]>60000){
+      warnAt[b.code]=now;
+      reject(code,"لا حضور مسجّل اليوم لـ"+b.name+" — هل البوابة على «"+lbl(move)+"» بالخطأ؟ امسح ثانيةً للتأكيد",b); return }
+  }
+  delete warnAt[b.code];
   accept(b,d);
+}
+/* هل لهذا الموظف حضور اليوم؟ من سجل هذا الجهاز أو من قائمة «لم يسجّلوا الانصراف» المخزَّنة */
+function hasCheckIn(code,today){
+  var i,L,D,j;
+  for(i=0;i<log.length;i++){L=log[i]; if(L.code===code&&L.date===today&&L.type==="حضور")return true}
+  if(unc&&unc.data&&unc.data.days){
+    for(i=0;i<unc.data.days.length;i++){
+      D=unc.data.days[i]; if(D.date!==today)continue;
+      for(j=0;j<D.items.length;j++)if(D.items[j].code===code&&D.items[j].checkIn)return true;
+    }
+  }
+  return false;
 }
 var CHECK_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 var CROSS_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';

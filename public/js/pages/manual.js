@@ -157,6 +157,86 @@ export function openManualDialog({ employees, date, work, onDone }) {
   return dlg;
 }
 
+
+// ---------------------------------------------------------------- تصحيح نوع الحركات بالجملة
+const MOVE_TYPES = ['حضور', 'خروج', 'عودة', 'انصراف'];
+
+/** خطأ الحارس (البوابة على «انصراف» صباحاً): يعاين الحركات المطابقة ثم يغيّر نوع المختار منها ويُعاد حساب الأيام. */
+export function openRetypeDialog({ date, onDone }) {
+  const dDate = h('input', { type: 'date', value: date, max: todayLocal(), required: true });
+  const from = select(MOVE_TYPES.map((x) => [x, x]), 'انصراف', { 'aria-label': 'النوع المسجَّل خطأً' });
+  const to = select(MOVE_TYPES.map((x) => [x, x]), 'حضور', { 'aria-label': 'النوع الصحيح' });
+  const tFrom = timeField({ label: 'من الساعة' });
+  const tTo = timeField({ label: 'إلى الساعة' });
+  const reason = h('textarea', { rows: '2', maxlength: '300', placeholder: 'السبب (مطلوب، يُحفظ في سجل التدقيق)' });
+  const err = h('div', { class: 'notice notice-err', hidden: true, role: 'alert' });
+  const list = h('div', { class: 'retype-list' });
+  const apply = h('button', { type: 'button', class: 'btn btn-primary', disabled: true }, 'تصحيح المحدَّد');
+  const peek = h('button', { type: 'button', class: 'btn' }, 'معاينة');
+  let items = [];
+  const picked = new Set();
+  let busy = false;
+
+  const crit = () => ({ date: dDate.value, from: from.value, to: to.value, ...(tFrom.value ? { fromTime: tFrom.value } : {}), ...(tTo.value ? { toTime: tTo.value } : {}) });
+  const fail = (m) => { err.textContent = m; err.hidden = !m; };
+
+  function drawList() {
+    clear(list);
+    apply.disabled = !picked.size;
+    apply.textContent = picked.size ? `تصحيح ${picked.size} حركة` : 'تصحيح المحدَّد';
+    if (!items.length) return;
+    const all = h('input', { type: 'checkbox', checked: picked.size === items.length, 'aria-label': 'تحديد الكل', onchange: (e) => { items.forEach((i) => (e.target.checked ? picked.add(i.id) : picked.delete(i.id))); drawList(); } });
+    list.append(h('table', { class: 'tbl' },
+      h('thead', null, h('tr', null, h('th', { class: 'pick' }, all), h('th', null, 'الموظف'), h('th', { class: 'num' }, 'الوقت'), h('th', null, 'حركاته في اليوم'))),
+      h('tbody', null, items.map((i) => h('tr', null,
+        h('td', { class: 'pick' }, h('input', { type: 'checkbox', checked: picked.has(i.id), 'aria-label': `تحديد ${i.name}`, onchange: (e) => { e.target.checked ? picked.add(i.id) : picked.delete(i.id); drawList(); } })),
+        h('td', null, i.name, i.center ? h('div', { class: 'code' }, i.center) : null),
+        h('td', { class: 'num' }, fmt12(i.time)),
+        h('td', null, i.day.map((x) => `${x.type} ${fmt12(x.time)}`).join('، ')))))));
+  }
+
+  peek.onclick = async () => {
+    fail('');
+    if (!dDate.value) return fail('اختر اليوم');
+    if (from.value === to.value) return fail('اختر نوعين مختلفين');
+    peek.disabled = true;
+    try {
+      const r = await post('/api/movements/retype', crit());
+      items = r.items;
+      picked.clear();
+      items.forEach((i) => picked.add(i.id));
+      if (!items.length) fail('لا حركات مطابقة لهذه الشروط.');
+    } catch (e) { fail(e.message); items = []; }
+    peek.disabled = false;
+    drawList();
+  };
+  apply.onclick = async () => {
+    if (busy || !picked.size) return;
+    fail('');
+    if (reason.value.trim().length < 3) return fail('اكتب سبب التصحيح');
+    if (!(await confirmBox(`تغيير ${picked.size} حركة من «${from.value}» إلى «${to.value}» وإعادة حساب أيامها؟`, 'تصحيح'))) return;
+    busy = true;
+    apply.disabled = true;
+    try {
+      const r = await post('/api/movements/retype', { ...crit(), ids: [...picked], reason: reason.value.trim() });
+      toast(`صُحّحت ${r.changed} حركة (${r.employees} موظف)`);
+      dlg.close();
+      onDone?.();
+    } catch (e) { fail(e.message); busy = false; apply.disabled = false; }
+  };
+
+  const dlg = dialog({
+    title: 'تصحيح نوع الحركات',
+    wide: true,
+    content: h('div', { class: 'form-grid' },
+      h('p', { class: 'field-hint span-all' }, 'للخطأ الذي تُترك فيه البوابة على وضع خاطئ (مثلاً «انصراف» صباحاً فيُسجَّل الجميع انصرافاً بدل الحضور). عاين أولاً ثم اختر من تريد تصحيحه.'),
+      field('اليوم', dDate), field('سُجّلت خطأً باسم', from), field('والصحيح', to),
+      field('من الساعة', tFrom), field('إلى الساعة', tTo),
+      h('div', { class: 'span-all' }, peek), list, field('السبب', reason), err,
+      h('div', { class: 'dlg-actions span-all' }, h('button', { type: 'button', class: 'btn', onclick: () => dlg.close() }, 'إغلاق'), apply)),
+  });
+}
+
 // ---------------------------------------------------------------- الصفحة
 export default async function render() {
   const today = todayLocal();
@@ -184,7 +264,8 @@ export default async function render() {
         h('button', { type: 'button', class: 'btn', onclick: () => go(addDays(date, -1)) }, 'السابق'),
         dateInput,
         h('button', { type: 'button', class: 'btn', disabled: date >= today, onclick: () => go(addDays(date, 1)) }, 'التالي'),
-        date !== today ? h('button', { type: 'button', class: 'btn btn-ghost', onclick: () => go(today) }, 'اليوم') : null));
+        date !== today ? h('button', { type: 'button', class: 'btn btn-ghost', onclick: () => go(today) }, 'اليوم') : null,
+        h('button', { type: 'button', class: 'btn', onclick: () => openRetypeDialog({ date, onDone: () => go(date) }) }, 'تصحيح نوع الحركات')));
     dateInput.value = date;
   }
 

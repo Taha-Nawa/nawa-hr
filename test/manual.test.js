@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { apiEnv, login, call, seedOrg } from './helpers/api.js';
-import { setWork, addHolidays, addEmployee } from './helpers/seed.js';
+import { setWork, addHolidays, addEmployee, gatePost, mv } from './helpers/seed.js';
 
 // «اليوم»: السبت 2026-11-07 (الجمعة والسبت عطلة أسبوعية). أيام الدوام 11-01..11-05 سبقت.
 const NOW = '2026-11-07T07:00:00Z';
@@ -136,4 +136,63 @@ test('التحقق: السبب إلزامي، لا مستقبل، ترتيب ا�
   assert.equal(await s({}, u.mgr), 403);
   assert.equal(await s({}, u.director), 403);
   assert.equal(await s({}, u.admin), 200);
+});
+
+// ---- تصحيح نوع الحركات بالجملة (خطأ الحارس: البوابة على «انصراف» صباحاً)
+const retype = (env, who, body) => post(env, who, '/api/movements/retype', body);
+async function wrongMode(env) {
+  const D = '2026-11-04';
+  await gatePost(env, [
+    mv('NW-002', 'انصراف', D, '08:20'), mv('NW-003', 'انصراف', D, '08:25'),
+    mv('NW-004', 'حضور', D, '08:30'), // موظف سُجّل حضوره صحيحاً: يجب ألا يُمسّ
+    mv('NW-002', 'انصراف', D, '15:00'), // انصراف حقيقي بعد الظهر: خارج نطاق التصحيح
+  ]);
+  return D;
+}
+
+test('تصحيح النوع: المعاينة لا تغيّر شيئاً وتعرض حركات اليوم لكل موظف', async () => {
+  const { db, env, u } = await world();
+  const D = await wrongMode(env);
+  const r = await retype(env, u.hr, { date: D, from: 'انصراف', to: 'حضور', toTime: '11:00' });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.preview, true);
+  assert.deepEqual(r.body.items.map((i) => [i.employeeId, i.time]), [[2, '08:20'], [3, '08:25']]);
+  assert.deepEqual(r.body.items[0].day.map((x) => x.type), ['انصراف', 'انصراف']);
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM movements WHERE type = 'انصراف'").first()).n, 3, 'لم يتغيّر شيء');
+});
+
+test('تصحيح النوع: يُطبَّق على المختار فقط ويُعاد حساب اليوم ويُدوَّن في التدقيق والملاحظة', async () => {
+  const { db, env, u } = await world();
+  const D = await wrongMode(env);
+  assert.equal((await day(db, 3, D)).alert, 'حضور غير مسجّل', 'قبل التصحيح: انصراف بلا حضور');
+  const pv = await retype(env, u.hr, { date: D, from: 'انصراف', to: 'حضور', toTime: '11:00' });
+  const ids = pv.body.items.map((i) => i.id);
+  assert.equal((await retype(env, u.hr, { date: D, from: 'انصراف', to: 'حضور', toTime: '11:00', ids })).status, 400, 'السبب مطلوب');
+  const r = await retype(env, u.hr, { date: D, from: 'انصراف', to: 'حضور', toTime: '11:00', ids, reason: 'البوابة كانت على انصراف' });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.deepEqual([r.body.changed, r.body.employees], [2, 2]);
+  assert.deepEqual(await day(db, 3, D), { status: 'حاضر', ci: '08:25', dep: null, ap: 0, source: 'بطاقة', alert: 'انصراف غير مسجّل' });
+  const d2 = await day(db, 2, D);
+  assert.deepEqual([d2.ci, d2.dep], ['08:20', '15:00'], 'الانصراف الحقيقي بقي');
+  const row = await db.prepare("SELECT type, note FROM movements WHERE employee_id = 3").first();
+  assert.equal(row.type, 'حضور');
+  assert.match(row.note, /صُحّح من «انصراف» إلى «حضور»/);
+  const log = await db.prepare("SELECT actor, detail FROM audit_log WHERE action = 'movements.retype'").first();
+  assert.equal(log.actor, 'hr@nawaculture.org');
+  assert.match(log.detail, /البوابة كانت على انصراف/);
+  // إعادة التطبيق على المعرّفات نفسها لا تجد شيئاً (لم تعد مطابقة)
+  assert.equal((await retype(env, u.hr, { date: D, from: 'انصراف', to: 'حضور', toTime: '11:00', ids, reason: 'مرة ثانية' })).status, 409);
+});
+
+test('تصحيح النوع: للموارد البشرية والمسؤول فقط، ومدخلات غير صالحة تُرفض', async () => {
+  const { env, u } = await world();
+  await wrongMode(env);
+  const body = { date: '2026-11-04', from: 'انصراف', to: 'حضور' };
+  assert.equal((await retype(env, u.emp2, body)).status, 403);
+  assert.equal((await retype(env, u.mgr, body)).status, 403);
+  assert.equal((await retype(env, u.admin, body)).status, 200);
+  assert.equal((await retype(env, u.hr, { ...body, to: 'انصراف' })).status, 400);
+  assert.equal((await retype(env, u.hr, { ...body, to: 'غياب' })).status, 400);
+  assert.equal((await retype(env, u.hr, { ...body, date: '2026-12-01' })).status, 400, 'مستقبل');
+  assert.equal((await retype(env, u.hr, { ...body, fromTime: '12:00', toTime: '08:00' })).status, 400);
 });
