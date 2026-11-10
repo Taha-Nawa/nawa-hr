@@ -177,10 +177,14 @@ var TYPE={"حضور":{c:"in",i:"i-sun"},"خروج":{c:"out",i:"i-out"},"عودة
 function ico(id,cls){return '<svg class="ic'+(cls?' '+cls:'')+'" aria-hidden="true"><use href="#'+id+'"/></svg>'}
 function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
 /* يظهر نوع الحركة الحالي داخل القوس نفسه حتى لا يُسجَّل «حضور» بالخطأ مكان «انصراف» */
-var modeDay=dstr(new Date()), warnAt={}, lateTap=0;
+var modeDay=dstr(new Date()), warnAt={}, lateTap=0, unlocked=false;
 function morning(){return new Date().getHours()<11}
+/* قبل الحادية عشرة يبرز «حضور» وحده وتبهت بقية الأنواع حتى تُنقر نقرة مقصودة تفتحها */
+function applyLock(){var g=$("#grid"); if(g)g.classList.toggle("am-lock",morning()&&!unlocked)}
 function setMove(t){
   move=t; modeDay=dstr(new Date());
+  if(t==="حضور")unlocked=false;
+  applyLock();
   [].forEach.call(document.querySelectorAll(".mv"),function(x){
     x.setAttribute("aria-pressed", x.dataset.t===t?"true":"false")});
   var m=$("#mode"), ty=TYPE[t]||TYPE["حضور"];
@@ -196,6 +200,7 @@ function setMove(t){
 $("#grid").addEventListener("click",function(e){
   var b=e.target.closest(".mv"); if(!b)return;
   var t=b.dataset.t;
+  if(t!=="حضور"&&morning()&&!unlocked){unlocked=true; applyLock(); toast("فُتحت بقية الأنواع — اختر النوع المطلوب",3500); return}
   /* «انصراف» قبل الحادية عشرة صباحاً غالباً خطأ: نقرة ثانية خلال ٥ ثوانٍ للتأكيد */
   if(t==="انصراف"&&morning()&&move!=="انصراف"){
     if(Date.now()-lateTap>5000){lateTap=Date.now(); toast("الوقت صباحاً — اضغط «انصراف» مرة أخرى للتأكيد",4500); return}
@@ -204,6 +209,7 @@ $("#grid").addEventListener("click",function(e){
 });
 /* يوم جديد: تعود البوابة إلى «حضور» وحدها (لا يبقى وضع الأمس) */
 setInterval(function(){
+  applyLock();
   if(dstr(new Date())!==modeDay&&move!=="حضور"){setMove("حضور"); toast("يوم جديد: عادت البوابة إلى وضع «حضور»",5000)}
   else if(dstr(new Date())!==modeDay){modeDay=dstr(new Date())}
 },60000);

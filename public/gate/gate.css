@@ -320,3 +320,6 @@ button,.mv,.cog,.flip{touch-action:manipulation;-webkit-user-select:none;user-se
 .unc-em .ic{width:1.4rem;height:1.4rem;flex:none}
 .unc-foot{margin:0;padding:.55rem 1rem calc(.65rem + env(safe-area-inset-bottom));border-top:2px solid var(--line);color:var(--muted);font-size:.78rem;font-weight:700}
 @media (prefers-reduced-motion:reduce){.unc-panel,.unc-panel.open{transition:none}}
+
+.grid.am-lock .mv:not([data-t="حضور"]){opacity:.38;filter:saturate(.35)}
+.grid.am-lock .mv[data-t="حضور"]{box-shadow:0 0 0 .22rem rgba(245,158,11,.4)}
