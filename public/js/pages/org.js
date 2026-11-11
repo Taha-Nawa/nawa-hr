@@ -125,8 +125,9 @@ export default async function render({ user }) {
     canvas.style.zoom = '1';
     const w = canvas.scrollWidth;
     const avail = scroller.clientWidth - 24;
-    setZoom(w > avail ? avail / w : 1);
-    scroller.scrollLeft = 0;
+    setZoom(w > avail ? Math.max(0.7, avail / w) : 1); // لا يصغر دون 70% كي تبقى البطاقات مقروءة (يُكمل التنقل بالسحب)
+    const first = canvas.querySelector('.oc-card');
+    if (first) first.scrollIntoView({ block: 'nearest', inline: 'center' });
   }
 
   function summaryStrip() {
