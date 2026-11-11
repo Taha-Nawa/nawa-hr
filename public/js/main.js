@@ -1,4 +1,5 @@
 import { dailyPop } from './daily-pop.js';
+import { startIdle } from './idle.js';
 import { openPalette, bindPaletteShortcut } from './palette.js';
 import { bellButton } from './bell.js';
 import { maybeTour } from './tour.js';
@@ -60,6 +61,7 @@ const PAGES = [
 
 const root = document.getElementById('app');
 let me = null;
+let stopIdle = null; // إيقاف مراقبة الخمول عند الخروج
 
 function match(path) {
   for (const p of PAGES) {
@@ -74,6 +76,8 @@ function match(path) {
 // ---------------------------------------------------------------- شاشة الدخول
 async function showLogin(message, known) {
   me = null;
+  stopIdle?.();
+  stopIdle = null;
   const [config, device] = await Promise.all([authConfig(), known ?? deviceInfo()]);
   renderLogin({ root, message, config, device, onDone: startApp });
 }
@@ -82,9 +86,11 @@ async function showLogin(message, known) {
 const listed = () => PAGES.filter((p) => p.icon && !p.path.includes(':') && p.roles.includes(me.role));
 const initial = () => ((me.employeeName || me.email || '؟').trim()[0] || '؟').toUpperCase();
 
-async function signOut() {
+async function signOut(message) {
+  stopIdle?.();
+  stopIdle = null;
   await logout();
-  showLogin();
+  showLogin(typeof message === 'string' ? message : undefined);
 }
 
 // تلميح لمرة واحدة بعد دخول قوي: أنشئ PIN لدخول أسرع. يُخفى بالإغلاق ويبقى مخفياً على هذا الجهاز.
@@ -275,6 +281,8 @@ async function startApp(known = null) {
   showShell();
   route();
   dailyPop(me); // بوب اليوم: يظهر مرة واحدة كل يوم
+  stopIdle?.();
+  stopIdle = startIdle({ user: me, onSignOut: signOut }); // سكون بعد 5 دقائق، وقفل بالـ PIN بعد ساعة ونصف
 }
 
 // انتهت الجلسة أثناء الاستعمال: نحاول الاستئناف الصامت من الجهاز المتذكَّر قبل أن نُظهر شاشة الدخول.

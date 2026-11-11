@@ -1652,3 +1652,25 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
 .ann-shapes { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
 .ann-shape { font: inherit; cursor: pointer; padding: 10px 8px; border: 2px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); text-align: center; font-weight: 600; color: var(--ink-2); }
 .ann-shape.on { border-color: var(--red); background: var(--red-soft); color: var(--red-d); }
+
+/* ---- وضع السكون والقفل ---- */
+.idle { position: fixed; inset: 0; z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4vh; padding: 20px 20px 18vh; color: #fff; background: radial-gradient(ellipse at 50% 30%, #b3180e 0%, #7a0d06 55%, #4f0904 100%); animation: dpFade 0.8s ease both; overflow: hidden; }
+.idle.idle-gone { animation: dpFadeOut 0.45s ease both; }
+.idle-clock { text-align: center; }
+.idle-time { font-size: clamp(3rem, 12vw, 6rem); font-weight: 800; line-height: 1; letter-spacing: 0.02em; color: #fff; text-shadow: 0 0 40px rgba(255, 151, 152, 0.55); }
+.idle-date { margin-top: 10px; font-size: clamp(1rem, 3.2vw, 1.4rem); color: #ff9798; }
+.idle-pop { cursor: default; margin-top: 0; }
+.idle-pop .dp-str { height: 6vh; min-height: 28px; }
+.idle-lock { gap: 18px; padding-bottom: 20px; }
+.idle-card { display: flex; flex-direction: column; align-items: center; gap: 14px; width: min(340px, 100%); padding: 30px 26px 24px; border-radius: 22px; background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 0 0 1.5px rgba(255, 151, 152, 0.55), 0 0 60px rgba(230, 169, 1, 0.25); }
+.idle-key { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #e6a901; color: #7a0d06; }
+.idle-key .ic { width: 28px; height: 28px; }
+.idle-who { font-size: 1.15rem; font-weight: 800; text-align: center; }
+.idle-form { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+.idle-pin { width: 100%; text-align: center; letter-spacing: 0.5em; font-size: 1.5rem; }
+.idle-err { min-height: 1.3em; margin: 0; font-size: 0.9rem; color: #ffd2c4; text-align: center; }
+.idle-out { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; color: #ff9798; font: inherit; font-size: 0.9rem; cursor: pointer; padding: 6px 10px; }
+.idle-out:hover { color: #fff; }
+@media (prefers-reduced-motion: reduce) { .idle { animation: dpFade 0.3s ease both; } .idle-time { text-shadow: none; } }
+@media print { .idle { display: none !important; } }
+.idle-pin:focus, .idle-pin:focus-visible { outline: 3px solid #e6a901; outline-offset: 2px; }

@@ -361,6 +361,17 @@ export function registerLoginRoutes(add, kit) {
     return r.ok ? null : pinFail(ctx, r, user, 'الـ PIN الحالي غير صحيح');
   }
 
+  // فتح شاشة القفل بعد خمول طويل: يتحقق من PIN صاحب الجلسة نفسها (بالعدّ والقفل المعتادين) دون إنشاء جلسة جديدة.
+  add('POST', '/api/auth/unlock', async (ctx) => {
+    const { request, env, user } = ctx;
+    const { body, error } = await readJson(request);
+    if (error) return error;
+    const r = await tryPin(env, user.id, body.pin, nowOf(env));
+    if (r.reason === 'none') return json({ ok: false, error: 'لا يوجد PIN لهذا الحساب', code: 'no_pin' }, 409);
+    if (!r.ok) return pinFail(ctx, r, user, 'الـ PIN غير صحيح');
+    return json({ ok: true });
+  });
+
   add('POST', '/api/account/pin', async (ctx) => {
     const { request, db, env, user } = ctx;
     const { body, error } = await readJson(request);

@@ -20,6 +20,19 @@ function markSeen(key, date) {
   } catch { /* لا مشكلة */ }
 }
 
+/** يلفّ الفانوس نصّه تماماً: يقيس أعرض سطر فعلي بعد الالتفاف (text-wrap: balance لا يقلّص الصندوق) فلا يبقى فراغ جانبي. */
+export function fitLamp(lamp) {
+  const t = lamp.querySelector('.dp-text');
+  const fit = () => {
+    const r = document.createRange();
+    r.selectNodeContents(t);
+    const w = Math.max(...[...r.getClientRects()].map((x) => x.width));
+    if (Number.isFinite(w) && w > 0) t.style.width = `${Math.ceil(w) + 2}px`;
+  };
+  requestAnimationFrame(fit);
+  document.fonts?.ready?.then(() => { t.style.width = ''; requestAnimationFrame(fit); });
+}
+
 /** فانوس واحد: يعيد وعداً يُحلّ عند إغلاقه بالنقر. */
 function lantern({ kind, label, title, text, source, hint, shape = DEFAULT_SHAPE }) {
   const sh = SHAPES.some(([id]) => id === shape) ? shape : DEFAULT_SHAPE;
@@ -44,16 +57,7 @@ function lantern({ kind, label, title, text, source, hint, shape = DEFAULT_SHAPE
     pop.addEventListener('click', close);
     document.addEventListener('keydown', onKey);
     document.body.append(layer);
-    // يلفّ الفانوس نصّه تماماً: يقيس أعرض سطر فعلي بعد الالتفاف (text-wrap: balance لا يقلّص الصندوق) فلا يبقى فراغ جانبي
-    const fit = () => {
-      const t = lamp.querySelector('.dp-text');
-      const r = document.createRange();
-      r.selectNodeContents(t);
-      const w = Math.max(...[...r.getClientRects()].map((x) => x.width));
-      if (Number.isFinite(w) && w > 0) t.style.width = `${Math.ceil(w) + 2}px`;
-    };
-    requestAnimationFrame(fit);
-    document.fonts?.ready?.then(() => { lamp.querySelector('.dp-text').style.width = ''; requestAnimationFrame(fit); });
+    fitLamp(lamp);
   });
 }
 
