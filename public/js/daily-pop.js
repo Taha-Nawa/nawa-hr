@@ -38,6 +38,5 @@ export function dailyPop(user, { force = false } = {}) {
     h('span', { class: 'dp-hint' }, 'اضغط لإغلاق'));
   const backdrop = h('div', { class: 'dp-layer', role: 'status' }, pop);
   document.body.append(backdrop);
-  pop.focus({ preventScroll: true });
   return backdrop;
 }
