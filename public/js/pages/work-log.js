@@ -101,6 +101,7 @@ export default async function render({ user, params }) {
   const monthTitle = h('p', { class: 'sub' });
   const reportLink = h('a', { class: 'btn', href: '#' }, icon('report'), 'تقريري الشهري');
   const teamLink = h('a', { class: 'btn', href: '#/work-log/team', hidden: true }, icon('users'), 'متابعة الفريق');
+  const msgLink = h('a', { class: 'btn', href: '#/team-message', hidden: true }, icon('bell'), 'رسالة لفريقي');
   let entries = [];
   let form;
   let suggestions = [];
@@ -243,13 +244,13 @@ export default async function render({ user, params }) {
   const root = h('div', { class: 'page wl-page' },
     h('header', { class: 'page-head' },
       h('div', null, h('h1', null, 'ماذا أنجزت اليوم'), monthTitle),
-      h('div', { class: 'page-actions' }, nav, teamLink, reportLink)),
+      h('div', { class: 'page-actions' }, nav, teamLink, msgLink, reportLink)),
     h('section', { class: 'panel wl-add' },
       h('h2', null, 'سطر جديد'),
       h('p', { class: 'muted small' }, 'اكتب ما أنجزته أو حضرته أو ما ستعمل عليه. هذا السجل لك، ويراه مسؤولوك في خطّك الإداري ما دمتَ تُبقي خيار الإظهار (وتستطيع إلغاءه لأي سطر)؛ تستورد منه إلى تقريرك الشهري بنقرة، وتقدّم التقرير متى شئت.'),
       form.el),
     summary, list);
-  get(`/api/work-log/team?month=${month}`).then((r) => { if (r.members?.length) { teamLink.hidden = false; const n = r.members.reduce((a, m) => a + (m.toReview || 0), 0); if (n) teamLink.append(` (${n} بانتظار اعتمادك)`); } }).catch(() => {});
+  get(`/api/work-log/team?month=${month}`).then((r) => { if (r.members?.length) { teamLink.hidden = false; msgLink.hidden = false; const n = r.members.reduce((a, m) => a + (m.toReview || 0), 0); if (n) teamLink.append(` (${n} بانتظار اعتمادك)`); } }).catch(() => {});
   await load();
   return root;
 }

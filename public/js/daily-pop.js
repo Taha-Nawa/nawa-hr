@@ -71,7 +71,7 @@ export async function dailyPop(user, { force = false, messages = null, preview =
   let chosen = shape;
   if (!items) { try { const r = await get('/api/announcements/active'); items = r.items || []; chosen = chosen || r.shape; } catch { items = []; } }
   for (const m of items) {
-    await lantern({ kind: 'msg', label: 'رسالة من الإدارة', title: m.title, text: m.body, hint: 'اضغط لإغلاق الرسالة', shape: chosen });
+    await lantern({ kind: 'msg', label: m.from ? `رسالة من ${m.from}` : 'رسالة من الإدارة', title: m.title, text: m.body, hint: 'اضغط لإغلاق الرسالة', shape: chosen });
     post(`/api/announcements/${m.id}/seen`, {}).catch(() => {});
   }
   const key = `nawa.pop.${user.id ?? user.email ?? 'u'}.${date}`;

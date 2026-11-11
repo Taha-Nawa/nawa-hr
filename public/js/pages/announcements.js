@@ -10,8 +10,14 @@ const MAX = 400;
 const when = (iso) => new Intl.DateTimeFormat('ar', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Hebron' }).format(new Date(iso));
 
 export default async function render({ user }) {
-  const [emps, cents] = await Promise.all([get('/api/employees').then((r) => r.employees.filter((e) => e.status === 'active')), get('/api/centers').then((r) => r.centers || r.items || [])]);
-  const st = { audience: 'all', centers: new Set(), people: new Set(), q: '' };
+  const scope = await get('/api/announcements/scope');
+  if (!scope.all && !scope.team) return h('div', { class: 'page' }, h('header', { class: 'page-head' }, h('h1', null, 'رسائل البوب')), h('p', { class: 'empty' }, 'هذه الصفحة لمن لديه فريق أو للموارد البشرية والمسؤول.'));
+  const admin = scope.all;
+  // الإدارة: كل الموظفين والمراكز؛ مسؤول الفريق: فريقه وأفراده فقط
+  const [emps, cents] = admin
+    ? await Promise.all([get('/api/employees').then((r) => r.employees.filter((e) => e.status === 'active')), get('/api/centers').then((r) => r.centers || r.items || [])])
+    : [(await get(`/api/work-log/team?month=${new Date().toISOString().slice(0, 7)}`)).members.map((m) => ({ id: m.id, name: m.name, code: '', center: m.jobTitle || '' })), []];
+  const st = { audience: admin ? 'all' : 'team', centers: new Set(), people: new Set(), q: '' };
   const title = h('input', { type: 'text', maxlength: '80', placeholder: 'عنوان قصير (اختياري)' });
   const body = h('textarea', { rows: '4', maxlength: String(MAX), placeholder: 'اكتب رسالتك للموظفين…' });
   const count = h('span', { class: 'muted small' }, `0 من ${MAX}`);
@@ -22,7 +28,7 @@ export default async function render({ user }) {
   const listBox = h('div', { class: 'ann-list' });
 
   // شكل البوب: يُعتمد للمؤسسة كلها (لكل الأنواع)، واللون يتبع النوع تلقائياً
-  const cur = (await get('/api/pop-style').catch(() => ({ shape: 'lantern' }))).shape;
+  const cur = admin ? (await get('/api/pop-style').catch(() => ({ shape: 'lantern' }))).shape : 'lantern';
   let shape = cur;
   const shapeBox = h('div', { class: 'ann-shapes', role: 'radiogroup', 'aria-label': 'شكل البوب' });
   const drawShapes = () => clear(shapeBox).append(...SHAPES.map(([id, name]) => h('button', { type: 'button', class: `ann-shape${shape === id ? ' on' : ''}`, role: 'radio', 'aria-checked': String(shape === id), onclick: () => { shape = id; drawShapes(); } }, name)));
@@ -31,7 +37,7 @@ export default async function render({ user }) {
   const saveShape = h('button', { type: 'button', class: 'btn btn-primary', onclick: async () => { try { await put('/api/pop-style', { shape }); toast('اعتُمد الشكل لكل الموظفين'); } catch (e) { toast(e.message, 'err'); } } }, 'اعتماد هذا الشكل');
 
   function drawAud() {
-    clear(aud).append(...[['all', 'كل الموظفين'], ['center', 'مراكز محددة'], ['employees', 'موظفون بأسمائهم']].map(([k, t]) =>
+    clear(aud).append(...(admin ? [['all', 'كل الموظفين'], ['center', 'مراكز محددة'], ['employees', 'موظفون بأسمائهم']] : [['team', `كل فريقي (${scope.team})`], ['employees', 'أشخاص من فريقي']]).map(([k, t]) =>
       h('button', { type: 'button', class: `seg-tab${st.audience === k ? ' on' : ''}`, role: 'tab', 'aria-selected': String(st.audience === k), onclick: () => { st.audience = k; drawAud(); } }, t)));
     clear(pick);
     if (st.audience === 'center') {
@@ -51,8 +57,8 @@ export default async function render({ user }) {
     }
   }
 
-  const payload = () => ({ title: title.value.trim(), body: body.value.trim(), hours: Number(dur.value), audience: st.audience, ids: st.audience === 'center' ? [...st.centers] : st.audience === 'employees' ? [...st.people] : [] });
-  const preview = h('button', { type: 'button', class: 'btn', onclick: () => { if (!body.value.trim()) { toast('اكتب نص الرسالة أولاً', 'err'); return; } dailyPop(user, { preview: true, messages: [{ title: title.value.trim(), body: body.value.trim() }] }); } }, 'معاينة الفانوس');
+  const payload = () => ({ title: title.value.trim(), body: body.value.trim(), hours: Number(dur.value), audience: st.audience, ids: st.audience === 'team' ? [] : st.audience === 'center' ? [...st.centers] : st.audience === 'employees' ? [...st.people] : [] });
+  const preview = h('button', { type: 'button', class: 'btn', onclick: () => { if (!body.value.trim()) { toast('اكتب نص الرسالة أولاً', 'err'); return; } dailyPop(user, { preview: true, messages: [{ title: title.value.trim(), body: body.value.trim(), label: admin ? undefined : `رسالة من ${user.employeeName || 'مسؤولك'}` }] }); } }, 'معاينة الفانوس');
   const send = h('button', { type: 'button', class: 'btn btn-primary', onclick: async () => {
     const p = payload();
     try { send.disabled = true; await post('/api/announcements', p); toast('نُشرت الرسالة وستظهر للمستهدفين عند فتحهم للنظام'); body.value = ''; title.value = ''; count.textContent = `0 من ${MAX}`; await load(); }
@@ -75,11 +81,11 @@ export default async function render({ user }) {
   drawAud();
   await load();
   return h('div', { class: 'page' },
-    h('header', { class: 'page-head' }, h('div', null, h('h1', null, 'رسائل البوب للموظفين'), h('p', { class: 'sub' }, 'رسالة قصيرة في فانوس تظهر للموظفين عند فتح النظام لمدة محددة، ثم تنتهي وحدها'))),
-    h('section', { class: 'panel ann-form' },
+    h('header', { class: 'page-head' }, h('div', null, h('h1', null, 'رسائل البوب للموظفين'), h('p', { class: 'sub' }, admin ? 'رسالة قصيرة في فانوس تظهر للموظفين عند فتح النظام لمدة محددة، ثم تنتهي وحدها' : 'شارك فريقك رسالة قصيرة تظهر لهم عند فتح النظام لمدة محددة، ثم تنتهي وحدها'))),
+    admin ? h('section', { class: 'panel ann-form' },
       h('h2', null, 'شكل البوب'),
       h('p', { class: 'muted' }, 'الآية خضراء، والحديث ذهبي، والحكمة زرقاء، ورسالة الإدارة ياقوتية، بأي شكل تختاره.'),
-      shapeBox, h('div', { class: 'row-actions' }, previewShape, saveShape)),
+      shapeBox, h('div', { class: 'row-actions' }, previewShape, saveShape)) : null,
     h('section', { class: 'panel ann-form' },
       h('h2', null, 'رسالة جديدة'),
       field('العنوان', title), field('نص الرسالة', body, count),

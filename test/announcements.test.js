@@ -64,3 +64,32 @@ test('شكل البوب: يُعتمد من الموارد البشرية فقط 
   assert.equal((await j(env, u.emp4, 'GET', '/api/announcements/active')).body.shape, 'orb');
   assert.equal((await j(env, u.dir, 'GET', '/api/pop-style')).body.shape, 'orb');
 });
+
+test('رسائل الفريق: مسؤول الفريق يرسل لفريقه فقط، ويحمل اسمه، ويدير رسائله وحدها', async () => {
+  const w = await world();
+  const m = await login(w.db, 'mgr@nawaculture.org', 'manager', 1); // 1 يدير 2 و3
+  const e2 = w.u.emp2;
+  const e3 = await login(w.db, 'emp3@nawaculture.org', 'employee', 3);
+  const e4 = w.u.emp4; // خارج فريقها
+  assert.deepEqual((await j(w.env, m, 'GET', '/api/announcements/scope')).body, { ok: true, all: false, team: 2 });
+  assert.equal((await j(w.env, e4, 'GET', '/api/announcements')).status, 403, 'بلا فريق');
+  assert.equal((await j(w.env, m, 'POST', '/api/announcements', { body: 'للجميع', hours: 24, audience: 'all' })).status, 403, 'مسؤول الفريق لا يرسل للكل');
+  assert.equal((await j(w.env, m, 'POST', '/api/announcements', { body: 'خارج', hours: 24, audience: 'employees', ids: [4] })).status, 403, 'ولا لمن خارج فريقه');
+
+  const t = await j(w.env, m, 'POST', '/api/announcements', { title: 'تذكير', body: 'سلّموا التقارير اليوم', hours: 24, audience: 'team' });
+  assert.equal(t.status, 200);
+  const r2 = (await j(w.env, e2, 'GET', '/api/announcements/active')).body.items;
+  assert.equal(r2.length, 1);
+  assert.ok(r2[0].from, 'تحمل اسم المرسِل');
+  assert.equal((await j(w.env, e3, 'GET', '/api/announcements/active')).body.items.length, 1);
+  assert.equal((await j(w.env, e4, 'GET', '/api/announcements/active')).body.items.length, 0, 'من خارج الفريق لا يراها');
+  assert.equal((await j(w.env, m, 'GET', '/api/announcements/active')).body.items.length, 0, 'المرسِل لا تظهر له رسالته');
+
+  const mine = (await j(w.env, m, 'GET', '/api/announcements')).body.items;
+  assert.deepEqual([mine.length, mine[0].target], [1, 2]);
+  await j(w.env, w.u.hr, 'POST', '/api/announcements', { body: 'عامة', hours: 24, audience: 'all' });
+  assert.equal((await j(w.env, m, 'GET', '/api/announcements')).body.items.length, 1, 'لا يرى رسائل الإدارة');
+  assert.equal((await j(w.env, e2, 'DELETE', `/api/announcements/${t.body.id}`)).status, 403);
+  assert.equal((await j(w.env, m, 'DELETE', `/api/announcements/${t.body.id}`)).status, 200);
+  assert.equal((await j(w.env, e2, 'GET', '/api/announcements/active')).body.items.filter((x) => x.from).length, 0);
+});
