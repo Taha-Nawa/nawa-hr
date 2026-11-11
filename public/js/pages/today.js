@@ -4,6 +4,7 @@ import { fmt12, fmtRange12 } from '../time12.js';
 import { monthLabel } from '../monthly-report-lib.js';
 import { mySummary } from './my-summary.js';
 import { unclosedPanel } from './unclosed-panel.js';
+import { dashboard } from './dashboard.js';
 
 // تصنيف الحالة القادمة من المحرك إلى مجموعة للعرض واللون.
 const GROUPS = [
@@ -54,7 +55,8 @@ export default async function render({ user }) {
   const tools = h('div', { class: 'tools' });
   const tableBox = h('div', { class: 'table-wrap' });
   const unclosed = unclosedPanel({ user, work: settings?.work || null, onChange: () => go(date) });
-  const root = h('div', { class: 'page' }, head, notice, user.employeeId != null ? mySummary({ employeeId: user.employeeId, own: true }) : null, strip, tools, tableBox, unclosed.el);
+  const dash2 = dashboard({ user, today });
+  const root = h('div', { class: 'page' }, head, notice, dash2.el, user.employeeId != null ? mySummary({ employeeId: user.employeeId, own: true }) : null, strip, tools, tableBox, unclosed.el);
 
   const dateInput = h('input', { type: 'date', value: date, 'aria-label': 'التاريخ', onchange: (e) => e.target.value && go(e.target.value) });
 
@@ -72,6 +74,7 @@ export default async function render({ user }) {
       clear(tableBox).append(h('div', { class: 'notice notice-err' }, e.message));
       return;
     }
+    dash2.setRows(rows, d);
     draw();
   }
 
@@ -188,10 +191,10 @@ export default async function render({ user }) {
   }
 
   // حالة البوابات وغيرها (لمن يملك الصلاحية): لا تعطّل اللوحة إن تعذّرت، وتُرسم عند وصولها دون انتظار
-  gatesReq.then((r) => { if (r) { gates = r.problems || []; draw(); } });
+  gatesReq.then((r) => { if (r) { gates = r.problems || []; dash2.setHealth({ gates }); draw(); } });
   boardReq?.then((r) => { if (r) { noShows = r.items.filter((i) => i.state === 'noshow'); draw(); } });
   dueReq?.then((r) => { if (r) { due = r.items; draw(); } });
-  backupReq?.then((r) => { if (r) { backup = r; draw(); } });
+  backupReq?.then((r) => { if (r) { backup = r; dash2.setHealth({ backup }); draw(); } });
   await go(date, dayReq);
   return root;
 }
