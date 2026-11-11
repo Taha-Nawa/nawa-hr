@@ -862,21 +862,29 @@ table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; w
 
 /* بطاقة المزوّد: 85.6×54 مم (حجم بطاقة بنكية). يمين: البيانات، يسار: الرمز */
 .id-sheet { display: flex; flex-wrap: wrap; gap: 8mm; justify-content: center; padding: 6px 0; }
-.id-card { --brand: #a21008; --acc: #ff9798; --accfg: #a21008; --gold: #e6a901; width: 85.6mm; height: 54mm; box-sizing: border-box; display: flex; background: linear-gradient(120deg, #1d1311, #2c1b17); color: #fff; border-radius: 3mm; overflow: hidden; break-inside: avoid; font-family: "Sakkal Majalla", "Form Fallback", "Traditional Arabic", serif; line-height: 1.25; -webkit-print-color-adjust: exact; print-color-adjust: exact; position: relative; }
-.id-card.id-volunteer { --acc: #e6a901; --accfg: #5a0a04; }
-.id-card.id-provider { --acc: #fff; --accfg: #a21008; }
-.id-qrp { width: 40mm; flex: none; display: grid; place-items: center; background-color: var(--brand); background-image: radial-gradient(rgba(255, 255, 255, 0.14) 0.45mm, transparent 0.5mm); background-size: 3mm 3mm; }
-.id-qr svg { width: 34mm; height: 34mm; display: block; background: #fff; padding: 1.6mm; border-radius: 2.4mm; box-sizing: border-box; }
-.id-bd { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 3.4mm 3.6mm 3mm; }
-.id-brand { display: flex; align-items: center; justify-content: center; gap: 2mm; }
-.id-brand img { width: 6.6mm; height: 8mm; flex: none; background: #fff; border-radius: 99px 99px 0.6mm 0.6mm; padding: 0.5mm; object-fit: contain; box-sizing: border-box; }
-.id-brand span { flex: 1; text-align: center; font-size: 8.5pt; line-height: 1.15; color: #f1dcd3; }
-.id-name { font: inherit; font-size: 14.5pt; font-weight: 700; line-height: 1.2; margin-top: auto; color: #fff; overflow-wrap: anywhere; }
-.id-meta { font-size: 8.5pt; color: #d9c5bc; line-height: 1.2; }
-.id-valid { font-size: 7.5pt; color: #b9a79e; }
-.id-foot { display: flex; align-items: center; justify-content: space-between; gap: 2mm; margin-top: 2mm; padding-top: 1.6mm; border-top: 0.2mm solid rgba(230, 169, 1, 0.55); }
-.id-code { font-size: 10pt; font-weight: 700; letter-spacing: 0.6pt; color: var(--gold); unicode-bidi: plaintext; }
-.id-kind { font-style: normal; font-size: 7.5pt; font-weight: 700; background: var(--acc); color: var(--accfg); border-radius: 99px; padding: 0.2mm 2.6mm; white-space: nowrap; }
+@font-face { font-family: Lalezar; font-style: normal; font-weight: 400; font-display: swap; src: url(/fonts/lalezar-arabic.woff2) format("woff2"); unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FE80-FEFC; }
+/* بطاقة الهوية الموحّدة (اعتُمدت 2026-11-11): رمز كبير على لوحة ملوّنة، وباترن خفيف من غصن الزيتون وسعفة النخيل، ولون اللوحة يميّز النوع */
+.id-card { --bg: #f8e8cf; --panel: #efd7ad; --pc: #a21008; --po: 0.05; --fb: #e6a901; --cd: #a21008; --pb: #a21008; --pf: #fff; --bd: #e6a901; --mt: #7a4a30; --nm: #a21008; width: 85.6mm; height: 54mm; box-sizing: border-box; display: flex; background: var(--bg); color: var(--nm); border-radius: 3mm; overflow: hidden; break-inside: avoid; font-family: Alexandria, "Traditional Arabic", sans-serif; line-height: 1.25; -webkit-print-color-adjust: exact; print-color-adjust: exact; position: relative; isolation: isolate; }
+.id-card.id-volunteer { --bg: #fdf3df; --panel: #2d4018; --po: 0.07; --cd: #2d4018; --pb: #2d4018; --pf: #fff; }
+.id-card.id-provider { --panel: #a21008; --pc: #ffb870; --po: 0.09; --fb: #a21008; --cd: #e6a901; --pb: #e6a901; --pf: #7f0d07; }
+.id-card::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 44.6mm; background: var(--pc); opacity: 0.03; -webkit-mask: url(/img/card-pat.svg) 0 0 / 85.6mm 54mm no-repeat; mask: url(/img/card-pat.svg) 0 0 / 85.6mm 54mm no-repeat; z-index: 0; }
+.id-card::after { content: ""; position: absolute; inset: 1.7mm; border: 0.4mm solid var(--bd); border-radius: 1.9mm; z-index: 3; pointer-events: none; }
+.id-qrp { width: 41mm; flex: none; display: grid; place-items: center; background: var(--panel); position: relative; z-index: 1; }
+.id-qrp::before { content: ""; position: absolute; inset: 0; background: var(--pc); opacity: var(--po); -webkit-mask: url(/img/card-pat.svg) -44.6mm 0 / 85.6mm 54mm no-repeat; mask: url(/img/card-pat.svg) -44.6mm 0 / 85.6mm 54mm no-repeat; }
+.id-qr { position: relative; }
+.id-qr svg { width: 34mm; height: 34mm; display: block; background: #fff; padding: 2.2mm; border-radius: 2.4mm; box-sizing: border-box; }
+.id-bd { flex: 1; min-width: 0; position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; text-align: center; padding: 3.2mm 4mm; box-sizing: border-box; }
+.id-brand { display: flex; flex-direction: column; align-items: center; gap: 1.3mm; }
+.id-brand img { height: 12.6mm; width: auto; display: block; }
+.id-tall .id-brand img { height: 10mm; }
+.id-brand span { font-family: Lalezar, Alexandria, sans-serif; font-size: 3.5mm; line-height: 1.3; color: var(--nm); }
+.id-who { display: flex; flex-direction: column; align-items: center; gap: 0.9mm; }
+.id-name { font: inherit; font-family: Lalezar, Alexandria, sans-serif; font-size: 6.6mm; font-weight: 400; line-height: 1.2; margin: 0; color: var(--nm); overflow-wrap: anywhere; }
+.id-meta { margin: 0; font-size: 2.65mm; font-weight: 500; white-space: nowrap; color: var(--mt); line-height: 1.2; }
+.id-valid { margin: 0; font-size: 2.5mm; font-weight: 500; color: var(--mt); }
+.id-foot { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 1.2mm; background: var(--fb); padding: 1.2mm 2.2mm; border-radius: 2mm; box-sizing: border-box; }
+.id-code { font-size: 3.3mm; font-weight: 700; letter-spacing: 0.03em; color: var(--cd); white-space: nowrap; unicode-bidi: plaintext; }
+.id-kind { font-style: normal; font-size: 2.7mm; font-weight: 700; background: var(--pb); color: var(--pf); border-radius: 99px; padding: 0.5mm 1.9mm; white-space: nowrap; }
 
 /* كشف المزوّد المطبوع */
 .prov-paper { height: auto; min-height: 296mm; }
