@@ -2,6 +2,9 @@
 import { h, clear, icon } from '../dom.js';
 import { get } from '../api.js';
 import { openLifecycleDialog } from './lifecycle.js';
+import { initials } from '../employee-lib.js';
+
+const PALETTE = ['#a21008', '#3f5a24', '#34557d', '#b07d00', '#6b3f7a', '#0f766e', '#9a3412', '#475569'];
 
 const LEVEL = { high: ['chip-absent', 'مهم'], mid: ['chip-late', 'متوسط'], low: ['chip-none', 'بسيط'] };
 const GRADE_CLASS = { 'ممتاز': 'chip-present', 'جيد': 'chip-present', 'يحتاج مراجعة': 'chip-late', 'ضعيف': 'chip-absent' };
@@ -15,11 +18,13 @@ export default async function render({ user }) {
   for (const n of data.org.nodes) if (n.parent != null) (children.get(n.parent) || children.set(n.parent, []).get(n.parent)).push(n.id);
   for (const list of children.values()) list.sort((a, b) => (node.get(b).team - node.get(a).team) || byId.get(a).code.localeCompare(byId.get(b).code));
 
-  let tab = 'tree';
+  let tab = 'chart';
+  let zoom = 1;
+  const colorOf = (cid) => PALETTE[(Number(cid) || 0) % PALETTE.length];
   let q = '';
   let centerF = '';
   let showInactive = false;
-  const open = new Set(data.org.roots.slice(0, 1)); // القمة مفتوحة، والباقي مطوي
+  const open = new Set(data.org.nodes.filter((n) => n.depth !== null && n.depth <= 1).map((n) => n.id)); // أول مستويين مفتوحان، والباقي مطوي
   const body = h('div', { class: 'org-body' });
 
   const matches = (e) => (!q || `${e.name} ${e.code} ${e.jobTitle || ''}`.toLowerCase().includes(q)) && (!centerF || String(e.centerId) === centerF);
@@ -49,6 +54,52 @@ export default async function render({ user }) {
         : h('span', { class: 'org-tg org-leaf' }, '•'),
       cardOf(e));
     return h('li', null, row, isOpen && kids.length ? h('ul', { class: 'org-tree' }, kids.map(branch)) : null);
+  }
+
+
+  // ---- المخطط الهرمي: الرئيس في الأعلى ومرؤوسوه تحته بخطوط ربط
+  function photoEl(e) {
+    const box = h('span', { class: 'oc-av', 'aria-hidden': 'true' }, initials(e.name));
+    if (/^https:\/\//.test(e.photo || '')) {
+      const img = h('img', { alt: '', referrerpolicy: 'no-referrer', decoding: 'async' });
+      img.addEventListener('load', () => { box.classList.add('has-photo'); box.replaceChildren(img); });
+      img.src = e.photo;
+    }
+    return box;
+  }
+  function chartNode(id) {
+    const e = byId.get(id);
+    const n = node.get(id);
+    const all = children.get(id) || [];
+    const kids = all.filter((c) => !searching() || hits(c));
+    const isOpen = searching() || open.has(id);
+    const hit = searching() && matches(e);
+    const card = h('div', { class: `oc-card${hit ? ' oc-hit' : ''}${e.status === 'active' ? '' : ' org-off'}` },
+      photoEl(e),
+      h('a', { href: `#/employees/${e.id}`, class: 'oc-name' }, e.name),
+      h('span', { class: 'oc-job' }, e.jobTitle || '—'),
+      h('span', { class: 'oc-center' }, e.center || 'بلا مركز'),
+      !e.role ? h('span', { class: 'oc-flag', title: 'لا حساب دخول فعّال' }, 'بلا حساب') : null,
+      canAct ? h('button', { type: 'button', class: 'oc-act', 'aria-label': `إجراء وظيفي لـ ${e.name}`, title: 'إجراء وظيفي', onclick: () => openLifecycleDialog({ emp: e, centers: data.centers, people: data.employees, onDone: () => location.reload() }) }, '⋯') : null,
+      all.length ? h('button', { type: 'button', class: 'oc-tg', 'aria-expanded': String(isOpen), onclick: () => { if (open.has(id)) open.delete(id); else open.add(id); draw(); } }, isOpen ? '▴' : '▾', ` ${n.reports}`, n.team > n.reports ? h('small', null, ` · ${n.team}`) : null) : null);
+    card.style.borderTopColor = colorOf(e.centerId);
+    return h('li', null, card, isOpen && kids.length ? h('ul', null, kids.map(chartNode)) : null);
+  }
+  function chartView() {
+    const roots = data.org.roots.filter((id) => !searching() || hits(id));
+    const legend = data.centers.filter((c) => data.employees.some((e) => e.centerId === c.id && e.status === 'active'))
+      .map((c) => { const dot = h('i', { class: 'oc-dot' }); dot.style.background = colorOf(c.id); return h('span', { class: 'oc-leg' }, dot, c.name); });
+    const canvas = h('div', { class: 'oc-canvas' }, h('ul', { class: 'oc' }, roots.map(chartNode)));
+    canvas.style.zoom = String(zoom);
+    const zbtn = (t, d, label) => h('button', { type: 'button', class: 'btn btn-sm', 'aria-label': label, onclick: () => { zoom = Math.min(1.3, Math.max(0.5, Math.round((zoom + d) * 10) / 10)); canvas.style.zoom = String(zoom); } }, t);
+    return h('div', null,
+      h('div', { class: 'tools' },
+        zbtn('＋', 0.1, 'تكبير'), zbtn('－', -0.1, 'تصغير'),
+        h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { for (const n of data.org.nodes) if (n.reports) open.add(n.id); draw(); } }, 'فتح الكل'),
+        h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { open.clear(); for (const n of data.org.nodes) if (n.depth === 0) open.add(n.id); draw(); } }, 'طيّ الكل'),
+        h('button', { type: 'button', class: 'btn btn-sm', onclick: () => window.print() }, icon('printer'), 'طباعة')),
+      h('div', { class: 'oc-legend' }, legend, h('span', { class: 'muted' }, 'الرقم تحت البطاقة: المرؤوسون المباشرون · إجمالي الفريق')),
+      roots.length ? h('div', { class: 'oc-scroll' }, canvas) : h('div', { class: 'empty' }, h('b', null, 'لا نتائج')));
   }
 
   function treeView() {
@@ -95,12 +146,12 @@ export default async function render({ user }) {
   }
 
   function draw() {
-    clear(body).append(tab === 'tree' ? treeView() : tab === 'centers' ? centersView() : checksView());
+    clear(body).append(tab === 'chart' ? chartView() : tab === 'tree' ? treeView() : tab === 'centers' ? centersView() : checksView());
     for (const b of tabBar.children) b.classList.toggle('on', b.dataset.tab === tab);
   }
 
   const tabBar = h('div', { class: 'seg-tabs', role: 'tablist', 'aria-label': 'عرض الهيكلية' },
-    [['tree', 'الشجرة'], ['centers', 'حسب المركز'], ['checks', 'سلامة الهيكل']].map(([k, t]) =>
+    [['chart', 'المخطط الهرمي'], ['tree', 'القائمة'], ['centers', 'حسب المركز'], ['checks', 'سلامة الهيكل']].map(([k, t]) =>
       h('button', { type: 'button', role: 'tab', class: 'seg-tab', dataset: { tab: k }, onclick: () => { tab = k; draw(); } }, t, k === 'checks' && data.org.checks.length ? h('span', { class: 'count' }, String(data.org.checks.length)) : null)));
 
   const search = h('input', { type: 'search', placeholder: 'بحث بالاسم أو الرمز أو المسمى', 'aria-label': 'بحث', oninput: (e) => { q = e.target.value.trim().toLowerCase(); draw(); } });
