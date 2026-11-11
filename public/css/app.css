@@ -1544,3 +1544,6 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
 .wlt-note-form { display: flex; gap: 6px; margin-top: 8px; }
 .wlt-note-form input { flex: 1; min-width: 0; }
 .wl-fields input[type="checkbox"] { width: auto; }
+.ec-pick { max-height: 320px; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 4px 12px; padding: 8px 2px; }
+.ec-pick-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ec-pick-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

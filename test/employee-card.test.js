@@ -19,3 +19,20 @@ test('بطاقة الموظف: عرض، إعادة إصدار تُلغي الق�
   await db.prepare("UPDATE employees SET status = 'inactive' WHERE id = 3").run();
   assert.equal((await call(env, 'POST', '/api/employees/3/card', { cookie: hr.cookie })).status, 409);
 });
+
+test('بطاقات دفعة واحدة: للموارد البشرية والمسؤول، الفعّالون ذوو البطاقة، ومن بلا بطاقة في missing', async () => {
+  const { db, env } = await apiEnv();
+  await seedOrg(db);
+  await db.prepare("UPDATE employees SET status = 'inactive' WHERE id = 4").run();
+  await db.prepare("DELETE FROM badges WHERE employee_id = 3").run();
+  const hr = await login(db, 'hr@nawaculture.org', 'hr', null);
+  const emp = await login(db, 'e@nawaculture.org', 'employee', 2);
+  assert.equal((await call(env, 'GET', '/api/employees/cards', { cookie: emp.cookie })).status, 403);
+  const all = await call(env, 'GET', '/api/employees/cards', { cookie: hr.cookie });
+  assert.deepEqual(all.body.cards.map((c) => c.id), [1, 2]);
+  assert.deepEqual(all.body.missing.map((m) => m.id), [3]);
+  assert.ok(all.body.cards.every((c) => c.card));
+  const some = await call(env, 'GET', '/api/employees/cards?ids=2,3', { cookie: hr.cookie });
+  assert.deepEqual(some.body.cards.map((c) => c.id), [2]);
+  assert.equal((await call(env, 'GET', '/api/employees/cards?ids=x', { cookie: hr.cookie })).status, 400);
+});

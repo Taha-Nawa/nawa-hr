@@ -140,7 +140,7 @@ export default async function render({ user }) {
   const page = h('div', { class: 'page' },
     h('header', { class: 'page-head' },
       h('div', null, h('h1', null, user.role === 'employee' ? 'بياناتي' : 'الموظفون'), count),
-      canEdit ? h('button', { type: 'button', class: 'btn btn-primary', onclick: () => employeeForm({ emp: null, onSaved: reload }) }, 'موظف جديد') : null),
+      canEdit ? h('div', { class: 'page-actions' }, h('a', { class: 'btn', href: '#/employees/cards' }, 'طباعة بطاقات عدة موظفين'), h('button', { type: 'button', class: 'btn btn-primary', onclick: () => employeeForm({ emp: null, onSaved: reload }) }, 'موظف جديد')) : null),
     h('div', { class: 'tools' },
       h('input', { type: 'search', class: 'search', placeholder: 'بحث بالاسم أو الكود أو القسم', 'aria-label': 'بحث', oninput: (e) => { q = e.target.value.trim(); draw(); } }),
       h('label', { class: 'check' }, h('input', { type: 'checkbox', onchange: (e) => { showInactive = e.target.checked; draw(); } }), 'إظهار المتوقفين')),

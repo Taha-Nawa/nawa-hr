@@ -449,6 +449,21 @@ add('GET', '/api/employees/:id/badges', async ({ db, user, params }) => {
 });
 
 // بطاقة الموظف للطباعة: تعرض البطاقة السارية (أو لا شيء)، والإصدار يُلغي القديمة ويُنشئ جديدة برمز عشوائي غير قابل للتخمين.
+// بطاقات عدة موظفين دفعة واحدة للطباعة (ids=1,2,3؛ بلا ids = كل الفعّالين). من لا بطاقة سارية له يُذكر في missing ولا تصدر له هنا.
+add('GET', '/api/employees/cards', async ({ db, user, url }) => {
+  if (!can(user, 'badge.manage')) return forbidden();
+  const raw = url.searchParams.get('ids');
+  const ids = raw ? [...new Set(raw.split(',').map(Number))] : null;
+  if (ids && (ids.length > 400 || ids.some((n) => !Number.isInteger(n) || n <= 0))) return bad('قائمة الموظفين غير صالحة (حتى 400)');
+  const rows = (await db.prepare(
+    `SELECT e.id, e.code, e.name, e.job_title AS jobTitle, c.name AS center,
+            (SELECT card FROM badges b WHERE b.employee_id = e.id AND b.status = 'active' ORDER BY b.created_at DESC, b.rowid DESC LIMIT 1) AS card
+     FROM employees e LEFT JOIN centers c ON c.id = e.center_id
+     WHERE e.status = 'active' ${ids ? 'AND e.id IN (SELECT value FROM json_each(?))' : ''} ORDER BY e.code`,
+  ).bind(...(ids ? [JSON.stringify(ids)] : [])).all()).results;
+  return json({ ok: true, cards: rows.filter((r) => r.card), missing: rows.filter((r) => !r.card).map((r) => ({ id: r.id, name: r.name })) });
+});
+
 add('GET', '/api/employees/:id/card', async ({ db, user, params }) => {
   if (!can(user, 'badge.manage')) return forbidden();
   const id = Number(params.id);
