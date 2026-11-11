@@ -1685,3 +1685,5 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
 .id-who .id-place { margin-top: 1.1mm; }
 .id-portrait .id-who .id-place { margin-top: 1.3mm; }
 .id-card:not(.id-portrait) .id-bd { padding-block: 2.4mm 2.2mm; }
+.ann-repeat { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.ann-repeat input[type=number] { width: 84px; }

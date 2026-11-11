@@ -1,7 +1,7 @@
 /**
  * رسائل البوب: تنشرها الموارد البشرية أو المسؤول للموظفين (الكل أو مراكز أو أشخاص بعينهم) لمدة محددة كالستوري.
  * ولكل مسؤول فريق (منسق مشروع، مدير مباشر…) أن يرسل لفريقه فقط (كل من تحته في الشجرة، أو أشخاص منهم) ويدير رسائله وحدها.
- * تظهر للموظف مرة واحدة عند فتح النظام ثم تُسجَّل مشاهدتها فلا تتكرر، وتنتهي وحدها بانتهاء المدة أو تُسحب يدوياً.
+ * تظهر للموظف عند فتح النظام أو فور نشرها وهو فيه، ثم تُسجَّل مشاهدتها فلا تتكرر إلا إن حدّد المرسِل تكراراً (كل كذا دقيقة داخل المدة)، وتنتهي وحدها بانتهاء المدة أو تُسحب يدوياً.
  * تُعرض للمستخدم المرتبط بموظف فقط (الحساب بلا موظف لا يراها).
  */
 import { json, clip, nowOf } from './util.js';
@@ -56,12 +56,18 @@ export function registerAnnouncementRoutes(add, kit) {
     if (user.employeeId == null) return json({ ok: true, items: [], shape });
     const now = nowOf(env).toISOString();
     let rows = [];
+    // تظهر ما لم تُشاهَد، أو المتكررة منها متى مضى زمن التكرار على آخر مشاهدة
+    const query = (repeat) => db.prepare(
+      `SELECT a.id, a.title, a.body, a.ends_at, a.audience, a.audience_ids, a.sender_id, se.name AS fromName FROM announcements a LEFT JOIN employees se ON se.id = a.sender_id
+       WHERE a.revoked = 0 AND a.starts_at <= ?1 AND a.ends_at > ?1
+         AND (NOT EXISTS (SELECT 1 FROM announcement_seen s WHERE s.announcement_id = a.id AND s.user_id = ?2)
+           ${repeat ? 'OR (a.repeat_minutes IS NOT NULL AND EXISTS (SELECT 1 FROM announcement_seen s WHERE s.announcement_id = a.id AND s.user_id = ?2 AND julianday(s.seen_at) <= julianday(?1) - a.repeat_minutes / 1440.0))' : ''})
+       ORDER BY a.id`).bind(now, user.id).all();
     try {
-      rows = (await db.prepare(
-        `SELECT a.id, a.title, a.body, a.ends_at, a.audience, a.audience_ids, a.sender_id, se.name AS fromName FROM announcements a LEFT JOIN employees se ON se.id = a.sender_id
-         WHERE a.revoked = 0 AND a.starts_at <= ?1 AND a.ends_at > ?1
-           AND NOT EXISTS (SELECT 1 FROM announcement_seen s WHERE s.announcement_id = a.id AND s.user_id = ?2)
-         ORDER BY a.id`).bind(now, user.id).all()).results;
+      try { rows = (await query(true)).results; } catch (e) {
+        if (!/repeat_minutes/.test(String(e?.message || e))) throw e; // الترحيل 0031 لم يُطبَّق بعد: بلا تكرار
+        rows = (await query(false)).results;
+      }
     } catch { return json({ ok: true, items: [], shape }); } // الترحيل 0029 لم يُطبَّق
     const emp = await db.prepare('SELECT center_id AS centerId FROM employees WHERE id = ?').bind(user.employeeId).first();
     const bossCache = new Map(); // مرسِل → هل المستخدم في فريقه
@@ -82,10 +88,10 @@ export function registerAnnouncementRoutes(add, kit) {
     return json({ ok: true, items: mine.map((r) => ({ id: r.id, title: r.title, body: r.body, endsAt: r.ends_at, from: r.sender_id != null ? r.fromName || null : null })), shape });
   });
 
-  add('POST', '/api/announcements/:id/seen', async ({ db, user, params }) => {
+  add('POST', '/api/announcements/:id/seen', async ({ env, db, user, params }) => {
     const id = Number(params.id);
-    try {
-      await db.prepare('INSERT OR IGNORE INTO announcement_seen (announcement_id, user_id) SELECT id, ?2 FROM announcements WHERE id = ?1').bind(id, user.id).run();
+    try { // كل مشاهدة تحدّث وقتها: منه يُحسب موعد ظهورها التالي إن كانت متكررة
+      await db.prepare('INSERT INTO announcement_seen (announcement_id, user_id, seen_at) SELECT id, ?2, ?3 FROM announcements WHERE id = ?1 ON CONFLICT(announcement_id, user_id) DO UPDATE SET seen_at = excluded.seen_at').bind(id, user.id, nowOf(env).toISOString()).run();
     } catch { /* الترحيل 0029 لم يُطبَّق */ }
     return json({ ok: true });
   });
@@ -114,7 +120,7 @@ export function registerAnnouncementRoutes(add, kit) {
       } else if (r.audience === 'team') { target = (await teamIds(db, r.sender_id)).length; audienceText = 'فريقه كاملاً'; }
       else if (r.audience === 'employees') { target = ids.length; audienceText = `${ids.length} موظفاً محدَّداً`; }
       const status = r.revoked ? 'revoked' : r.ends_at <= now ? 'ended' : r.starts_at > now ? 'scheduled' : 'live';
-      items.push({ id: r.id, title: r.title, body: r.body, startsAt: r.starts_at, endsAt: r.ends_at, audience: r.audience, audienceText, status, seen: r.seen, target });
+      items.push({ id: r.id, title: r.title, body: r.body, startsAt: r.starts_at, endsAt: r.ends_at, audience: r.audience, audienceText, status, seen: r.seen, target, repeatMinutes: r.repeat_minutes ?? null });
     }
     return json({ ok: true, items });
   });
@@ -158,12 +164,18 @@ export function registerAnnouncementRoutes(add, kit) {
       if (ids.length > 400) return bad('عدد كبير: اختر المركز بدل تحديد الأشخاص');
       if (!admin && ids.some((i) => !team.includes(i))) return forbidden(); // أشخاص من فريقه فقط
     }
+    let repeat = null;
+    if (body.repeatMinutes !== undefined && body.repeatMinutes !== null && body.repeatMinutes !== '') {
+      repeat = Number(body.repeatMinutes);
+      if (!Number.isInteger(repeat) || repeat < 1 || repeat > MAX_HOURS * 60) return bad('زمن التكرار بين دقيقة واحدة وشهر');
+      if (repeat * 60000 >= end.getTime() - start.getTime()) repeat = null; // لا يتسع للتكرار داخل المدة: تظهر مرة واحدة
+    }
     const title = clip(body.title, 80);
     // الرسالة الصادرة من مسؤول فريق أو الموجَّهة لفريق تحمل اسم مرسِلها؛ رسائل الإدارة العامة تبقى «من الإدارة»
     const sender = !admin || audience === 'team' ? user.employeeId : null;
-    const r = await db.prepare('INSERT INTO announcements (title, body, starts_at, ends_at, audience, audience_ids, created_by, sender_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-      .bind(title || null, text, start.toISOString(), end.toISOString(), audience, JSON.stringify(ids), user.email || null, sender).run();
-    await auditStmt(db, user, 'announcement.add', 'announcement', String(r.meta.last_row_id), { audience, startsAt: start.toISOString(), endsAt: end.toISOString(), count: ids.length }).run();
+    const r = await db.prepare('INSERT INTO announcements (title, body, starts_at, ends_at, audience, audience_ids, created_by, sender_id, repeat_minutes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(title || null, text, start.toISOString(), end.toISOString(), audience, JSON.stringify(ids), user.email || null, sender, repeat).run();
+    await auditStmt(db, user, 'announcement.add', 'announcement', String(r.meta.last_row_id), { audience, startsAt: start.toISOString(), endsAt: end.toISOString(), repeat, count: ids.length }).run();
     return json({ ok: true, id: r.meta.last_row_id, startsAt: start.toISOString(), endsAt: end.toISOString() });
   });
 

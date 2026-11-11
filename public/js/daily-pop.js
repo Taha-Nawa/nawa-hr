@@ -61,7 +61,25 @@ function lantern({ kind, label, title, text, source, hint, shape = DEFAULT_SHAPE
   });
 }
 
-/** يعرض الرسائل الإدارية غير المشاهَدة ثم حكمة اليوم (مرة واحدة يومياً لكل مستخدم). force للمعاينة. */
+// الفوانيس تُعرض واحداً بعد واحد: لا يتزاحم فانوس الحكمة مع رسالة وصلت للتوّ.
+let chain = Promise.resolve();
+let running = 0;
+const exclusive = (fn) => {
+  running++;
+  const p = chain.then(fn).finally(() => { running--; });
+  chain = p.catch(() => {});
+  return p;
+};
+
+/** رسائل الإدارة والفريق الواجبة الآن (غير مشاهَدة، أو متكررة حان موعد تكرارها): تُعرض ثم تُسجَّل مشاهدتها. */
+async function showPending(items, shape) {
+  for (const m of items) {
+    await lantern({ kind: 'msg', label: m.from ? `رسالة من ${m.from}` : 'رسالة من الإدارة', title: m.title, text: m.body, hint: 'اضغط لإغلاق الرسالة', shape });
+    post(`/api/announcements/${m.id}/seen`, {}).catch(() => {});
+  }
+}
+
+/** يعرض الرسائل الإدارية الواجبة ثم حكمة اليوم (مرة واحدة يومياً لكل مستخدم). force للمعاينة. */
 export async function dailyPop(user, { force = false, messages = null, preview = false, shape = null } = {}) {
   if (!user) return;
   if (preview) { // معاينة قبل النشر أو الاعتماد: لا تُسجَّل مشاهدة ولا تظهر حكمة اليوم. كل عنصر قد يحمل kind/label/source
@@ -69,17 +87,38 @@ export async function dailyPop(user, { force = false, messages = null, preview =
     return;
   }
   const date = todayLocal();
-  // الرسائل الإدارية أولاً (تُسجَّل مشاهدتها على الخادم فلا تتكرر على أي جهاز)
   let items = messages;
   let chosen = shape;
   if (!items) { try { const r = await get('/api/announcements/active'); items = r.items || []; chosen = chosen || r.shape; } catch { items = []; } }
-  for (const m of items) {
-    await lantern({ kind: 'msg', label: m.from ? `رسالة من ${m.from}` : 'رسالة من الإدارة', title: m.title, text: m.body, hint: 'اضغط لإغلاق الرسالة', shape: chosen });
-    post(`/api/announcements/${m.id}/seen`, {}).catch(() => {});
-  }
-  const key = `nawa.pop.${user.id ?? user.email ?? 'u'}.${date}`;
-  if (!force && seen(key)) return;
-  const item = itemFor(date);
-  markSeen(key, date);
-  await lantern({ kind: item.k, label: KINDS[item.k], text: item.t, source: item.s, hint: 'اضغط لإغلاق', shape: chosen });
+  await exclusive(async () => {
+    await showPending(items, chosen);
+    const key = `nawa.pop.${user.id ?? user.email ?? 'u'}.${date}`;
+    if (!force && seen(key)) return;
+    const item = itemFor(date);
+    markSeen(key, date);
+    await lantern({ kind: item.k, label: KINDS[item.k], text: item.t, source: item.s, hint: 'اضغط لإغلاق', shape: chosen });
+  });
+}
+
+const POLL_MS = 30_000;
+
+/**
+ * متابعة الرسائل أثناء بقاء النظام مفتوحاً: تظهر الرسالة للموظف فور إرسالها دون تحديث الصفحة، وتعود المتكررة في موعدها.
+ * تفحص كل 30 ثانية، وفور عودة التبويب للظهور. تتخطى الفحص إن كان فانوس معروضاً الآن. تعيد دالة إيقاف.
+ */
+export function watchAnnouncements(user) {
+  if (!user) return () => {};
+  let checking = false;
+  const check = async () => {
+    if (checking || running || document.hidden) return;
+    checking = true;
+    try {
+      const r = await get('/api/announcements/active');
+      if ((r.items || []).length) await exclusive(() => showPending(r.items, r.shape));
+    } catch { /* انقطاع شبكة مؤقت: نحاول في الدورة التالية */ } finally { checking = false; }
+  };
+  const timer = setInterval(check, POLL_MS);
+  const onVisible = () => { if (!document.hidden) check(); };
+  document.addEventListener('visibilitychange', onVisible);
+  return () => { clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
 }

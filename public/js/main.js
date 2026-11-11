@@ -1,4 +1,4 @@
-import { dailyPop } from './daily-pop.js';
+import { dailyPop, watchAnnouncements } from './daily-pop.js';
 import { startIdle } from './idle.js';
 import { openPalette, bindPaletteShortcut } from './palette.js';
 import { bellButton } from './bell.js';
@@ -62,6 +62,7 @@ const PAGES = [
 const root = document.getElementById('app');
 let me = null;
 let stopIdle = null; // إيقاف مراقبة الخمول عند الخروج
+let stopWatch = null; // إيقاف متابعة الرسائل عند الخروج
 
 function match(path) {
   for (const p of PAGES) {
@@ -78,6 +79,8 @@ async function showLogin(message, known) {
   me = null;
   stopIdle?.();
   stopIdle = null;
+  stopWatch?.();
+  stopWatch = null;
   const [config, device] = await Promise.all([authConfig(), known ?? deviceInfo()]);
   renderLogin({ root, message, config, device, onDone: startApp });
 }
@@ -89,6 +92,8 @@ const initial = () => ((me.employeeName || me.email || '؟').trim()[0] || '؟').
 async function signOut(message) {
   stopIdle?.();
   stopIdle = null;
+  stopWatch?.();
+  stopWatch = null;
   await logout();
   showLogin(typeof message === 'string' ? message : undefined);
 }
@@ -281,6 +286,8 @@ async function startApp(known = null) {
   showShell();
   route();
   dailyPop(me); // بوب اليوم: يظهر مرة واحدة كل يوم
+  stopWatch?.();
+  stopWatch = watchAnnouncements(me); // رسائل جديدة أو متكررة تصل أثناء فتح النظام
   stopIdle?.();
   stopIdle = startIdle({ user: me, onSignOut: signOut }); // سكون بعد 5 دقائق، وقفل بالـ PIN بعد ساعة ونصف
 }

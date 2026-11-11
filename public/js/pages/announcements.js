@@ -4,6 +4,7 @@ import { get, post, put, del } from '../api.js';
 import { dailyPop } from '../daily-pop.js';
 import { SHAPES, ITEMS, KINDS } from '../daily-pop-lib.js';
 
+const repText = (m) => (m % 60 === 0 ? (m === 60 ? 'ساعة' : m === 120 ? 'ساعتين' : `${m / 60} ساعات`) : m === 1 ? 'دقيقة' : m === 2 ? 'دقيقتين' : `${m} دقائق`);
 const DURATIONS = [[24, '24 ساعة'], [72, '3 أيام'], [168, 'أسبوع'], [336, 'أسبوعان'], [720, 'شهر']];
 const STATUS = { live: ['سارية', 'present'], ended: ['انتهت', 'none'], revoked: ['مسحوبة', 'absent'], scheduled: ['مجدولة', 'late'] };
 const MAX = 400;
@@ -29,6 +30,14 @@ export default async function render({ user }) {
   const fromAt = h('input', { type: 'datetime-local', value: local(soon), 'aria-label': 'يظهر في' });
   const toAt = h('input', { type: 'datetime-local', value: local(new Date(soon.getTime() + 86400000)), 'aria-label': 'يختفي في' });
   const quick = h('div', { class: 'ann-quick' }, DURATIONS.map(([hrs, t]) => h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { const s = new Date(fromAt.value); if (!Number.isNaN(+s)) toAt.value = local(new Date(s.getTime() + hrs * 3600000)); } }, t)));
+  // تكرار الظهور خلال المدة: بدون، أو كل عدد من الدقائق أو الساعات، حتى لا تُنسى الرسالة
+  const repUnit = select([['none', 'بدون تكرار'], ['min', 'دقائق'], ['hour', 'ساعات']], 'none', { 'aria-label': 'وحدة التكرار' });
+  const repN = h('input', { type: 'number', min: '1', max: '720', value: '15', inputmode: 'numeric', 'aria-label': 'كل كم' });
+  const repWrap = h('div', { class: 'ann-repeat' }, h('span', null, 'تكرار الظهور كل'), repN, repUnit);
+  const syncRep = () => { repN.hidden = repUnit.value === 'none'; };
+  repUnit.addEventListener('change', syncRep);
+  syncRep();
+  const repeatMinutes = () => (repUnit.value === 'none' ? null : Math.round(Number(repN.value) * (repUnit.value === 'hour' ? 60 : 1)));
   const aud = h('div', { class: 'seg-tabs', role: 'tablist' });
   const pick = h('div', { class: 'ann-pick' });
   const listBox = h('div', { class: 'ann-list' });
@@ -63,12 +72,13 @@ export default async function render({ user }) {
     }
   }
 
-  const payload = () => ({ title: title.value.trim(), body: body.value.trim(), startsAt: new Date(fromAt.value).toISOString(), endsAt: new Date(toAt.value).toISOString(), audience: st.audience, ids: st.audience === 'team' ? [] : st.audience === 'center' ? [...st.centers] : st.audience === 'employees' ? [...st.people] : [] });
+  const payload = () => ({ title: title.value.trim(), body: body.value.trim(), startsAt: new Date(fromAt.value).toISOString(), endsAt: new Date(toAt.value).toISOString(), repeatMinutes: repeatMinutes(), audience: st.audience, ids: st.audience === 'team' ? [] : st.audience === 'center' ? [...st.centers] : st.audience === 'employees' ? [...st.people] : [] });
   const preview = h('button', { type: 'button', class: 'btn', onclick: () => { if (!body.value.trim()) { toast('اكتب نص الرسالة أولاً', 'err'); return; } dailyPop(user, { preview: true, messages: [{ title: title.value.trim(), body: body.value.trim(), label: admin ? undefined : `رسالة من ${user.employeeName || 'مسؤولك'}` }] }); } }, 'معاينة الفانوس');
   const send = h('button', { type: 'button', class: 'btn btn-primary', onclick: async () => {
     if (Number.isNaN(+new Date(fromAt.value)) || Number.isNaN(+new Date(toAt.value))) { toast('حدّد تاريخ وساعة الظهور والاختفاء', 'err'); return; }
+    if (repUnit.value !== 'none' && !(repeatMinutes() >= 1)) { toast('حدّد زمن التكرار بعدد صحيح', 'err'); return; }
     const p = payload();
-    try { send.disabled = true; await post('/api/announcements', p); toast('نُشرت الرسالة وستظهر للمستهدفين عند فتحهم للنظام'); body.value = ''; title.value = ''; count.textContent = `0 من ${MAX}`; await load(); }
+    try { send.disabled = true; await post('/api/announcements', p); toast('نُشرت الرسالة وستظهر للمستهدفين فور حلول وقتها، وهم في النظام أو عند فتحه'); body.value = ''; title.value = ''; count.textContent = `0 من ${MAX}`; await load(); }
     catch (e) { toast(e.message, 'err'); } finally { send.disabled = false; }
   } }, 'نشر الرسالة');
 
@@ -80,7 +90,7 @@ export default async function render({ user }) {
         h('div', { class: 'ann-top' }, h('span', { class: `chip chip-${g}` }, t), a.title ? h('b', null, a.title) : null,
           a.status === 'live' ? h('button', { type: 'button', class: 'btn btn-sm', onclick: async () => { if (await confirmBox('تُسحب الرسالة فلا تظهر لمن لم يرها بعد. متابعة؟', 'سحب', true)) { await del(`/api/announcements/${a.id}`); toast('سُحبت الرسالة'); load(); } } }, 'سحب') : null),
         h('p', null, a.body),
-        h('p', { class: 'muted small' }, `${a.audienceText} · حتى ${when(a.endsAt)} · شاهدها ${a.seen} من ${a.target}`));
+        h('p', { class: 'muted small' }, `${a.audienceText} · حتى ${when(a.endsAt)} · شاهدها ${a.seen} من ${a.target}${a.repeatMinutes ? ` · تتكرر كل ${repText(a.repeatMinutes)}` : ''}`));
     })) : h('p', { class: 'empty' }, 'لم تُنشر رسائل بعد.'));
   }
 
@@ -97,7 +107,7 @@ export default async function render({ user }) {
       h('h2', null, 'رسالة جديدة'),
       field('العنوان', title), field('نص الرسالة', body, count),
       h('div', null, h('label', { class: 'lbl' }, 'تظهر لـ'), aud, pick),
-      h('div', { class: 'ann-when' }, field('يظهر في', fromAt), field('يختفي في', toAt)), quick,
+      h('div', { class: 'ann-when' }, field('يظهر في', fromAt), field('يختفي في', toAt)), quick, repWrap,
       h('div', { class: 'row-actions' }, preview, send)),
     h('section', { class: 'panel' }, h('h2', null, 'الرسائل المنشورة'), listBox));
 }

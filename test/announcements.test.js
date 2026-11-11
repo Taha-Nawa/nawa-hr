@@ -116,3 +116,35 @@ test('رسائل البوب: وقت ظهور واختفاء محدد (تاريخ
   const later = (await j(env, u.emp2, 'GET', '/api/announcements/active')).body.items;
   assert.equal(later.length, 1);
 });
+
+test('رسائل البوب: التكرار داخل المدة يعيد ظهورها بعد زمنه من آخر مشاهدة، وتنتهي بانتهاء المدة', async () => {
+  const { env, u } = await world();
+  const at = (m) => new Date(Date.parse('2026-11-11T08:00:00Z') + m * 60000).toISOString();
+  const seenIt = (id) => j(env, u.emp2, 'POST', `/api/announcements/${id}/seen`, {});
+  const active = async () => (await j(env, u.emp2, 'GET', '/api/announcements/active')).body.items;
+  assert.equal((await j(env, u.hr, 'POST', '/api/announcements', { body: 'x', audience: 'all', startsAt: at(0), endsAt: at(600), repeatMinutes: 0 })).status, 400);
+  assert.equal((await j(env, u.hr, 'POST', '/api/announcements', { body: 'x', audience: 'all', startsAt: at(0), endsAt: at(600), repeatMinutes: 2.5 })).status, 400);
+  const rep = await j(env, u.hr, 'POST', '/api/announcements', { body: 'تذكير متكرر', audience: 'all', startsAt: at(0), endsAt: at(600), repeatMinutes: 60 });
+  const once = await j(env, u.hr, 'POST', '/api/announcements', { body: 'مرة واحدة', audience: 'all', startsAt: at(0), endsAt: at(600) });
+  assert.equal(rep.status, 200);
+  assert.deepEqual((await active()).map((x) => x.id).sort(), [rep.body.id, once.body.id].sort());
+  await seenIt(rep.body.id); await seenIt(once.body.id);
+  assert.deepEqual(await active(), [], 'بعد المشاهدة تختفي');
+  env.__NOW = at(59);
+  assert.deepEqual(await active(), [], 'قبل مرور ساعة التكرار');
+  env.__NOW = at(61);
+  assert.deepEqual((await active()).map((x) => x.id), [rep.body.id], 'المتكررة تعود والعادية لا');
+  await seenIt(rep.body.id); // وقت المشاهدة الجديد 61
+  env.__NOW = at(100);
+  assert.deepEqual(await active(), []);
+  env.__NOW = at(125);
+  assert.deepEqual((await active()).map((x) => x.id), [rep.body.id]);
+  env.__NOW = at(601);
+  assert.deepEqual(await active(), [], 'بعد انتهاء المدة لا تتكرر');
+  const list = (await j(env, u.hr, 'GET', '/api/announcements')).body.items;
+  assert.equal(list.find((x) => x.id === rep.body.id).repeatMinutes, 60);
+  assert.equal(list.find((x) => x.id === once.body.id).repeatMinutes, null);
+  // تكرار أطول من المدة نفسها = مرة واحدة
+  const long = await j(env, u.hr, 'POST', '/api/announcements', { body: 'قصيرة', audience: 'all', startsAt: at(700), endsAt: at(730), repeatMinutes: 60 });
+  assert.equal((await j(env, u.hr, 'GET', '/api/announcements')).body.items.find((x) => x.id === long.body.id).repeatMinutes, null);
+});
