@@ -31,7 +31,7 @@ const life = (env, who, id, body) => call(env, 'POST', `/api/employees/${id}/lif
 const emp = (db, id) => db.prepare('SELECT status, end_date AS endDate, center_id AS c, manager_id AS m FROM employees WHERE id = ?').bind(id).first();
 
 test('الهيكلية: تحتاج org.read، وتعيد الشجرة وتحليلها', async () => {
-  const { env, u } = await world();
+  const { db, env, u } = await world();
   assert.equal((await call(env, 'GET', '/api/org', { cookie: u.emp3.cookie })).status, 403);
   assert.equal((await call(env, 'GET', '/api/org', { cookie: u.mgr2.cookie })).status, 403);
   const r = await call(env, 'GET', '/api/org', { cookie: u.director.cookie });
@@ -40,6 +40,10 @@ test('الهيكلية: تحتاج org.read، وتعيد الشجرة وتحلي
   assert.equal(r.body.org.stats.active, 5);
   assert.ok(r.body.org.checks.some((c) => c.id === 'manager_no_approver'), 'مدير 1 بلا حساب اعتماد');
   assert.ok(!('email' in r.body.employees[0]), 'لا بريد في الاستجابة');
+  assert.deepEqual(r.body.employees.map((e) => [e.pendingRequests, e.onLeave]).filter(([n, l]) => n || l), []);
+  await db.prepare("INSERT INTO requests (employee_id, kind, purpose, from_date, to_date, days, status, request_date, created_by) VALUES (3, 'leave', 'annual', '2026-11-11', '2026-11-12', 2, 'approved', '2026-11-01', 'x'), (3, 'leave', 'annual', '2026-11-20', '2026-11-20', 1, 'pending', '2026-11-11', 'x')").run();
+  const r2 = (await call(env, 'GET', '/api/org', { cookie: u.director.cookie })).body.employees.find((e) => e.id === 3);
+  assert.deepEqual([r2.pendingRequests, r2.onLeave], [1, true]);
 });
 
 test('المعاينة لا تغيّر شيئاً وتعرض الأثر كاملاً', async () => {

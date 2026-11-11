@@ -36,9 +36,10 @@ export function closeAccessStatements(db, empId) {
 export function registerOrgRoutes(add, kit) {
   const { bad, forbidden, notFound, readJson, auditStmt } = kit;
 
-  add('GET', '/api/org', async ({ db, user }) => {
+  add('GET', '/api/org', async ({ db, user, env }) => {
     if (!can(user, 'org.read')) return forbidden();
-    const [emps, users, centers, badges] = await db.batch([
+    const today = localDate(tzOf(env), nowOf(env));
+    const [emps, users, centers, badges, pend, leave] = await db.batch([
       db.prepare(
         `SELECT e.id, e.code, e.name, e.job_title AS jobTitle, e.center_id AS centerId, c.name AS center, e.manager_id AS managerId, e.status,
                 e.photo_url AS photo, e.contract_type AS contractType, e.start_date AS startDate, e.end_date AS endDate, e.email
@@ -47,13 +48,17 @@ export function registerOrgRoutes(add, kit) {
       db.prepare('SELECT employee_id AS employeeId, email, role, active FROM users'),
       db.prepare('SELECT id, name, active FROM centers ORDER BY id'),
       db.prepare("SELECT employee_id AS employeeId, status FROM badges WHERE status = 'active'"),
+      db.prepare("SELECT employee_id AS id, COUNT(*) AS n FROM requests WHERE status = 'pending' GROUP BY employee_id"),
+      db.prepare("SELECT DISTINCT employee_id AS id FROM requests WHERE status = 'approved' AND kind = 'leave' AND from_date <= ?1 AND to_date >= ?1").bind(today),
     ]);
+    const pendOf = new Map(pend.results.map((r) => [r.id, r.n]));
+    const onLeave = new Set(leave.results.map((r) => r.id));
     const org = analyzeOrg({ employees: emps.results, users: users.results, centers: centers.results, badges: badges.results });
     const roleOf = new Map();
     for (const u of users.results) if (u.employeeId != null && u.active && !roleOf.has(u.employeeId)) roleOf.set(u.employeeId, u.role);
     return json({
       ok: true,
-      employees: emps.results.map(({ email, ...e }) => ({ ...e, hasEmail: !!email, role: roleOf.get(e.id) || null })),
+      employees: emps.results.map(({ email, ...e }) => ({ ...e, hasEmail: !!email, role: roleOf.get(e.id) || null, pendingRequests: pendOf.get(e.id) || 0, onLeave: onLeave.has(e.id) })),
       centers: centers.results,
       org,
     });
