@@ -39,6 +39,8 @@ export const ACTIONS = {
   'header.manage': ['hr', 'admin'], // ترويسة الشعارات للتقرير الشهري
   'insights.read': ['hr', 'director', 'admin'], // تسوية الممولين وسلامة البيانات (قراءة)
   'exception.manage': ['hr', 'admin'], // تسجيل دوام استثنائي في يوم عطلة وإلغاؤه
+  'org.read': ['hr', 'director', 'admin'], // الهيكلية الإدارية وفحص سلامتها
+  'employee.lifecycle': ['hr', 'admin'], // نقل موظف أو إنهاء خدمته أو إعادة تفعيله (يغلق الحساب والبطاقة ويعيد إسناد مرؤوسيه)
   'emergency.manage': ['hr', 'admin'], // إعلان طارئ أثناء الدوام (إخلاء فوري / احتساب اليوم كاملاً) وإلغاؤه
 };
 

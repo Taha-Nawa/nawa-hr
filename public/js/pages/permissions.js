@@ -10,6 +10,7 @@ const LABELS = {
   'audit.read': 'سجل التدقيق', 'volunteer.manage': 'إدارة المتطوعين', 'volunteer.read': 'عرض المتطوعين', 'provider.manage': 'إدارة مزوّدي الخدمة',
   'provider.read': 'عرض مزوّدي الخدمة', 'gates.read': 'حالة البوابات', 'backup.export': 'النسخة الاحتياطية', 'links.manage': 'الروابط', 'balance.manage': 'أرصدة الإجازات',
   'insights.read': 'تسوية الممولين وسلامة البيانات', 'exception.manage': 'الدوام الاستثنائي', 'emergency.manage': 'إعلان طارئ أثناء الدوام',
+  'org.read': 'الهيكلية الإدارية وسلامتها', 'employee.lifecycle': 'نقل موظف أو إنهاء خدمته',
 };
 
 export default async function render() {

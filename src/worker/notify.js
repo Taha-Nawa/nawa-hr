@@ -75,6 +75,27 @@ function dedupe(list, actorEmail) {
     .slice(0, MAX_RECIPIENTS);
 }
 
+/**
+ * لا بريد لمنتهي الخدمة مطلقاً: يُحذف من القائمة كل عنوان يخص موظفاً غير فعّال (ببريده المسجَّل أو بحساب مربوط به).
+ * هذا يسدّ الرجوع إلى بريد سجل الموظف حين لا حساب فعّالاً له.
+ */
+export async function dropDeparted(db, list) {
+  if (!list.length) return list;
+  const gone = new Set(
+    (
+      await db
+        .prepare(
+          `SELECT lower(email) AS e FROM employees WHERE status = 'inactive' AND email IS NOT NULL AND lower(email) IN (SELECT lower(value) FROM json_each(?1))
+           UNION
+           SELECT lower(u.email) FROM users u JOIN employees x ON x.id = u.employee_id AND x.status = 'inactive' WHERE lower(u.email) IN (SELECT lower(value) FROM json_each(?1))`,
+        )
+        .bind(JSON.stringify(list))
+        .all()
+    ).results.map((r) => r.e),
+  );
+  return list.filter((a) => !gone.has(String(a).toLowerCase()));
+}
+
 /** عناوين من يستقبل الإشعار (بلا المُشغِّل نفسه، بلا تكرار، بحدّ أقصى). */
 async function recipientsOf(db, event, r, rules, actorEmail) {
   const emails = (sql, ...p) => emailsOf(db, sql, ...p);
@@ -100,7 +121,7 @@ async function recipientsOf(db, event, r, rules, actorEmail) {
     list = await emails('SELECT email FROM users WHERE active = 1 AND employee_id = ?', r.employee_id);
     if (!list.length && r.employeeEmail) list = [r.employeeEmail];
   }
-  return dedupe(list, actorEmail);
+  return dropDeparted(db, dedupe(list, actorEmail));
 }
 
 /**
@@ -225,7 +246,7 @@ export function notifyPlan(ctx, event, planId, { actor = null } = {}) {
       } else {
         list = await ownerEmails(ctx.db, p.employee_id, p.employeeEmail);
       }
-      const to = dedupe(list, actor);
+      const to = await dropDeparted(ctx.db, dedupe(list, actor));
       if (!to.length) return;
       const m = planMessage(event, p, days, origin);
       let failed = null;

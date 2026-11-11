@@ -1323,3 +1323,21 @@ h2 { font-size: 0.95rem; }
 .mail-tx small { color: var(--muted); direction: ltr; text-align: start; overflow: hidden; text-overflow: ellipsis; }
 
 .retype-list{grid-column:1/-1;max-height:45vh;overflow:auto}
+
+/* الهيكلية الإدارية والإجراء الوظيفي */
+.org-tree { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.org-tree .org-tree { margin-inline-start: 18px; padding-inline-start: 14px; border-inline-start: 2px solid var(--line); margin-top: 8px; }
+.org-row { display: flex; align-items: flex-start; gap: 8px; }
+.org-tg { flex: none; width: 28px; height: 28px; border: 0; background: var(--line-2); border-radius: 8px; cursor: pointer; font: inherit; color: var(--ink-2); margin-top: 8px; }
+.org-leaf { background: transparent; text-align: center; line-height: 28px; cursor: default; color: var(--line); }
+.org-card { flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px 12px; }
+.org-card.org-off { opacity: 0.65; background: var(--row-alt); }
+.org-name { font-weight: 800; color: var(--ink); text-decoration: none; }
+.org-sub { color: var(--muted); font-size: 0.86rem; }
+.org-card .btn { margin-inline-start: auto; }
+.org-centers { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; align-items: start; }
+.lc-box { background: var(--row-alt); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 14px; }
+.lc-impact { margin: 6px 0 0; }
+.lc-check { display: flex; gap: 8px; align-items: center; }
+.lc-hist li { padding: 8px 0; border-bottom: 1px solid var(--line-2); }
+.tools input[type="search"], .tools select { height: 38px; }

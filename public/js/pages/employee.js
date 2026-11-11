@@ -3,6 +3,7 @@ import { get, post, put } from '../api.js';
 import { allocationCheck, MAX_CONCURRENT } from '../allocations-lib.js';
 import { statusChip, groupOf } from './today.js';
 import { employeeForm } from './employees.js';
+import { openLifecycleDialog, historyPanel } from './lifecycle.js';
 import { openManualDialog } from './manual.js';
 import { fmt12 } from '../time12.js';
 import { initials, serviceSpan, activeAllocations, projectSummary, dmy } from '../employee-lib.js';
@@ -77,7 +78,13 @@ export default async function render({ user, params }) {
         projChip)),
     h('div', { class: 'ec-actions' },
       h('a', { href: `#/reports?employee=${emp.id}`, class: 'btn' }, 'التايم شيت'),
-      canEdit ? h('button', { type: 'button', class: 'btn btn-primary', onclick: () => employeeForm({ emp, allocations: allocs, onSaved: () => location.reload() }) }, 'تعديل البيانات') : null));
+      canEdit ? h('button', { type: 'button', class: 'btn btn-primary', onclick: () => employeeForm({ emp, allocations: allocs, onSaved: () => location.reload() }) }, 'تعديل البيانات') : null,
+      canEdit ? h('button', { type: 'button', class: 'btn', onclick: async () => {
+        try {
+          const o = await get('/api/org');
+          openLifecycleDialog({ emp, centers: o.centers, people: o.employees, onDone: () => location.reload() });
+        } catch (e) { toast(e.message, 'err'); }
+      } }, 'إجراء وظيفي') : null));
 
   const cards = h('div', { class: 'ec-grid' },
     group('الوظيفة', 'briefcase', 'red',
@@ -315,6 +322,7 @@ export default async function render({ user, params }) {
       h('button', { type: 'submit', class: 'btn' }, 'تسجيل')));
   }
 
+  const histBox = canEdit ? await historyPanel(emp.id) : null;
   const page = h('div', { class: 'page' },
     hero,
     cards,
@@ -322,6 +330,7 @@ export default async function render({ user, params }) {
     allocBox,
     canEdit ? badgeBox : null,
     canEdit ? excBox : null,
+    histBox,
     h('section', { class: 'panel-plain' }, h('div', { class: 'page-head' }, h('h2', null, 'سجل الدوام'), monthBar), sums, tableBox));
   await Promise.all([loadMonth(), loadBadges(), loadExceptions().catch(() => {}), loadAllocations().catch(() => {})]);
   return page;

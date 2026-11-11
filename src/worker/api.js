@@ -33,6 +33,7 @@ import { registerBackupRoutes } from './backup.js';
 import { registerMonthlyReportRoutes } from './monthly-report.js';
 import { registerWorkLogRoutes } from './work-log.js';
 import { registerManualRoutes } from './manual.js';
+import { registerOrgRoutes, closeAccessStatements } from './org.js';
 import { registerPlanRoutes } from './plans.js';
 import { registerLoginRoutes, resetLoginStatements, DEVICE_COOKIE, clearDeviceCookie } from './login.js';
 
@@ -91,6 +92,7 @@ registerBackupRoutes(add, { bad, readJson, auditStmt });
 registerMonthlyReportRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 registerWorkLogRoutes(add, { bad, forbidden, notFound, readJson });
 registerManualRoutes(add, { bad, forbidden, readJson, auditStmt });
+registerOrgRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 registerPlanRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 const { establish } = registerLoginRoutes(add, { bad, readJson, auditStmt });
 
@@ -281,6 +283,8 @@ add('PATCH', '/api/employees/:id', async ({ request, db, user, params }) => {
   try {
     await db.batch([
       db.prepare(`UPDATE employees SET ${sets.join(', ')} WHERE id = ?`).bind(...vals, id),
+      // غير فعّال ⇒ لا وصول: يُغلق الحساب والجلسات والبطاقات حتى لو عُطّل الموظف من نموذج التعديل لا من «إجراء وظيفي»
+      ...(body.status === 'inactive' && before.status === 'active' ? closeAccessStatements(db, id) : []),
       auditStmt(db, user, 'employee.update', 'employee', id, { changed: Object.keys(body) }),
     ]);
   } catch (e) {
