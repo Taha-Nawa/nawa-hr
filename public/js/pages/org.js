@@ -48,6 +48,9 @@ export default async function render({ user }) {
   let showInactive = false;
   let pendingFit = true;
   let scrollTo = null;
+  let panelMin = false;
+  let panelPos = null;
+  try { panelPos = JSON.parse(localStorage.getItem('nawa.org.panel') || 'null'); } catch { panelPos = null; }
   const open = new Set(data.org.nodes.filter((n) => n.depth !== null && n.depth <= 1).map((n) => n.id));
   const seen = new Set();
   const body = h('div', { class: 'org-body' });
@@ -130,6 +133,17 @@ export default async function render({ user }) {
     if (first) first.scrollIntoView({ block: 'nearest', inline: 'center' });
   }
 
+  // الطباعة: A4 أفقي بهامش 10مم، ويُصغَّر المخطط ليتسع عرضه كاملاً
+  let savedZoom = null;
+  window.addEventListener('beforeprint', () => {
+    if (!canvas || !document.body.contains(canvas)) return;
+    savedZoom = canvas.style.zoom;
+    canvas.style.zoom = '1';
+    const w = canvas.scrollWidth;
+    canvas.style.zoom = String(Math.min(1, 1040 / Math.max(w, 1)));
+  });
+  window.addEventListener('afterprint', () => { if (savedZoom != null && canvas) canvas.style.zoom = savedZoom; savedZoom = null; });
+
   function summaryStrip() {
     const { score, grade } = data.org;
     const ring = document.createElementNS(SVG, 'svg');
@@ -157,6 +171,28 @@ export default async function render({ user }) {
       h('div', { class: 'oc-sum oc-sum-info' }, h('b', null, String(pendingN)), h('span', null, 'طلب معلّق')));
   }
 
+  // بطاقة التفاصيل عائمة: تُسحب من شريطها وتبقى حيث تُترك
+  const floatOk = () => window.matchMedia('(min-width: 901px)').matches;
+  function placePanel(panel, bar) {
+    const W = 340;
+    const clampPos = (x, y) => ({ x: Math.min(Math.max(8, x), Math.max(8, window.innerWidth - W - 8)), y: Math.min(Math.max(8, y), Math.max(8, window.innerHeight - 60)) });
+    const apply = (x, y) => { panel.style.left = `${x}px`; panel.style.top = `${y}px`; panel.style.right = 'auto'; panel.style.bottom = 'auto'; };
+    if (!floatOk()) return;
+    const d = clampPos(panelPos ? panelPos.x : 24, panelPos ? panelPos.y : 96);
+    apply(d.x, d.y);
+    let g = null;
+    bar.addEventListener('pointerdown', (ev) => {
+      if (ev.target.closest('button')) return;
+      g = { dx: ev.clientX - panel.offsetLeft, dy: ev.clientY - panel.offsetTop };
+      bar.setPointerCapture(ev.pointerId);
+      panel.classList.add('moving');
+    });
+    bar.addEventListener('pointermove', (ev) => { if (!g) return; const c = clampPos(ev.clientX - g.dx, ev.clientY - g.dy); apply(c.x, c.y); panelPos = c; });
+    const end = () => { if (!g) return; g = null; panel.classList.remove('moving'); try { localStorage.setItem('nawa.org.panel', JSON.stringify(panelPos)); } catch { /* التخزين غير متاح */ } };
+    bar.addEventListener('pointerup', end);
+    bar.addEventListener('pointercancel', end);
+  }
+
   function panelEl() {
     if (selected == null) return null;
     const e = byId.get(selected);
@@ -166,8 +202,12 @@ export default async function render({ user }) {
     const reps = children.get(selected) || [];
     const chain = pathUp(selected).reverse();
     const link = (id) => h('button', { type: 'button', class: 'oc-link', onclick: () => select(id) }, byId.get(id).name);
-    const panel = h('aside', { class: 'oc-panel', 'aria-label': `تفاصيل ${e.name}` },
-      h('button', { type: 'button', class: 'oc-x', 'aria-label': 'إغلاق', onclick: () => select(null) }, '✕'),
+    const bar = h('div', { class: 'oc-p-bar', title: 'اسحب لتحريك البطاقة' },
+      h('span', { class: 'oc-p-grip', 'aria-hidden': 'true' }, '⠿'),
+      h('b', null, panelMin ? e.name : 'تفاصيل الموظف'),
+      h('button', { type: 'button', class: 'oc-x', 'aria-label': panelMin ? 'توسيع' : 'تصغير', title: panelMin ? 'توسيع' : 'طيّ', onclick: () => { panelMin = !panelMin; draw(); } }, panelMin ? '▢' : '–'),
+      h('button', { type: 'button', class: 'oc-x', 'aria-label': 'إغلاق', title: 'إغلاق (Esc)', onclick: () => select(null) }, '✕'));
+    const inner = h('div', { class: 'oc-p-body' },
       h('div', { class: 'oc-p-head' }, h('span', { class: 'oc-ring acc oc-big' }, photoEl(e)),
         h('div', null, h('h3', null, e.name), h('p', { class: 'muted' }, [e.jobTitle, e.center].filter(Boolean).join(' · ')),
           h('div', { class: 'oc-p-chips' }, h('span', { class: 'chip chip-none', dir: 'ltr' }, e.code), e.status === 'active' ? h('span', { class: 'chip chip-present' }, 'على رأس العمل') : h('span', { class: 'chip chip-absent' }, 'غير فعّال'), e.onLeave ? h('span', { class: 'chip chip-late' }, 'في إجازة اليوم') : null))),
@@ -186,6 +226,8 @@ export default async function render({ user }) {
       h('h4', null, fl.length ? `الملاحظات (${fl.length})` : 'لا ملاحظات'),
       fl.length ? fl.map((f) => h('div', { class: `oc-flag-box oc-${f.level}` }, h('div', null, h('span', { class: `chip ${LEVEL[f.level][0]}` }, SEV_LABEL[f.level]), ' ', h('b', null, f.title)), f.detail ? h('p', null, f.detail) : null, h('p', { class: 'muted' }, f.why), h('p', null, h('b', null, 'المعالجة: '), f.fix)))
         : h('p', { class: 'muted' }, 'بيانات هذا الموظف سليمة في الهيكل.'));
+    const panel = h('aside', { class: `oc-panel${panelMin ? ' min' : ''}`, 'aria-label': `تفاصيل ${e.name}` }, bar, panelMin ? null : inner);
+    placePanel(panel, bar);
     return panel;
   }
 
@@ -226,7 +268,7 @@ export default async function render({ user }) {
     scroller.addEventListener('click', (ev) => { if (moved) { ev.stopPropagation(); ev.preventDefault(); moved = false; } }, true);
     scroller.addEventListener('wheel', (ev) => { if (ev.ctrlKey || ev.metaKey) { ev.preventDefault(); setZoom(zoom + (ev.deltaY < 0 ? 0.08 : -0.08)); } }, { passive: false });
     zoomLabel = h('span', { class: 'oc-zl' }, `${Math.round(zoom * 100)}%`);
-    const wrap = h('div', { class: `oc-wrap${selected != null ? ' has-panel' : ''}` });
+    const wrap = h('div', { class: 'oc-wrap' });
     const tools = h('div', { class: 'tools oc-tools' },
       h('button', { type: 'button', class: 'btn btn-sm', 'aria-label': 'تكبير', onclick: () => setZoom(zoom + 0.1) }, '＋'), zoomLabel,
       h('button', { type: 'button', class: 'btn btn-sm', 'aria-label': 'تصغير', onclick: () => setZoom(zoom - 0.1) }, '－'),
@@ -240,9 +282,9 @@ export default async function render({ user }) {
     wrap.append(
       h('div', { class: 'oc-main' }, tools, h('div', { class: 'oc-legend' }, legend, hiC ? h('button', { type: 'button', class: 'oc-link', onclick: () => { hiC = ''; draw(); } }, 'إلغاء التمييز') : h('span', { class: 'muted' }, 'اضغط مركزاً لتمييز موظفيه')), crumbs,
         roots.length ? scroller : h('div', { class: 'empty' }, h('b', null, 'لا نتائج'), h('p', { class: 'muted' }, 'غيّر البحث أو المرشحات.')),
-        h('p', { class: 'muted oc-hint' }, 'اضغط البطاقة لتفاصيلها، واسم الموظف لفتح ملفه. السحب للتنقل، وCtrl مع العجلة للتكبير. الرقم الملوّن على البطاقة عدد ملاحظاتها.'),
+        h('p', { class: 'muted oc-hint' }, 'اضغط البطاقة لتفتح تفاصيلها في بطاقة عائمة يمكن تحريكها وطيّها وإغلاقها. السحب للتنقل، وCtrl مع العجلة للتكبير.'),
         strayed.length ? h('div', { class: 'notice notice-err' }, h('b', null, 'خرجوا من الخدمة وما زال لهم وصول: '), strayed.map((e, i) => [i ? '، ' : '', h('button', { type: 'button', class: 'oc-link', onclick: () => select(e.id, false) }, e.name)])) : null),
-      panelEl());
+      ...(selected != null ? [panelEl()] : []));
     return wrap;
   }
 
@@ -345,7 +387,7 @@ export default async function render({ user }) {
   });
 
   const s = data.org.stats;
-  const page = h('div', { class: 'page' },
+  const page = h('div', { class: 'page org-page' },
     h('div', { class: 'page-head' }, h('h1', null, 'الهيكلية الإدارية'), h('span', { class: `chip ${GRADE_CLASS[data.org.grade] || 'chip-none'}` }, icon('check'), `${s.active} موظف · ${s.managers} مدير · ${s.levels} مستويات`)),
     summaryStrip(),
     h('div', { class: 'tools' }, tabBar, search, centerSel, flagSel, inact),
