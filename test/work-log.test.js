@@ -157,3 +157,57 @@ test('اقتراحات من الإدخالات السابقة: السجل أول
   assert.deepEqual((await j(env, e3, 'GET', '/api/work-log/suggest')).body.suggestions, []);
   assert.equal((await j(env, adm, 'GET', '/api/work-log/suggest')).status, 403);
 });
+
+// ---------------------------------------------------------------- المشاركة مع المسؤولين (الشجرة الإدارية)
+test('المشاركة: يراها من فوق الموظف في خطه فقط، والخاصة لا تظهر، والموارد البشرية والمسؤول لا يرونها بصفتهم', async () => {
+  const { db, env, e2, e3, mgr, hr, adm } = await world();
+  await db.prepare('UPDATE employees SET manager_id = 2 WHERE id = 4').run(); // 1 ← 2 ← 4، و3 تحت 1 في خط آخر
+  const e4 = await login(db, 'e4@nawaculture.org', 'employee', 4);
+  const add = (b) => j(env, e4, 'POST', '/api/work-log', { kind: 'done', date: '2026-11-02', ...b });
+  const shared = (await add({ title: 'مشاركة افتراضياً' })).body.entry;
+  assert.equal(shared.shared, true);
+  const priv = (await add({ title: 'خاص', shared: false })).body.entry;
+  assert.equal(priv.shared, false);
+  const team = (who) => j(env, who, 'GET', '/api/work-log/team?month=2026-11');
+  for (const who of [e2, mgr]) {
+    const t = await team(who);
+    assert.deepEqual(t.body.entries.map((x) => x.title), ['مشاركة افتراضياً'], 'المباشر وغير المباشر');
+    assert.equal(t.body.members.some((m) => m.id === 4), true);
+  }
+  for (const who of [e3, hr, adm]) assert.deepEqual((await team(who)).body.entries, [], 'خط آخر أو بلا صفة إدارية');
+  assert.equal((await team(e4)).body.members.length, 0, 'لا مرؤوسين');
+  // الملاحظات: لمن فوقه فقط وللمشاركة فقط
+  assert.equal((await j(env, e3, 'POST', `/api/work-log/${shared.id}/notes`, { note: 'x' })).status, 403);
+  assert.equal((await j(env, mgr, 'POST', `/api/work-log/${priv.id}/notes`, { note: 'x' })).status, 404);
+  assert.equal((await j(env, mgr, 'POST', `/api/work-log/${shared.id}/notes`, { note: '  ' })).status, 400);
+  const n = await j(env, mgr, 'POST', `/api/work-log/${shared.id}/notes`, { note: 'وضّح النتيجة' });
+  assert.equal(n.status, 201);
+  let mine = (await j(env, e4, 'GET', '/api/work-log?month=2026-11')).body.entries.find((x) => x.id === shared.id);
+  assert.equal(mine.notes[0].status, 'open');
+  assert.equal(mine.notes[0].author, 'المديرة');
+  // تعديل شكلي للمشاركة وحدها لا يعني معالجة الملاحظة
+  await j(env, e4, 'PATCH', `/api/work-log/${shared.id}`, { shared: true });
+  mine = (await j(env, e4, 'GET', '/api/work-log?month=2026-11')).body.entries.find((x) => x.id === shared.id);
+  assert.equal(mine.notes[0].status, 'open');
+  // تعديل المحتوى ← «تم التعديل»
+  await j(env, e4, 'PATCH', `/api/work-log/${shared.id}`, { title: 'مشاركة افتراضياً — موضّحة' });
+  mine = (await j(env, e4, 'GET', '/api/work-log?month=2026-11')).body.entries.find((x) => x.id === shared.id);
+  assert.equal(mine.notes[0].status, 'addressed');
+  const seen = (await team(mgr)).body;
+  assert.equal(seen.entries[0].notes[0].status, 'addressed');
+  assert.equal(seen.members.find((m) => m.id === 4).toReview, 1);
+  // الاعتماد: كاتب الملاحظة وحده
+  assert.equal((await j(env, e2, 'POST', `/api/work-log-notes/${n.body.id}/close`)).status, 403);
+  assert.equal((await j(env, mgr, 'POST', `/api/work-log-notes/${n.body.id}/close`)).status, 200);
+  assert.equal((await team(mgr)).body.entries[0].notes[0].status, 'closed');
+  // الردّ دون تعديل
+  const n2 = await j(env, mgr, 'POST', `/api/work-log/${shared.id}/notes`, { note: 'ملاحظة ثانية' });
+  assert.equal((await j(env, e3, 'POST', `/api/work-log/${shared.id}/addressed`, { reply: 'x' })).status, 403);
+  assert.equal((await j(env, e4, 'POST', `/api/work-log/${shared.id}/addressed`, { reply: 'تم التوضيح شفهياً' })).status, 200);
+  assert.equal((await team(mgr)).body.entries[0].notes.find((x) => x.id === n2.body.id).reply, 'تم التوضيح شفهياً');
+  // إلغاء المشاركة يخفيه عن المسؤول، وحذفه يحذف ملاحظاته
+  await j(env, e4, 'PATCH', `/api/work-log/${shared.id}`, { shared: false });
+  assert.deepEqual((await team(mgr)).body.entries, []);
+  assert.equal((await j(env, e4, 'DELETE', `/api/work-log/${shared.id}`)).status, 200);
+  assert.equal(await db.prepare('SELECT COUNT(*) AS n FROM work_log_notes').first('n'), 0);
+});

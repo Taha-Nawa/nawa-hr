@@ -1526,3 +1526,21 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
 .ms-bar-fill { display: block; height: 100%; border-radius: 99px; background: #a21008; }
 .ms-bal h3, .ms-req h3 { margin: 0 0 8px; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
 @media (max-width: 700px) { .ms-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ms-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* مشاركة السجل اليومي وملاحظات المسؤول */
+.wl-vis { font-size: 0.78rem; color: var(--muted); }
+.wl-note { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--line); border-inline-start: 4px solid #e6a901; border-radius: 10px; background: var(--surface); }
+.wl-note-addressed { border-inline-start-color: #2f7d4f; }
+.wl-note-closed { border-inline-start-color: var(--line); opacity: 0.8; }
+.wl-note p { margin: 0; }
+.wl-note-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px !important; }
+.wl-note-text { white-space: pre-line; overflow-wrap: anywhere; }
+.wl-note-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px !important; }
+.wlt-members { display: flex; flex-wrap: wrap; gap: 8px; }
+.wlt-member { display: inline-flex; align-items: center; gap: 6px; }
+.wlt-member.on { background: var(--red, #a21008); color: #fff; border-color: transparent; }
+.wlt-count { font-size: 0.78rem; opacity: 0.85; }
+.wlt-person { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0; }
+.wlt-note-form { display: flex; gap: 6px; margin-top: 8px; }
+.wlt-note-form input { flex: 1; min-width: 0; }
+.wl-fields input[type="checkbox"] { width: auto; }

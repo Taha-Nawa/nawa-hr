@@ -27,6 +27,7 @@ const PAGES = [
   { path: 'monthly-report/:id/:month', title: 'التقرير الشهري', roles: ALL, nav: 'monthly-report', load: () => import('./pages/monthly-report.js') },
   { path: 'monthly-report/:id/:month/print', title: 'طباعة التقرير الشهري', roles: ALL, nav: 'monthly-report', load: () => import('./pages/monthly-report-print.js') },
   { path: 'work-log', group: 'work', title: 'ماذا أنجزت اليوم', icon: 'check', roles: ALL, load: () => import('./pages/work-log.js') },
+  { path: 'work-log/team', title: 'متابعة الفريق', roles: ALL, nav: 'work-log', load: () => import('./pages/work-log-team.js') },
   { path: 'work-log/:month', title: 'ماذا أنجزت اليوم', roles: ALL, nav: 'work-log', load: () => import('./pages/work-log.js') },
   { path: 'reports', group: 'work', title: 'التقارير', short: 'التقارير', icon: 'report', tab: true, roles: ALL, load: () => import('./pages/reports.js') },
   { path: 'timesheet-preview', title: 'معاينة التايم شيت', roles: ALL, nav: 'reports', load: () => import('./pages/timesheet-preview.js') },

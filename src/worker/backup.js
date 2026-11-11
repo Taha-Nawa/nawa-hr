@@ -23,7 +23,7 @@ export const BACKUP_TABLES = [
 ];
 // work_log: ملاحظات عمل يومية خاصة بأصحابها (قرار 6.19) ومسودات التقارير خاصة بأصحابها أيضاً: لا تدخل ملفاً يحمله المسؤول.
 // تبقى محمية بسجل الاسترجاع الزمني (Time Travel) داخل Cloudflare 30 يوماً؛ وما قدّمه الموظف من تقارير يُنسخ.
-export const BACKUP_EXCLUDED = ['sessions', 'auth_nonces', 'trusted_devices', 'user_pins', 'email_codes', 'auth_meta', 'work_log', 'report_reminders', 'provider_alerts', 'maternity_reminders'];
+export const BACKUP_EXCLUDED = ['sessions', 'auth_nonces', 'trusted_devices', 'user_pins', 'email_codes', 'auth_meta', 'work_log', 'work_log_notes', 'report_reminders', 'provider_alerts', 'maternity_reminders'];
 // جداول تُنسخ جزئياً: شرط SQL ثابت (لا مدخلات مستخدم) يطبَّق على العدّ والصفحات معاً.
 export const BACKUP_FILTERS = { monthly_reports: "status = 'submitted'" };
 // أعمدة لا تُصدَّر (بصمات رموز). بعد الاسترجاع تُعاد إصدار رموز الأجهزة من صفحة «أجهزة البوابة».

@@ -1,5 +1,5 @@
 // «ماذا أنجزت اليوم»: سجل يومي سريع (إنجاز / اجتماع / تدريب أو نشاط خارجي / مهمة قادمة).
-// خاص بصاحبه؛ يستورد منه محرّر التقرير الشهري بنقرة، فلا يُكتب التقرير من الذاكرة آخر الشهر.
+// لصاحبه ويظهر لمسؤوليه في الشجرة الإدارية إن شاء؛ يستورد منه محرّر التقرير الشهري بنقرة، فلا يُكتب التقرير من الذاكرة آخر الشهر.
 import { h, clear, toast, confirmBox, dialog, icon, todayLocal, longDate } from '../dom.js';
 import { get, post, patch, del } from '../api.js';
 import { monthLabel, shiftMonthStr, STATUS_SUGGESTIONS, IMPORTANCE_SUGGESTIONS, dmy } from '../monthly-report-lib.js';
@@ -54,6 +54,9 @@ function entryForm({ vals, today, onSubmit, submitLabel, submitIcon = null, show
       fields.append(mk('place', 'المكان', { type: 'text', maxlength: LIM.place }),
         mk('details', 'ملخص (اختياري)', { type: 'text', maxlength: LIM.details, fcls: 'wl-wide' }));
     }
+    fields.append(h('label', { class: 'check wl-wide' },
+      h('input', { type: 'checkbox', checked: vals.shared !== false, onchange: (e) => { vals.shared = e.target.checked; } }),
+      ' أظهرها لمسؤولي المباشر (مسؤولو خطّك في الشجرة الإدارية فقط، دون الموارد البشرية)'));
   }
 
   function drawKinds() {
@@ -85,7 +88,7 @@ function entryForm({ vals, today, onSubmit, submitLabel, submitIcon = null, show
   };
 }
 
-const fresh = (kind, date) => ({ kind, date, title: '', status: '', details: '', place: '', importance: '', endDate: '' });
+const fresh = (kind, date) => ({ kind, date, title: '', status: '', details: '', place: '', importance: '', endDate: '', shared: true });
 
 export default async function render({ user, params }) {
   const today = todayLocal();
@@ -97,6 +100,7 @@ export default async function render({ user, params }) {
   const summary = h('p', { class: 'muted small', role: 'status' });
   const monthTitle = h('p', { class: 'sub' });
   const reportLink = h('a', { class: 'btn', href: '#' }, icon('report'), 'تقريري الشهري');
+  const teamLink = h('a', { class: 'btn', href: '#/work-log/team', hidden: true }, icon('users'), 'متابعة الفريق');
   let entries = [];
   let form;
   let suggestions = [];
@@ -109,6 +113,7 @@ export default async function render({ user, params }) {
   function metaLine(e) {
     const bits = [];
     if (e.kind === 'done') bits.push(h('span', { class: 'chip chip-off' }, e.status));
+    bits.push(h('span', { class: 'wl-vis' }, e.shared ? 'مرئي لمسؤولك' : 'خاص بك'));
     if (e.place) bits.push(h('span', null, `المكان: ${e.place}`));
     if (e.kind === 'todo') {
       if (e.importance) bits.push(h('span', null, `الأهمية: ${e.importance}`));
@@ -132,13 +137,33 @@ export default async function render({ user, params }) {
           h('div', { class: 'wl-body' },
             h('p', { class: 'wl-text' }, e.title),
             metaLine(e).length ? h('p', { class: 'muted small wl-meta' }, ...metaLine(e)) : null,
-            e.details ? h('p', { class: 'muted small wl-meta' }, e.details) : null),
+            e.details ? h('p', { class: 'muted small wl-meta' }, e.details) : null,
+            ...(e.notes || []).map((n) => noteBox(e, n))),
           h('div', { class: 'wl-actions' },
             e.kind === 'todo' ? h('button', { type: 'button', class: 'btn btn-sm', onclick: () => finishTodo(e) }, icon('check'), 'أنجزتها') : null,
             e.kind !== 'todo' && e.date !== today ? h('button', { type: 'button', class: 'btn btn-sm', title: 'نسخ هذا السطر إلى اليوم', onclick: () => repeatEntry(e) }, 'كرّر اليوم') : null,
             h('button', { type: 'button', class: 'btn btn-sm', onclick: () => editEntry(e) }, 'تعديل'),
             h('button', { type: 'button', class: 'btn btn-sm btn-danger-ghost', 'aria-label': `حذف: ${e.title}`, onclick: () => removeEntry(e) }, icon('trash')))))))); 
     }
+  }
+
+  const NOTE_STATUS = { open: ['ملاحظة جديدة من مسؤولك', 'chip-late'], addressed: ['بانتظار اعتماد المسؤول', 'chip-present'], closed: ['اعتُمد', 'chip-off'] };
+  function noteBox(e, n) {
+    const [label, cls] = NOTE_STATUS[n.status] || [n.status, 'chip-off'];
+    return h('div', { class: `wl-note wl-note-${n.status}` },
+      h('p', { class: 'wl-note-head' }, h('strong', null, n.author), h('span', { class: `chip ${cls}` }, label)),
+      h('p', { class: 'wl-note-text' }, n.note),
+      n.reply ? h('p', { class: 'muted small' }, `ردّك: ${n.reply}`) : null,
+      n.status === 'open' ? h('div', { class: 'wl-note-actions' },
+        h('button', { type: 'button', class: 'btn btn-sm', onclick: () => editEntry(e) }, 'عدّل السطر'),
+        h('button', { type: 'button', class: 'btn btn-sm', onclick: () => replyNote(e) }, 'ردّ دون تعديل')) : null);
+  }
+  function replyNote(e) {
+    const t = h('textarea', { rows: '3', maxlength: '500', placeholder: 'ردّك على ملاحظة المسؤول (اختياري)', 'aria-label': 'الردّ' });
+    const d = dialog({ title: 'ردّ على الملاحظة', content: h('form', { class: 'form-grid', onsubmit: async (ev) => {
+      ev.preventDefault();
+      try { await post(`/api/work-log/${e.id}/addressed`, { reply: t.value }); d.close(); toast('وصل ردّك للمسؤول'); await load(); } catch (err) { toast(err.message, 'err'); }
+    } }, h('div', { class: 'span-all' }, t), h('div', { class: 'dlg-actions span-all' }, h('button', { type: 'button', class: 'btn', onclick: () => d.close() }, 'إلغاء'), h('button', { type: 'submit', class: 'btn btn-primary' }, 'إرسال'))) });
   }
 
   async function load() {
@@ -170,7 +195,7 @@ export default async function render({ user, params }) {
     const ev = { ...fresh(e.kind, e.date), ...Object.fromEntries(Object.entries(e).map(([k, x]) => [k, x ?? ''])) };
     const f = entryForm({ vals: ev, today, submitLabel: 'حفظ التعديل', onSubmit: async (v) => {
       try {
-        await patch(`/api/work-log/${e.id}`, { kind: v.kind, date: v.date, title: v.title, status: v.status, details: v.details, place: v.place, importance: v.importance, endDate: v.endDate });
+        await patch(`/api/work-log/${e.id}`, { kind: v.kind, date: v.date, title: v.title, status: v.status, details: v.details, place: v.place, importance: v.importance, endDate: v.endDate, shared: v.shared !== false });
         d.close();
         toast('حُفظ التعديل');
         await load();
@@ -218,12 +243,13 @@ export default async function render({ user, params }) {
   const root = h('div', { class: 'page wl-page' },
     h('header', { class: 'page-head' },
       h('div', null, h('h1', null, 'ماذا أنجزت اليوم'), monthTitle),
-      h('div', { class: 'page-actions' }, nav, reportLink)),
+      h('div', { class: 'page-actions' }, nav, teamLink, reportLink)),
     h('section', { class: 'panel wl-add' },
       h('h2', null, 'سطر جديد'),
-      h('p', { class: 'muted small' }, 'اكتب ما أنجزته أو حضرته أو ما ستعمل عليه. هذا السجل لك وحدك؛ تستورد منه إلى تقريرك الشهري بنقرة، وتقدّم التقرير متى شئت.'),
+      h('p', { class: 'muted small' }, 'اكتب ما أنجزته أو حضرته أو ما ستعمل عليه. هذا السجل لك، ويراه مسؤولوك في خطّك الإداري ما دمتَ تُبقي خيار الإظهار (وتستطيع إلغاءه لأي سطر)؛ تستورد منه إلى تقريرك الشهري بنقرة، وتقدّم التقرير متى شئت.'),
       form.el),
     summary, list);
+  get(`/api/work-log/team?month=${month}`).then((r) => { if (r.members?.length) { teamLink.hidden = false; const n = r.members.reduce((a, m) => a + (m.toReview || 0), 0); if (n) teamLink.append(` (${n} بانتظار اعتمادك)`); } }).catch(() => {});
   await load();
   return root;
 }
