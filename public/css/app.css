@@ -862,9 +862,9 @@ table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; w
 
 /* بطاقة المزوّد: 85.6×54 مم (حجم بطاقة بنكية). يمين: البيانات، يسار: الرمز */
 .id-sheet { display: flex; flex-wrap: wrap; gap: 8mm; justify-content: center; padding: 6px 0; }
-.id-card { --brand: #920000; --brand-2: #c8102e; width: 85.6mm; height: 54mm; box-sizing: border-box; display: flex; flex-direction: column; background: #fff; color: #1c0f0c; border: 0.25mm solid #d9c9c4; border-radius: 3mm; overflow: hidden; break-inside: avoid; font-family: "Sakkal Majalla", "Form Fallback", "Traditional Arabic", serif; line-height: 1.25; -webkit-print-color-adjust: exact; print-color-adjust: exact; position: relative; }
-.id-card.id-volunteer { --brand: #3f5a24; --brand-2: #5d7f36; }
-.id-card.id-provider { --brand: #1f4a7a; --brand-2: #34699f; }
+.id-card { --brand: #a21008; --brand-2: #c8281c; width: 85.6mm; height: 54mm; box-sizing: border-box; display: flex; flex-direction: column; background: #fff; color: #1c0f0c; border: 0.25mm solid #d9c9c4; border-radius: 3mm; overflow: hidden; break-inside: avoid; font-family: "Sakkal Majalla", "Form Fallback", "Traditional Arabic", serif; line-height: 1.25; -webkit-print-color-adjust: exact; print-color-adjust: exact; position: relative; }
+.id-card.id-volunteer { --brand: #3f5a24; --brand-2: #5f8a34; }
+.id-card.id-provider { --brand: #8a5d00; --brand-2: #e6a901; }
 .id-head { display: flex; align-items: center; gap: 2mm; padding: 1.8mm 3.2mm; background: linear-gradient(100deg, var(--brand), var(--brand-2)); color: #fff; flex: none; }
 .id-head img { width: 8mm; height: 9.8mm; flex: none; background: #fff; border-radius: 99px 99px 0.7mm 0.7mm; padding: 0.7mm; object-fit: contain; box-sizing: border-box; }
 .id-head > div { flex: 1; min-width: 0; text-align: center; }
