@@ -19,7 +19,7 @@ export function cardSheet(make, copies, orient) {
   return Array.from({ length: copies }, () => kinds.map((o) => make(o))).flat();
 }
 
-/** kind: employee|volunteer|provider — line: المسمى/الخدمة والمركز — valid: نص الصلاحية (اختياري) */
+/** kind: employee|volunteer|provider — line: نص أو مصفوفة أسطر (المسمى/الخدمة في سطر والمركز في سطر) — valid: نص الصلاحية (اختياري) */
 export function idCard({ kind, name, line, code, valid, qr, orientation = 'landscape' }) {
   return h('article', { class: `id-card id-${kind}${valid ? ' id-tall' : ''}${orientation === 'portrait' ? ' id-portrait' : ''}`, 'aria-label': `بطاقة ${name}` },
     h('div', { class: 'id-qrp' }, h('div', { class: 'id-qr' }, qr.cloneNode(true))),
@@ -27,7 +27,7 @@ export function idCard({ kind, name, line, code, valid, qr, orientation = 'lands
       h('header', { class: 'id-brand' }, h('img', { src: '/logo.png', alt: '' }), h('span', null, 'جمعية نوى للثقافة والفنون')),
       h('div', { class: 'id-who' },
         h('h2', { class: 'id-name' }, shortName(name)),
-        h('p', { class: 'id-meta' }, line || ''),
+        ...[].concat(line || []).filter(Boolean).map((l, i) => h('p', { class: `id-meta${i ? ' id-place' : ''}` }, l)),
         valid ? h('p', { class: 'id-valid' }, valid) : null),
       h('footer', { class: `id-foot${code ? '' : ' id-nocode'}` }, h('em', { class: 'id-kind' }, KIND[kind] || ''), code ? h('span', { class: 'id-code', dir: 'ltr' }, code) : null)));
 }

@@ -4,7 +4,7 @@ import { get, post } from '../api.js';
 import { qrSvg } from '../qr.js';
 import { idCard, cardSheet, ORIENT_OPTIONS } from '../id-card.js';
 
-const cardEl = (e, qr, orientation) => idCard({ kind: 'employee', name: e.name, line: [e.jobTitle, e.center].filter(Boolean).join(' · '), code: e.code, qr, orientation });
+const cardEl = (e, qr, orientation) => idCard({ kind: 'employee', name: e.name, line: [e.jobTitle, e.center], code: e.code, qr, orientation });
 
 export default async function render({ params }) {
   const id = Number(params.id);
