@@ -134,3 +134,41 @@ test('التذكير: بعيد عن العودة لا يُرسل شيئاً', as
   env.__MAILER = { send: async () => { throw new Error('must not send'); } };
   assert.equal((await maternityReminders(env)).sent, 0);
 });
+
+// ---------------------------------------------------------------- الإجازات الخاصة
+import { validateSpecial, datesOf as spDates, isSpecialLeave } from '../src/engine/special-leaves.js';
+
+test('الإجازات الخاصة: التحقق (الوفاة بصلة درجة أولى وافتراضي 3، الحج والعلاج بعدد صريح)', () => {
+  assert.equal(validateSpecial({ kind: 'bereavement', fromDate: '2026-03-02', relation: 'أب' }).value.days, 3);
+  assert.ok(validateSpecial({ kind: 'bereavement', fromDate: '2026-03-02', relation: 'عم' }).error, 'ليس من الدرجة الأولى');
+  assert.ok(validateSpecial({ kind: 'hajj', fromDate: '2026-03-02' }).error, 'الحج بلا عدد');
+  assert.equal(validateSpecial({ kind: 'hajj', fromDate: '2026-03-02', days: 21 }).value.days, 21);
+  assert.ok(validateSpecial({ kind: 'x', fromDate: '2026-03-02', days: 2 }).error);
+  assert.equal(spDates({ fromDate: '2026-03-02', days: 3 }).join(), '2026-03-02,2026-03-03,2026-03-04');
+  assert.ok(isSpecialLeave('إجازة حج') && isSpecialLeave('إجازة وضع') && !isSpecialLeave('إجازة سنوية'));
+});
+
+test('التايم شيت: الإجازة الخاصة في صف Others لا السنوية ولا المرضية', () => {
+  const days = { '2026-10-04': { dayType: 'عمل', approvedHours: 0, leaveType: 'إجازة علاج طويلة' }, '2026-10-05': { dayType: 'عمل', approvedHours: 0, leaveType: 'إجازة حج' } };
+  const t = buildTimesheet({ year: 2026, month: 10, days, allocations: [{ funder: 'F', share: 1, from: '2026-01-01', to: '2030-12-31' }], dayHours: 6.5 });
+  assert.equal(t.others.values[3], 7.5);
+  assert.equal(t.others.values[4], 7.5);
+  assert.equal(t.sick.values[3], null);
+  assert.equal(t.annual.values[3], null);
+});
+
+test('واجهة الإجازات الخاصة: صلاحيات، تسجيل، تداخل، حذف', async () => {
+  const { db, env, u } = await world();
+  const body = { kind: 'bereavement', fromDate: '2026-03-02', relation: 'أم' };
+  assert.equal((await j(env, u.emp, 'POST', '/api/employees/2/special-leaves', body)).status, 403);
+  assert.equal((await j(env, u.dir, 'GET', '/api/employees/2/special-leaves')).status, 403);
+  const c = await j(env, u.hr, 'POST', '/api/employees/2/special-leaves', body); // موظف (غير أنثى): مسموح
+  assert.equal(c.status, 201, JSON.stringify(c.body));
+  const n = () => db.prepare("SELECT COUNT(*) AS n FROM day_overrides WHERE employee_id = 2 AND leave_type = 'إجازة وفاة'").first('n');
+  assert.equal(await n(), 3);
+  assert.equal((await j(env, u.hr, 'POST', '/api/employees/2/special-leaves', { ...body, fromDate: '2026-03-03' })).status, 400, 'تداخل');
+  const g = await j(env, u.admin, 'GET', '/api/employees/2/special-leaves');
+  assert.equal(g.body.records[0].toDate, '2026-03-04');
+  assert.equal((await j(env, u.hr, 'DELETE', `/api/special-leaves/${c.body.id}`)).status, 200);
+  assert.equal(await n(), 0);
+});

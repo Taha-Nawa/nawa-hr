@@ -393,6 +393,58 @@ export default async function render({ user, params }) {
       } }, field('تاريخ الولادة', delivery), field('عدد الأيام التقويمية', days), field('ملاحظة', note), h('button', { type: 'submit', class: 'btn' }, 'تسجيل إجازة الوضع')));
   }
 
+  // الإجازات الخاصة: حج / وفاة قريب من الدرجة الأولى / علاج طويل (للموارد البشرية والمسؤول)
+  const spBox = h('section', { class: 'panel' });
+  const RELS = ['أب', 'أم', 'ابن', 'ابنة', 'زوج', 'زوجة'];
+  async function loadSpecial() {
+    if (!canEdit) return;
+    const { records, kinds } = await get(`/api/employees/${id}/special-leaves`);
+    const kind = h('select', { 'aria-label': 'نوع الإجازة' }, kinds.map((k) => h('option', { value: k.kind }, k.label)));
+    const from = h('input', { type: 'date', required: true, 'aria-label': 'تاريخ البداية' });
+    const days = h('input', { type: 'number', min: '1', max: '365', inputmode: 'numeric', 'aria-label': 'عدد الأيام' });
+    const rel = h('select', { 'aria-label': 'صلة القرابة' }, RELS.map((r) => h('option', { value: r }, r)));
+    const relField = field('صلة القرابة (الدرجة الأولى)', rel);
+    const note = h('input', { maxlength: '200', placeholder: 'ملاحظة / رقم القرار (اختياري)', 'aria-label': 'ملاحظة' });
+    const sync = () => {
+      const k = kinds.find((x) => x.kind === kind.value);
+      relField.hidden = kind.value !== 'bereavement';
+      days.value = k?.defaultDays ?? '';
+      days.placeholder = k?.defaultDays ? '' : 'حدّد العدد';
+    };
+    kind.onchange = sync;
+    sync();
+    clear(spBox).append(
+      h('h2', null, 'إجازات خاصة (حج / وفاة / علاج طويل)'),
+      h('p', { class: 'muted' }, 'أيام تقويمية من تاريخ البداية، لا تُخصم من أي رصيد، وتظهر كاملة في صف Others بالتايم شيت. الوفاة لقريب من الدرجة الأولى، وعدد أيام الحج يحدَّد عند التسجيل، والعلاج الطويل بقرار الموارد البشرية والإدارة.'),
+      records.length
+        ? h('ul', { class: 'plain' }, records.map((r) => h('li', { class: 'badge-row' },
+          h('strong', null, r.label),
+          h('span', { class: 'muted' }, `${dmy(r.fromDate)} ← ${dmy(r.toDate)} · ${r.days} يوماً${r.relation ? ` · ${r.relation}` : ''}${r.note ? ` · ${r.note}` : ''}`),
+          h('button', { type: 'button', class: 'btn btn-sm btn-danger-ghost', onclick: async () => {
+            if (!(await confirmBox('حذف هذه الإجازة؟ تُزال أيامها ويُعاد حساب الأيام.', 'حذف', true))) return;
+            try {
+              await del(`/api/special-leaves/${r.id}`);
+              toast('حُذفت الإجازة');
+              loadSpecial();
+              loadMonth();
+            } catch (e) {
+              toast(e.message, 'err');
+            }
+          } }, 'حذف'))))
+        : h('p', { class: 'muted' }, 'لا إجازات خاصة مسجّلة.'),
+      h('form', { class: 'inline-form', onsubmit: async (e) => {
+        e.preventDefault();
+        try {
+          await post(`/api/employees/${id}/special-leaves`, { kind: kind.value, fromDate: from.value, days: Number(days.value), relation: rel.value, note: note.value });
+          toast('سُجّلت الإجازة');
+          loadSpecial();
+          loadMonth();
+        } catch (ex) {
+          toast(ex.message, 'err');
+        }
+      } }, field('النوع', kind), field('من تاريخ', from), field('عدد الأيام التقويمية', days), relField, field('ملاحظة', note), h('button', { type: 'submit', class: 'btn' }, 'تسجيل الإجازة')));
+  }
+
   const histBox = canEdit ? await historyPanel(emp.id) : null;
   const page = h('div', { class: 'page' },
     hero,
@@ -402,8 +454,9 @@ export default async function render({ user, params }) {
     canEdit ? badgeBox : null,
     canEdit ? excBox : null,
     canEdit ? matBox : null,
+    canEdit ? spBox : null,
     histBox,
     h('section', { class: 'panel-plain' }, h('div', { class: 'page-head' }, h('h2', null, 'سجل الدوام'), monthBar), sums, tableBox));
-  await Promise.all([loadMonth(), loadBadges(), loadExceptions().catch(() => {}), loadMaternity().catch(() => {}), loadAllocations().catch(() => {})]);
+  await Promise.all([loadMonth(), loadBadges(), loadExceptions().catch(() => {}), loadMaternity().catch(() => {}), loadSpecial().catch(() => {}), loadAllocations().catch(() => {})]);
   return page;
 }

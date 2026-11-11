@@ -21,6 +21,7 @@
 
 import { isDate } from '../worker/util.js';
 
+import { isSpecialLeave } from './special-leaves.js';
 export const TIMESHEET_DAY_HOURS = 7.5; // F الافتراضي = 6.5 + 1
 export const MAX_FUNDER_ROWS = 6;
 export const EMERGENCY_HOURS = 1; // X الافتراضي
@@ -128,7 +129,7 @@ export function buildTimesheet({ year, month, days, allocations, dayHours, confi
     const dt = row ? row.dayType : '';
     const leave = row?.leaveType || '';
     const isSick = leave.includes('مرض');
-    const isMat = leave.includes('وضع'); // إجازة الوضع تظهر في صف Others
+    const isMat = isSpecialLeave(leave); // الوضع والحج والوفاة والعلاج الطويل: صف Others بدل السنوية
     const mh = row && wk > 0 ? num(row.matHours) : 0; // ساعة الأمومة (في صف Others)
 
     const hf = hoursFor(date, config, dayHours);

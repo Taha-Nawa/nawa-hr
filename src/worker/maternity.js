@@ -18,7 +18,7 @@ import {
 
 const DEFAULT_ORIGIN = 'https://nawa-hr.nawa-attendance.workers.dev';
 const MAX_MAILS = 20;
-const OVERRIDE_UPSERT = `
+export const OVERRIDE_UPSERT = `
   INSERT INTO day_overrides (employee_id, date, leave_type, reason, updated_by)
   SELECT ?1, value, ?2, ?3, ?4 FROM json_each(?5) WHERE true
   ON CONFLICT(employee_id, date) DO UPDATE SET leave_type = excluded.leave_type, reason = excluded.reason, updated_by = excluded.updated_by, updated_at = datetime('now')`;
@@ -51,7 +51,7 @@ export function applyMatHours(daysBy, matMap) {
   }
 }
 
-async function recomputeRange(db, employeeId, from, to, today) {
+export async function recomputeRange(db, employeeId, from, to, today) {
   const settings = await loadWorkSettings(db);
   if (!settings) return;
   const hi = to < today ? to : today;
