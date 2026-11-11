@@ -41,6 +41,6 @@ export default async function render({ params }) {
   return h('div', { class: 'page print-page' },
     h('header', { class: 'page-head no-print' },
       h('div', null, h('a', { href: `#/employees/${id}`, class: 'back' }, d.employee.name), h('h1', null, `بطاقة ${d.employee.name}`)),
-      h('div', { class: 'row-actions' }, orientSel, count, h('button', { type: 'button', class: 'btn', onclick: reissue }, icon('key'), d.card ? 'بطاقة جديدة (ضاعت)' : 'إصدار بطاقة جديدة'), h('button', { type: 'button', class: 'btn btn-primary', onclick: () => window.print() }, icon('printer'), 'طباعة'))),
+      h('div', { class: 'row-actions' }, orientSel, count, h('button', { type: 'button', class: 'btn', onclick: reissue }, icon('key'), d.card ? 'بطاقة جديدة (ضاعت)' : 'إصدار بطاقة جديدة'), h('button', { type: 'button', class: 'btn btn-primary', onclick: () => window.print() }, icon('printer'), 'طباعة / حفظ PDF (A4)'))),
     sheet);
 }

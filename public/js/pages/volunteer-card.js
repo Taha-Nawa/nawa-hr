@@ -36,7 +36,7 @@ export default async function render({ params }) {
   return h('div', { class: 'page print-page' },
     h('header', { class: 'page-head no-print' },
       h('div', null, h('a', { href: '#/volunteers', class: 'back' }, 'المتطوعون'), h('h1', null, `بطاقة ${d.volunteer.name}`)),
-      h('div', { class: 'row-actions' }, orientSel, count, h('button', { type: 'button', class: 'btn', onclick: reissue }, icon('key'), 'بطاقة جديدة (ضاعت)'), h('button', { type: 'button', class: 'btn btn-primary', onclick: () => window.print() }, icon('printer'), 'طباعة'))),
+      h('div', { class: 'row-actions' }, orientSel, count, h('button', { type: 'button', class: 'btn', onclick: reissue }, icon('key'), 'بطاقة جديدة (ضاعت)'), h('button', { type: 'button', class: 'btn btn-primary', onclick: () => window.print() }, icon('printer'), 'طباعة / حفظ PDF (A4)'))),
     h('div', { class: 'notice no-print' }, h('b', null, 'للمتطوع: '), 'يمسح رمز بطاقته على البوابة: «حضور» عند الوصول و«انصراف» عند النهاية، فيُملأ كشفه الشهري تلقائياً. أي تصحيح تدخله الموارد البشرية يدوياً له الأولوية على المسح.'),
     sheet);
 }

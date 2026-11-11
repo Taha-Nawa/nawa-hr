@@ -26,7 +26,7 @@ export default async function render({ params }) {
     h('header', { class: 'page-head no-print' },
       h('div', null, h('a', { href: `#/providers/${id}`, class: 'back' }, 'ملف المزوّد'), h('h1', null, `بطاقة ${p.name}`),
         h('p', { class: 'sub' }, `صالحة حتى ${dmy(p.contractEnd)} — بعدها تتوقف تلقائياً عن العمل على البوابة`)),
-      h('div', { class: 'row-actions' }, orientSel, count, h('button', { type: 'button', class: 'btn btn-primary', onclick: () => window.print() }, icon('printer'), 'طباعة'))),
+      h('div', { class: 'row-actions' }, orientSel, count, h('button', { type: 'button', class: 'btn btn-primary', onclick: () => window.print() }, icon('printer'), 'طباعة / حفظ PDF (A4)'))),
     h('div', { class: 'notice no-print' },
       h('b', null, 'للمزوّد: '), 'يحتفظ بالبطاقة ويمسح رمزها على تابلت البوابة في المركز: «حضور» عند الوصول، «خروج» و«عودة» عند الخروج المؤقت، «انصراف» عند النهاية. ',
       p.contractStart ? `الجدول: ${scheduleLines(d.schedule).join(' — ')}.` : ''),

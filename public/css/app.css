@@ -929,7 +929,8 @@ table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; w
 }
 
 @media print {
-  .id-sheet { gap: 6mm 8mm; justify-content: flex-start; padding: 8mm; }
+  .id-sheet { gap: 6mm 8mm; justify-content: center; align-content: flex-start; padding: 10mm 8mm; }
+  .id-card { outline: 0.15mm dotted #b8aca6; outline-offset: 0.7mm; }
   .prov-paper { min-height: 0; }
 }
 
