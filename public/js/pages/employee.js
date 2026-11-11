@@ -445,6 +445,45 @@ export default async function render({ user, params }) {
       } }, field('النوع', kind), field('من تاريخ', from), field('عدد الأيام التقويمية', days), relField, field('ملاحظة', note), h('button', { type: 'submit', class: 'btn' }, 'تسجيل الإجازة')));
   }
 
+  // نائب المدير المعتمد: تعيّنه الموارد البشرية بتاريخ من/إلى فيعتمد طلبات وخطط فريق هذا المدير خلال المدة
+  const depBox = h('section', { class: 'panel' });
+  async function loadDeputies() {
+    if (!canEdit) return;
+    const { deputies } = await get(`/api/employees/${id}/deputies`);
+    const who = h('select', { 'aria-label': 'النائب', required: true }, h('option', { value: '' }, 'اختر النائب'), employees.filter((x) => x.id !== id && x.status === 'active').map((x) => h('option', { value: x.id }, x.name)));
+    const from = h('input', { type: 'date', required: true, 'aria-label': 'من تاريخ' });
+    const to = h('input', { type: 'date', required: true, 'aria-label': 'إلى تاريخ' });
+    const note = h('input', { maxlength: '200', placeholder: 'السبب (اختياري)', 'aria-label': 'السبب' });
+    clear(depBox).append(
+      h('h2', null, 'نائب المدير المعتمد'),
+      h('p', { class: 'muted' }, 'عند غياب المدير يعتمد النائب طلبات وخطط إجازات فريقه خلال المدة المحدّدة فقط، ويصله إشعار الطلبات الجديدة. يجب أن يكون للنائب حساب فعّال في النظام.'),
+      deputies.length
+        ? h('ul', { class: 'plain' }, deputies.map((d) => h('li', { class: 'badge-row' },
+          h('strong', null, d.deputyName),
+          h('span', { class: 'muted' }, `${dmy(d.fromDate)} ← ${dmy(d.toDate)}${d.note ? ` · ${d.note}` : ''}`),
+          h('button', { type: 'button', class: 'btn btn-sm btn-danger-ghost', onclick: async () => {
+            if (!(await confirmBox('إلغاء هذا التعيين؟ تنتهي صلاحية النائب فوراً.', 'إلغاء التعيين', true))) return;
+            try {
+              await del(`/api/deputies/${d.id}`);
+              toast('أُلغي التعيين');
+              loadDeputies();
+            } catch (e) {
+              toast(e.message, 'err');
+            }
+          } }, 'إلغاء'))))
+        : h('p', { class: 'muted' }, 'لا نائب معيَّن لهذا المدير.'),
+      h('form', { class: 'inline-form', onsubmit: async (e) => {
+        e.preventDefault();
+        try {
+          await post(`/api/employees/${id}/deputies`, { deputyId: Number(who.value), fromDate: from.value, toDate: to.value, note: note.value });
+          toast('عُيّن النائب');
+          loadDeputies();
+        } catch (ex) {
+          toast(ex.message, 'err');
+        }
+      } }, field('النائب', who), field('من تاريخ', from), field('إلى تاريخ', to), field('السبب', note), h('button', { type: 'submit', class: 'btn' }, 'تعيين النائب')));
+  }
+
   const histBox = canEdit ? await historyPanel(emp.id) : null;
   const page = h('div', { class: 'page' },
     hero,
@@ -455,8 +494,9 @@ export default async function render({ user, params }) {
     canEdit ? excBox : null,
     canEdit ? matBox : null,
     canEdit ? spBox : null,
+    canEdit && employees.some((x) => x.managerId === id) ? depBox : null,
     histBox,
     h('section', { class: 'panel-plain' }, h('div', { class: 'page-head' }, h('h2', null, 'سجل الدوام'), monthBar), sums, tableBox));
-  await Promise.all([loadMonth(), loadBadges(), loadExceptions().catch(() => {}), loadMaternity().catch(() => {}), loadSpecial().catch(() => {}), loadAllocations().catch(() => {})]);
+  await Promise.all([loadMonth(), loadBadges(), loadExceptions().catch(() => {}), loadMaternity().catch(() => {}), loadSpecial().catch(() => {}), loadDeputies().catch(() => {}), loadAllocations().catch(() => {})]);
   return page;
 }

@@ -2,7 +2,7 @@
  * واجهة الإدارة (بجلسة كوكي). كل معالج يبدأ بالتفويض عبر authz.js ويكتب سجل تدقيق مع كل تعديل.
  * لا يصل أي شيء إلى القاعدة قبل التحقق من الدور والنطاق.
  */
-import { json, isDate, clip, randomToken, sha256hex } from './util.js';
+import { json, isDate, clip, randomToken, sha256hex, localDate, nowOf } from './util.js';
 import {
   ssoConfig, verifyIdToken, emailOf, issueNonce, consumeNonce, createSession, cookieHeader, currentUser, destroySession,
   userForEmail, readCookie, COOKIE,
@@ -10,7 +10,7 @@ import {
 import { can, canReadEmployee, employeeScope, ROLES } from './authz.js';
 import { loadWorkSettings, validateWorkSettings } from './settings.js';
 import { ingestMoves, MAX_MOVES } from './gate.js';
-import { recomputeSlice } from './close.js';
+import { recomputeSlice, tzOf } from './close.js';
 import { validateAllocations, replaceStatements } from './projects.js';
 import { timesheetReport } from './reports.js';
 import { loadLinks, validateLinks, visibleTo } from './links.js';
@@ -25,6 +25,7 @@ import { registerVolunteerRoutes } from './volunteers.js';
 import { registerProviderRoutes } from './providers.js';
 import { registerMaternityRoutes } from './maternity.js';
 import { registerSpecialLeaveRoutes } from './special-leaves.js';
+import { registerDeputyRoutes } from './deputies.js';
 import { registerUnclosedRoutes } from './unclosed.js';
 import { registerExceptionRoutes } from './exceptions.js';
 import { validLat, validLng } from '../engine/geo.js';
@@ -87,6 +88,7 @@ registerVolunteerRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 registerProviderRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 registerMaternityRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 registerSpecialLeaveRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
+registerDeputyRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 registerUnclosedRoutes(add, { bad, readJson, auditStmt });
 registerExceptionRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 registerInsightRoutes(add, { bad, forbidden });
@@ -118,7 +120,7 @@ export async function handleApi(request, env, url, execCtx) {
   const defer = (p) => (execCtx?.waitUntil ? void execCtx.waitUntil(p) : p);
   const ctx = { request, env, db: env.DB, url, params, user: null, defer };
   if (route.auth) {
-    ctx.user = await currentUser(env.DB, request);
+    ctx.user = await currentUser(env.DB, request, localDate(tzOf(env), nowOf(env)));
     if (!ctx.user) return json({ ok: false, error: 'سجّل الدخول أولاً' }, 401);
   }
   return route.handler(ctx);
@@ -174,9 +176,11 @@ add('POST', '/api/auth/logout', async ({ request, db }) => {
   return res;
 }, { auth: false });
 
-add('GET', '/api/me', async ({ user }) => {
+add('GET', '/api/me', async ({ user, db }) => {
   const { hasPin, ...rest } = user;
-  return json({ ok: true, user: { ...rest, pin: !!hasPin } });
+  // من ينوب عنهم اليوم (أسماؤهم للافتتاحية في الواجهة)
+  const acting = rest.actingFor?.length ? (await db.prepare('SELECT id, name FROM employees WHERE id IN (SELECT value FROM json_each(?))').bind(JSON.stringify(rest.actingFor)).all()).results : [];
+  return json({ ok: true, user: { ...rest, actingFor: acting, pin: !!hasPin } });
 });
 
 // ---------------------------------------------------------------- الموظفون

@@ -13,6 +13,13 @@ export const ROLES = ['employee', 'manager', 'hr', 'director', 'admin'];
 
 const READ_ALL = new Set(['hr', 'director', 'admin']);
 
+/** الموظفون الذين يدير المستخدم فريقهم: نفسه إن كان مديراً + من ينوب عنهم الآن (user.actingFor من currentUser). */
+export function managedIds(user) {
+  const own = user?.role === 'manager' && user.employeeId != null ? [user.employeeId] : [];
+  return [...own, ...(user?.actingFor || [])];
+}
+const manages = (user, target) => target.manager_id != null && managedIds(user).includes(target.manager_id);
+
 /** إجراءات عامة (غير مرتبطة بموظف محدّد) -> الأدوار المسموحة */
 export const ACTIONS = {
   'employee.create': ['hr', 'admin'],
@@ -43,6 +50,7 @@ export const ACTIONS = {
   'employee.lifecycle': ['hr', 'admin'], // نقل موظف أو إنهاء خدمته أو إعادة تفعيله (يغلق الحساب والبطاقة ويعيد إسناد مرؤوسيه)
   'maternity.manage': ['hr', 'admin'], // الجنس وإجازة الوضع وساعة الأمومة للموظفات
   'special.manage': ['hr', 'admin'], // الإجازات الخاصة: حج، وفاة قريب، علاج طويل
+  'deputy.manage': ['hr', 'admin'], // تعيين نائب للمدير المباشر بتاريخ من/إلى
   'emergency.manage': ['hr', 'admin'], // إعلان طارئ أثناء الدوام (إخلاء فوري / احتساب اليوم كاملاً) وإلغاؤه
 };
 
@@ -56,14 +64,16 @@ export function canReadEmployee(user, target) {
   if (!user || !target) return false;
   if (READ_ALL.has(user.role)) return true;
   if (user.employeeId != null && user.employeeId === target.id) return true;
-  return user.role === 'manager' && user.employeeId != null && target.manager_id === user.employeeId;
+  return manages(user, target);
 }
 
 /** شرط SQL (مع متغيّراته) يحصر قائمة الموظفين بما يحق للمستخدم رؤيته. */
 export function employeeScope(user, alias = 'e') {
   if (READ_ALL.has(user.role)) return { sql: '1 = 1', params: [] };
   if (user.employeeId == null) return { sql: '0 = 1', params: [] };
-  if (user.role === 'manager') return { sql: `(${alias}.id = ? OR ${alias}.manager_id = ?)`, params: [user.employeeId, user.employeeId] };
+  const ids = managedIds(user);
+  if (ids.length === 1) return { sql: `(${alias}.id = ? OR ${alias}.manager_id = ?)`, params: [user.employeeId, ids[0]] };
+  if (ids.length > 1) return { sql: `(${alias}.id = ? OR ${alias}.manager_id IN (${ids.map(() => '?').join(', ')}))`, params: [user.employeeId, ...ids] };
   return { sql: `${alias}.id = ?`, params: [user.employeeId] };
 }
 
@@ -73,7 +83,7 @@ export function employeeScope(user, alias = 'e') {
 export function canManageRequests(user, target) {
   if (!user || !target) return false;
   if (READ_ALL.has(user.role)) return true;
-  return user.role === 'manager' && user.employeeId != null && target.manager_id === user.employeeId;
+  return manages(user, target);
 }
 
 /** الاعتماد والرفض: الصلاحية نفسها لكن لا أحد يقرّر طلبه بنفسه (يقرّره من فوقه). */

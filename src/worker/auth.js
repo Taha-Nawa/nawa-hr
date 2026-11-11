@@ -131,7 +131,7 @@ export function readCookie(request, name = COOKIE) {
 }
 
 /** المستخدم الحالي من الكوكي، أو null. لا يمنح شيئاً إن كان الحساب معطّلاً أو الجلسة منتهية. */
-export async function currentUser(db, request) {
+export async function currentUser(db, request, today = null) {
   const token = readCookie(request);
   if (!token || token.length < 32 || token.length > 200) return null;
   const row = await db
@@ -144,7 +144,19 @@ export async function currentUser(db, request) {
     )
     .bind(await sha256hex(token))
     .first();
-  return row || null;
+  if (!row) return null;
+  row.actingFor = await actingFor(db, row.employeeId, today);
+  return row;
+}
+
+/** معرّفات المدراء الذين ينوب عنهم هذا الموظف اليوم (جدول manager_deputies من الترحيل 0027؛ بدونه لا إنابة). */
+async function actingFor(db, employeeId, today) {
+  if (employeeId == null) return [];
+  try {
+    return (await db.prepare('SELECT manager_id AS m FROM manager_deputies WHERE deputy_id = ? AND ? BETWEEN from_date AND to_date').bind(employeeId, today || new Date().toISOString().slice(0, 10)).all()).results.map((r) => r.m);
+  } catch {
+    return [];
+  }
 }
 
 export async function destroySession(db, request) {

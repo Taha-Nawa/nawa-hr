@@ -15,7 +15,7 @@ import { tzOf } from './close.js';
 import { employeeBalance } from './balances.js';
 import { notifyPlan } from './notify.js';
 import { json, isDate, clip, localDate, nowOf, addDays, daysBetween } from './util.js';
-import { canReadEmployee, canDecideRequest, canManageRequests, employeeScope } from './authz.js';
+import { canReadEmployee, canDecideRequest, canManageRequests, employeeScope, managedIds } from './authz.js';
 import { dayTypeOf, DAY_WORK } from '../engine/attendance.js';
 import { workingDates, suggestLeaveType } from '../engine/requests.js';
 import { validatePlan, planRuns, earliestPlanDate, MAX_PLAN_DAYS } from '../engine/plans.js';
@@ -62,7 +62,8 @@ export function registerPlanRoutes(add, kit) {
   const inboxWhere = (user) => {
     const own = user.employeeId ?? -1;
     if (WIDE.includes(user.role)) return { sql: "p.status = 'submitted' AND p.employee_id != ?", params: [own] };
-    if (user.role === 'manager' && user.employeeId != null) return { sql: "p.status = 'submitted' AND e.manager_id = ? AND p.employee_id != ?", params: [own, own] };
+    const led = managedIds(user);
+    if (led.length) return { sql: `p.status = 'submitted' AND e.manager_id IN (${led.map(() => '?').join(', ')}) AND p.employee_id != ?`, params: [...led, own] };
     return null;
   };
 

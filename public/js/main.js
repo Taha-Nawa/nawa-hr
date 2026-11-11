@@ -194,7 +194,7 @@ async function refreshPending() {
       return 0; // العدّاد تحسين؛ لا يعطّل شيئاً
     }
   };
-  const [reqs, plans] = await Promise.all([count('/api/requests/meta'), ['manager', 'hr', 'director', 'admin'].includes(me.role) ? count('/api/plans/meta') : 0]);
+  const [reqs, plans] = await Promise.all([count('/api/requests/meta'), ['manager', 'hr', 'director', 'admin'].includes(me.role) || me.actingFor?.length ? count('/api/plans/meta') : 0]);
   for (const [path, n, what] of [['requests', reqs, 'طلب'], ['plans', plans, 'خطة إجازات']]) {
     document.querySelectorAll(`[data-path="${path}"]`).forEach((a) => {
       a.querySelector('.count')?.remove();

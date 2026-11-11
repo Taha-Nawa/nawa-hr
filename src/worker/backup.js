@@ -19,7 +19,7 @@ import { mailerFor, logMailFailure } from './mail.js';
 export const BACKUP_TABLES = [
   'centers', 'employees', 'badges', 'devices', 'users', 'settings', 'holidays', 'employee_projects',
   'day_overrides', 'requests', 'leave_balances', 'emergencies', 'leave_plans', 'leave_plan_days', 'leave_released',
-  'volunteers', 'volunteer_days', 'volunteer_badges', 'volunteer_movements', 'providers', 'provider_schedule', 'provider_badges', 'provider_movements', 'provider_extra_sessions', 'maternity', 'special_leaves', 'monthly_reports', 'daily_results', 'movements', 'unclosed_dismissed', 'work_exceptions', 'employee_history', 'audit_log',
+  'volunteers', 'volunteer_days', 'volunteer_badges', 'volunteer_movements', 'providers', 'provider_schedule', 'provider_badges', 'provider_movements', 'provider_extra_sessions', 'maternity', 'special_leaves', 'manager_deputies', 'monthly_reports', 'daily_results', 'movements', 'unclosed_dismissed', 'work_exceptions', 'employee_history', 'audit_log',
 ];
 // work_log: ملاحظات عمل يومية خاصة بأصحابها (قرار 6.19) ومسودات التقارير خاصة بأصحابها أيضاً: لا تدخل ملفاً يحمله المسؤول.
 // تبقى محمية بسجل الاسترجاع الزمني (Time Travel) داخل Cloudflare 30 يوماً؛ وما قدّمه الموظف من تقارير يُنسخ.

@@ -56,6 +56,12 @@ const emailsOf = async (db, sql, ...p) => (await db.prepare(sql).bind(...p).all(
 /** المعتمِد العادي: المدير المباشر إن كان له حساب بدور يعتمد، وإلا الموارد البشرية، وإلا المدير العام/المسؤول. */
 async function approverEmails(db, managerId) {
   let list = managerId != null ? await emailsOf(db, "SELECT email FROM users WHERE active = 1 AND employee_id = ? AND role IN ('manager', 'hr', 'director', 'admin')", managerId) : [];
+  // نائب المدير الحالي (إن وُجد) يصله الإشعار أيضاً
+  if (managerId != null) {
+    try {
+      list = [...list, ...(await emailsOf(db, "SELECT u.email FROM manager_deputies d JOIN users u ON u.employee_id = d.deputy_id AND u.active = 1 WHERE d.manager_id = ? AND date('now', '+3 hours') BETWEEN d.from_date AND d.to_date", managerId))];
+    } catch { /* الترحيل 0027 لم يُطبَّق */ }
+  }
   if (!list.length) list = await emailsOf(db, "SELECT email FROM users WHERE active = 1 AND role = 'hr'");
   if (!list.length) list = await emailsOf(db, "SELECT email FROM users WHERE active = 1 AND role IN ('director', 'admin')");
   return list;

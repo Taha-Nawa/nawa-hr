@@ -14,7 +14,7 @@ import { loadWorkSettings } from './settings.js';
 import { recomputePairs } from './recompute.js';
 import { tzOf } from './close.js';
 import { json, isDate, clip, localDate, localTime, nowOf, addDays, daysBetween } from './util.js';
-import { can, canReadEmployee, canManageRequests, canDecideRequest, canRevokeRequest, employeeScope } from './authz.js';
+import { can, canReadEmployee, canManageRequests, canDecideRequest, canRevokeRequest, employeeScope, managedIds } from './authz.js';
 import { employeeBalance } from './balances.js';
 import { notifyRequest } from './notify.js';
 import { validateRequest, mergeRules, workingDates, suggestLeaveType, monthOf, monthBounds, needsMedical, KINDS, PURPOSES } from '../engine/requests.js';
@@ -103,9 +103,10 @@ export function registerRequestRoutes(add, kit) {
     if (['hr', 'director', 'admin'].includes(user.role)) return { sql: "r.status = 'pending' AND r.employee_id != ?", params: [own] };
     const parts = [];
     const params = [];
-    if (user.role === 'manager' && user.employeeId != null) {
-      parts.push(`(e.manager_id = ? AND NOT (${med}))`);
-      params.push(user.employeeId, freeDays);
+    const led = managedIds(user);
+    if (led.length) {
+      parts.push(`(e.manager_id IN (${led.map(() => '?').join(', ')}) AND NOT (${med}))`);
+      params.push(...led, freeDays);
     }
     if (medicalOk) {
       parts.push(`(${med})`);
