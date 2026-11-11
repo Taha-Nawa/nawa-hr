@@ -49,7 +49,7 @@ export function dashboard({ user, today, onPick = () => {}, onCenter = () => {} 
         h('p', { class: 'dg-hello' }, `${greeting()}${user.employeeName ? `، ${firstName(user.employeeName)}` : ''}`),
         h('p', { class: 'dg-sub' }, `${ROLE_LABEL[role] || role} · ${longDate(state.date)}`)),
       h('div', { class: 'dg-actions' }, (ACTIONS[role] || ACTIONS.employee).map(([t, href, main]) => h('a', { class: `btn${main ? ' btn-primary' : ''}`, href }, t)),
-        lanternHref ? h('a', { class: 'dg-lantern', href: lanternHref, title: 'فانوس جديد', 'aria-label': 'إنشاء فانوس جديد' }, icon('plus')) : null));
+        lanternHref ? h('a', { class: 'dg-lantern', href: lanternHref, title: 'فانوس جديد', 'aria-label': 'إنشاء فانوس جديد' }, icon('lantern')) : null));
   }
 
   function drawAtt() {
