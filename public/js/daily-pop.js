@@ -28,8 +28,7 @@ function lantern({ kind, label, title, text, source, hint, shape = DEFAULT_SHAPE
       h('span', { class: 'dp-kind' }, label),
       title ? h('span', { class: 'dp-title' }, title) : null,
       h('span', { class: 'dp-text' }, text),
-      source ? h('span', { class: 'dp-src' }, source) : null,
-      h('span', { class: 'dp-hint' }, hint));
+      source ? h('span', { class: 'dp-src' }, source) : null);
     const pop = h('button', { type: 'button', class: `dp dp-${kind} dp-s-${sh}`, 'aria-label': `${label}: ${text}. اضغط للإغلاق` },
       h('span', { class: 'dp-str', 'aria-hidden': 'true' }), h('span', { class: 'dp-cap', 'aria-hidden': 'true' }), lamp, h('span', { class: 'dp-base', 'aria-hidden': 'true' }));
     const layer = h('div', { class: `dp-layer${sh === 'lantern' ? '' : ' dp-center'}`, role: 'status' }, pop);
