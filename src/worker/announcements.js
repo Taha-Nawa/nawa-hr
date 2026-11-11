@@ -6,6 +6,8 @@
 import { json, clip, nowOf } from './util.js';
 import { can } from './authz.js';
 
+/** أشكال البوب (تطابق SHAPES في public/js/daily-pop-lib.js؛ يتحقق اختبار من التطابق). */
+export const POP_SHAPES = ['lantern', 'bubble', 'arch', 'orb', 'scroll'];
 const MAX_BODY = 400;
 const MAX_HOURS = 24 * 30;
 
@@ -14,9 +16,29 @@ const parseIds = (s) => { try { const a = JSON.parse(s); return Array.isArray(a)
 export function registerAnnouncementRoutes(add, kit) {
   const { bad, forbidden, notFound, readJson, auditStmt } = kit;
 
-  // ما يخصّ المستخدم ولم يره بعد
+  async function shapeOf(db) {
+    try {
+      const row = await db.prepare("SELECT value FROM settings WHERE key = 'pop_style'").first();
+      const shape = row ? JSON.parse(row.value).shape : null;
+      return POP_SHAPES.includes(shape) ? shape : POP_SHAPES[0];
+    } catch { return POP_SHAPES[0]; }
+  }
+
+  add('GET', '/api/pop-style', async ({ db }) => json({ ok: true, shape: await shapeOf(db), shapes: POP_SHAPES }));
+  add('PUT', '/api/pop-style', async ({ request, db, user }) => {
+    if (!can(user, 'announce.manage')) return forbidden();
+    const { body, error } = await readJson(request);
+    if (error) return error;
+    if (!POP_SHAPES.includes(body.shape)) return bad('شكل غير معروف');
+    await db.prepare("INSERT INTO settings (key, value, updated_at) VALUES ('pop_style', ?, datetime('now')) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at").bind(JSON.stringify({ shape: body.shape })).run();
+    await auditStmt(db, user, 'popstyle.set', 'settings', 'pop_style', { shape: body.shape }).run();
+    return json({ ok: true, shape: body.shape });
+  });
+
+  // ما يخصّ المستخدم ولم يره بعد (ومعه شكل البوب المعتمد)
   add('GET', '/api/announcements/active', async ({ env, db, user }) => {
-    if (user.employeeId == null) return json({ ok: true, items: [] });
+    const shape = await shapeOf(db);
+    if (user.employeeId == null) return json({ ok: true, items: [], shape });
     const now = nowOf(env).toISOString();
     let rows = [];
     try {
@@ -25,14 +47,14 @@ export function registerAnnouncementRoutes(add, kit) {
          WHERE a.revoked = 0 AND a.starts_at <= ?1 AND a.ends_at > ?1
            AND NOT EXISTS (SELECT 1 FROM announcement_seen s WHERE s.announcement_id = a.id AND s.user_id = ?2)
          ORDER BY a.id`).bind(now, user.id).all()).results;
-    } catch { return json({ ok: true, items: [] }); } // الترحيل 0029 لم يُطبَّق
+    } catch { return json({ ok: true, items: [], shape }); } // الترحيل 0029 لم يُطبَّق
     const emp = await db.prepare('SELECT center_id AS centerId FROM employees WHERE id = ?').bind(user.employeeId).first();
     const mine = rows.filter((r) => {
       if (r.audience === 'all') return true;
       const ids = parseIds(r.audience_ids);
       return r.audience === 'center' ? ids.includes(Number(emp?.centerId)) : ids.includes(user.employeeId);
     });
-    return json({ ok: true, items: mine.map((r) => ({ id: r.id, title: r.title, body: r.body, endsAt: r.ends_at })) });
+    return json({ ok: true, items: mine.map((r) => ({ id: r.id, title: r.title, body: r.body, endsAt: r.ends_at })), shape });
   });
 
   add('POST', '/api/announcements/:id/seen', async ({ db, user, params }) => {

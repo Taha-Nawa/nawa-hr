@@ -63,3 +63,7 @@ export function dayNumber(date) {
 export function itemFor(date) {
   return ITEMS[dayNumber(date) % ITEMS.length];
 }
+
+/** أشكال البوب المتاحة (يُختار أحدها من صفحة «رسائل البوب»). المعرّف يطابق صنف CSS: dp-s-<id> ويطابق قائمة الخادم. */
+export const SHAPES = [['lantern', 'فانوس معلّق'], ['bubble', 'فقاعة صابون'], ['arch', 'قوس نوى'], ['orb', 'كرة ضوء'], ['scroll', 'لفافة']];
+export const DEFAULT_SHAPE = 'lantern';

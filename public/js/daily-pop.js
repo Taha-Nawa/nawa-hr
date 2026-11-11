@@ -2,7 +2,7 @@
 // الرسائل الإدارية الموجَّهة للموظف (من الموارد البشرية أو المسؤول، محدّدة المدة) تظهر أولاً بفانوس ياقوتي، ثم حكمة اليوم.
 import { h, todayLocal } from './dom.js';
 import { get, post } from './api.js';
-import { itemFor, KINDS } from './daily-pop-lib.js';
+import { itemFor, KINDS, SHAPES, DEFAULT_SHAPE } from './daily-pop-lib.js';
 
 const memory = new Set(); // احتياط إن تعذّر التخزين المحلي (وضع خاص): تظهر مرة لكل جلسة صفحة
 
@@ -21,7 +21,8 @@ function markSeen(key, date) {
 }
 
 /** فانوس واحد: يعيد وعداً يُحلّ عند إغلاقه بالنقر. */
-function lantern({ kind, label, title, text, source, hint }) {
+function lantern({ kind, label, title, text, source, hint, shape = DEFAULT_SHAPE }) {
+  const sh = SHAPES.some(([id]) => id === shape) ? shape : DEFAULT_SHAPE;
   return new Promise((resolve) => {
     const lamp = h('span', { class: 'dp-lamp' },
       h('span', { class: 'dp-kind' }, label),
@@ -29,9 +30,9 @@ function lantern({ kind, label, title, text, source, hint }) {
       h('span', { class: 'dp-text' }, text),
       source ? h('span', { class: 'dp-src' }, source) : null,
       h('span', { class: 'dp-hint' }, hint));
-    const pop = h('button', { type: 'button', class: `dp dp-${kind}`, 'aria-label': `${label}: ${text}. اضغط للإغلاق` },
+    const pop = h('button', { type: 'button', class: `dp dp-${kind} dp-s-${sh}`, 'aria-label': `${label}: ${text}. اضغط للإغلاق` },
       h('span', { class: 'dp-str', 'aria-hidden': 'true' }), h('span', { class: 'dp-cap', 'aria-hidden': 'true' }), lamp, h('span', { class: 'dp-base', 'aria-hidden': 'true' }));
-    const layer = h('div', { class: 'dp-layer', role: 'status' }, pop);
+    const layer = h('div', { class: `dp-layer${sh === 'lantern' ? '' : ' dp-center'}`, role: 'status' }, pop);
     let closed = false;
     const close = () => {
       if (closed) return;
@@ -58,23 +59,24 @@ function lantern({ kind, label, title, text, source, hint }) {
 }
 
 /** يعرض الرسائل الإدارية غير المشاهَدة ثم حكمة اليوم (مرة واحدة يومياً لكل مستخدم). force للمعاينة. */
-export async function dailyPop(user, { force = false, messages = null, preview = false } = {}) {
+export async function dailyPop(user, { force = false, messages = null, preview = false, shape = null } = {}) {
   if (!user) return;
-  if (preview) { // معاينة رسالة قبل نشرها: لا تُسجَّل مشاهدة ولا تظهر حكمة اليوم
-    for (const m of messages || []) await lantern({ kind: 'msg', label: 'رسالة من الإدارة', title: m.title, text: m.body, hint: 'اضغط لإغلاق الرسالة' });
+  if (preview) { // معاينة قبل النشر أو الاعتماد: لا تُسجَّل مشاهدة ولا تظهر حكمة اليوم. كل عنصر قد يحمل kind/label/source
+    for (const m of messages || []) await lantern({ kind: m.kind || 'msg', label: m.label || 'رسالة من الإدارة', title: m.title, text: m.body, source: m.source, hint: 'اضغط للإغلاق', shape: shape || m.shape });
     return;
   }
   const date = todayLocal();
   // الرسائل الإدارية أولاً (تُسجَّل مشاهدتها على الخادم فلا تتكرر على أي جهاز)
   let items = messages;
-  if (!items) { try { items = (await get('/api/announcements/active')).items || []; } catch { items = []; } }
+  let chosen = shape;
+  if (!items) { try { const r = await get('/api/announcements/active'); items = r.items || []; chosen = chosen || r.shape; } catch { items = []; } }
   for (const m of items) {
-    await lantern({ kind: 'msg', label: 'رسالة من الإدارة', title: m.title, text: m.body, hint: 'اضغط لإغلاق الرسالة' });
+    await lantern({ kind: 'msg', label: 'رسالة من الإدارة', title: m.title, text: m.body, hint: 'اضغط لإغلاق الرسالة', shape: chosen });
     post(`/api/announcements/${m.id}/seen`, {}).catch(() => {});
   }
   const key = `nawa.pop.${user.id ?? user.email ?? 'u'}.${date}`;
   if (!force && seen(key)) return;
   const item = itemFor(date);
   markSeen(key, date);
-  await lantern({ kind: item.k, label: KINDS[item.k], text: item.t, source: item.s, hint: 'اضغط لإغلاق' });
+  await lantern({ kind: item.k, label: KINDS[item.k], text: item.t, source: item.s, hint: 'اضغط لإغلاق', shape: chosen });
 }

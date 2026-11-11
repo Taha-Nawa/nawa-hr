@@ -1,7 +1,8 @@
 // رسائل البوب للموظفين (الموارد البشرية والمسؤول): نصّ قصير في فانوس يظهر للمستهدفين عند فتح النظام لمدة محددة كالستوري.
 import { h, clear, select, toast, confirmBox, field } from '../dom.js';
-import { get, post, del } from '../api.js';
+import { get, post, put, del } from '../api.js';
 import { dailyPop } from '../daily-pop.js';
+import { SHAPES, ITEMS, KINDS } from '../daily-pop-lib.js';
 
 const DURATIONS = [[24, '24 ساعة'], [72, '3 أيام'], [168, 'أسبوع'], [336, 'أسبوعان'], [720, 'شهر']];
 const STATUS = { live: ['سارية', 'present'], ended: ['انتهت', 'none'], revoked: ['مسحوبة', 'absent'], scheduled: ['مجدولة', 'late'] };
@@ -19,6 +20,15 @@ export default async function render({ user }) {
   const aud = h('div', { class: 'seg-tabs', role: 'tablist' });
   const pick = h('div', { class: 'ann-pick' });
   const listBox = h('div', { class: 'ann-list' });
+
+  // شكل البوب: يُعتمد للمؤسسة كلها (لكل الأنواع)، واللون يتبع النوع تلقائياً
+  const cur = (await get('/api/pop-style').catch(() => ({ shape: 'lantern' }))).shape;
+  let shape = cur;
+  const shapeBox = h('div', { class: 'ann-shapes', role: 'radiogroup', 'aria-label': 'شكل البوب' });
+  const drawShapes = () => clear(shapeBox).append(...SHAPES.map(([id, name]) => h('button', { type: 'button', class: `ann-shape${shape === id ? ' on' : ''}`, role: 'radio', 'aria-checked': String(shape === id), onclick: () => { shape = id; drawShapes(); } }, name)));
+  const sample = (k) => { const it = ITEMS.find((i) => i.k === k); return { kind: k, label: KINDS[k], body: it.t, source: it.s }; };
+  const previewShape = h('button', { type: 'button', class: 'btn', onclick: () => dailyPop(user, { preview: true, shape, messages: [sample('quran'), sample('hadith'), sample('wisdom'), { kind: 'msg', label: 'رسالة من الإدارة', title: 'اجتماع عام', body: 'اجتماع الطاقم غداً الساعة العاشرة' }] }) }, 'معاينة الألوان الأربعة');
+  const saveShape = h('button', { type: 'button', class: 'btn btn-primary', onclick: async () => { try { await put('/api/pop-style', { shape }); toast('اعتُمد الشكل لكل الموظفين'); } catch (e) { toast(e.message, 'err'); } } }, 'اعتماد هذا الشكل');
 
   function drawAud() {
     clear(aud).append(...[['all', 'كل الموظفين'], ['center', 'مراكز محددة'], ['employees', 'موظفون بأسمائهم']].map(([k, t]) =>
@@ -61,11 +71,17 @@ export default async function render({ user }) {
     })) : h('p', { class: 'empty' }, 'لم تُنشر رسائل بعد.'));
   }
 
+  drawShapes();
   drawAud();
   await load();
   return h('div', { class: 'page' },
     h('header', { class: 'page-head' }, h('div', null, h('h1', null, 'رسائل البوب للموظفين'), h('p', { class: 'sub' }, 'رسالة قصيرة في فانوس تظهر للموظفين عند فتح النظام لمدة محددة، ثم تنتهي وحدها'))),
     h('section', { class: 'panel ann-form' },
+      h('h2', null, 'شكل البوب'),
+      h('p', { class: 'muted' }, 'الآية خضراء، والحديث ذهبي، والحكمة زرقاء، ورسالة الإدارة ياقوتية، بأي شكل تختاره.'),
+      shapeBox, h('div', { class: 'row-actions' }, previewShape, saveShape)),
+    h('section', { class: 'panel ann-form' },
+      h('h2', null, 'رسالة جديدة'),
       field('العنوان', title), field('نص الرسالة', body, count),
       h('div', null, h('label', { class: 'lbl' }, 'تظهر لـ'), aud, pick),
       field('مدة الظهور', dur, 'تُحسب من لحظة النشر، وتظهر للموظف مرة واحدة فقط'),

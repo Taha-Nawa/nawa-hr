@@ -51,3 +51,16 @@ test('رسائل البوب: للموارد البشرية فقط، وتظهر �
   assert.equal((await j(env, u.emp4, 'GET', '/api/announcements/active')).body.items.length, 0, 'انتهت المدة');
   assert.equal((await j(env, u.hr, 'GET', '/api/announcements')).body.items.find((x) => x.id === all.body.id).status, 'ended');
 });
+
+test('شكل البوب: يُعتمد من الموارد البشرية فقط ويصل للموظفين، ويطابق قائمة الواجهة', async () => {
+  const { POP_SHAPES } = await import('../src/worker/announcements.js');
+  const { SHAPES } = await import('../public/js/daily-pop-lib.js');
+  assert.deepEqual(SHAPES.map(([id]) => id), POP_SHAPES);
+  const { env, u } = await world();
+  assert.equal((await j(env, u.emp2, 'GET', '/api/announcements/active')).body.shape, 'lantern', 'افتراضي');
+  assert.equal((await j(env, u.emp2, 'PUT', '/api/pop-style', { shape: 'orb' })).status, 403);
+  assert.equal((await j(env, u.hr, 'PUT', '/api/pop-style', { shape: 'نجمة' })).status, 400);
+  assert.equal((await j(env, u.hr, 'PUT', '/api/pop-style', { shape: 'orb' })).status, 200);
+  assert.equal((await j(env, u.emp4, 'GET', '/api/announcements/active')).body.shape, 'orb');
+  assert.equal((await j(env, u.dir, 'GET', '/api/pop-style')).body.shape, 'orb');
+});
