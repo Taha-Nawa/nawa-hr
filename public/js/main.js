@@ -19,6 +19,7 @@ const PAGES = [
   { path: 'plans', group: 'main', title: 'الإجازات المتوقعة', icon: 'calendar', roles: ALL, load: () => import('./pages/plans.js') },
   { path: 'balances', group: 'main', title: 'أرصدة الإجازات', icon: 'calendar', roles: ['manager', 'hr', 'director', 'admin'], load: () => import('./pages/balances.js') },
   { path: 'employees', group: 'main', title: 'الموظفون', short: 'الموظفون', icon: 'users', tab: true, roles: ALL, load: () => import('./pages/employees.js') },
+  { path: 'employees/:id/card', title: 'بطاقة موظف', roles: ['hr', 'admin'], nav: 'employees', load: () => import('./pages/employee-card.js') },
   { path: 'employees/:id', title: 'الموظف', roles: ALL, nav: 'employees', load: () => import('./pages/employee.js') },
   { path: 'manual', group: 'work', title: 'الحضور اليدوي', icon: 'clock', roles: ['hr', 'admin'], load: () => import('./pages/manual.js') },
   { path: 'attendance-sheet', group: 'work', title: 'كشف الحضور الأسبوعي', icon: 'printer', roles: ['manager', 'hr', 'director', 'admin'], load: () => import('./pages/attendance-sheet.js') },

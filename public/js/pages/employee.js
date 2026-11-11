@@ -79,6 +79,7 @@ export default async function render({ user, params }) {
     h('div', { class: 'ec-actions' },
       h('a', { href: `#/reports?employee=${emp.id}`, class: 'btn' }, 'التايم شيت'),
       canEdit ? h('button', { type: 'button', class: 'btn btn-primary', onclick: () => employeeForm({ emp, allocations: allocs, onSaved: () => location.reload() }) }, 'تعديل البيانات') : null,
+      canEdit ? h('a', { href: `#/employees/${emp.id}/card`, class: 'btn' }, icon('qr'), 'البطاقة') : null,
       canEdit ? h('button', { type: 'button', class: 'btn', onclick: async () => {
         try {
           const o = await get('/api/org');

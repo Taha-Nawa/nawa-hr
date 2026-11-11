@@ -440,6 +440,31 @@ add('GET', '/api/employees/:id/badges', async ({ db, user, params }) => {
   return json({ ok: true, badges: r.results });
 });
 
+// بطاقة الموظف للطباعة: تعرض البطاقة السارية (أو لا شيء)، والإصدار يُلغي القديمة ويُنشئ جديدة برمز عشوائي غير قابل للتخمين.
+add('GET', '/api/employees/:id/card', async ({ db, user, params }) => {
+  if (!can(user, 'badge.manage')) return forbidden();
+  const id = Number(params.id);
+  const e = await db.prepare('SELECT e.id, e.code, e.name, e.name_en AS nameEn, e.job_title AS jobTitle, e.status, c.name AS center FROM employees e LEFT JOIN centers c ON c.id = e.center_id WHERE e.id = ?').bind(id).first();
+  if (!e) return notFound('الموظف');
+  const card = await db.prepare("SELECT card FROM badges WHERE employee_id = ? AND status = 'active' ORDER BY created_at DESC, rowid DESC").bind(id).first('card');
+  return json({ ok: true, employee: e, card: card || null });
+});
+
+add('POST', '/api/employees/:id/card', async ({ db, user, params }) => {
+  if (!can(user, 'badge.manage')) return forbidden();
+  const id = Number(params.id);
+  const e = await db.prepare('SELECT code, status FROM employees WHERE id = ?').bind(id).first();
+  if (!e) return notFound('الموظف');
+  if (e.status !== 'active') return bad('الموظف غير فعّال: لا تصدر له بطاقة', 409);
+  const card = `${e.code}-${randomToken(6)}`;
+  await db.batch([
+    db.prepare("UPDATE badges SET status = 'revoked' WHERE employee_id = ? AND status = 'active'").bind(id),
+    db.prepare('INSERT INTO badges (card, employee_id) VALUES (?, ?)').bind(card, id),
+    auditStmt(db, user, 'badge.reissue', 'employee', id, { card }),
+  ]);
+  return json({ ok: true, card }, 201);
+});
+
 add('POST', '/api/badges/:card/revoke', async ({ db, user, params }) => {
   if (!can(user, 'badge.manage')) return forbidden();
   const card = decodeURIComponent(params.card);

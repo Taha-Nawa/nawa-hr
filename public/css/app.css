@@ -1341,3 +1341,14 @@ h2 { font-size: 0.95rem; }
 .lc-check { display: flex; gap: 8px; align-items: center; }
 .lc-hist li { padding: 8px 0; border-bottom: 1px solid var(--line-2); }
 .tools input[type="search"], .tools select { height: 38px; }
+
+/* صور البروفايل أكبر: صفحة الموظف وبطاقة الترحيب في الدخول */
+.ec-avatar { width: 116px; height: 116px; font-size: 2.3rem; box-shadow: 0 0 0 4px #fff, 0 0 0 6px var(--line), 0 8px 20px -10px rgba(42, 20, 16, 0.4); }
+.welcome { flex-direction: column; text-align: center; gap: 10px; padding: 18px 16px 14px; }
+.welcome .avatar-lg { width: 112px; height: 112px; font-size: 2.6rem; border-radius: 50%; box-shadow: 0 0 0 4px #fff, 0 0 0 6px var(--line), 0 8px 20px -10px rgba(42, 20, 16, 0.4); }
+.welcome > div { text-align: center; }
+.welcome-mail { text-align: center; }
+@media (max-width: 760px) {
+  .ec-avatar { width: 76px; height: 76px; font-size: 1.6rem; box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--line); }
+  .welcome .avatar-lg { width: 96px; height: 96px; font-size: 2.2rem; }
+}
