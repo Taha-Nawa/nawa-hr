@@ -227,7 +227,8 @@ function watchTables(view) {
 
 async function route() {
   if (!me) return;
-  const path = (location.hash.replace(/^#\/?/, '') || 'today').split('?')[0];
+  const current = () => (location.hash.replace(/^#\/?/, '') || 'today').split('?')[0];
+  const path = current();
   const found = match(path);
   const view = $('#view');
   if (!found || !found.page.roles.includes(me.role)) {
@@ -244,7 +245,7 @@ async function route() {
   try {
     const mod = await found.page.load();
     const node = await mod.default({ user: me, params: found.params });
-    if (location.hash.replace(/^#\/?/, '').split('?')[0] === path) {
+    if (current() === path) { // الصفحة المطلوبة لم تتغير أثناء التحميل (بلا # يُعدّ «اليوم»)
       clear(view).append(node);
       if (found.page.path === 'today') { maybeTip(view); maybeTour(me.role); }
       view.focus({ preventScroll: true });
