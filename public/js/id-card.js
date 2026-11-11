@@ -25,6 +25,6 @@ export function idCard({ kind, name, line, code, valid, photo, qr }) {
       h('div', { class: 'id-main' },
         face(name, photo),
         h('div', { class: 'id-who' }, h('h2', { class: 'id-name' }, name), h('p', { class: 'id-meta' }, line || ''))),
-      h('div', { class: 'id-qr' }, qr.cloneNode(true), h('span', null, 'رمز الحضور'))),
+      h('div', { class: 'id-qr' }, qr.cloneNode(true))),
     h('footer', { class: 'id-foot' }, h('span', { class: 'id-code', dir: 'ltr' }, code), valid ? h('span', { class: 'id-valid' }, valid) : null));
 }
