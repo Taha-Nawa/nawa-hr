@@ -294,3 +294,56 @@ test('النسخة الاحتياطية تتضمن جداول المزوّدين
   for (const t of ['providers', 'provider_schedule', 'provider_badges', 'provider_movements']) assert.ok(BACKUP_TABLES.includes(t), t);
   assert.ok(BACKUP_EXCLUDED.includes('provider_alerts'));
 });
+
+test('حضور خارج الجدول: لا يُحتسب، ثم يُعتمد فتُحتسب ساعاته ويُلغى الاعتماد', async () => {
+  const { env, u } = await world('2026-11-09T09:00:00Z');
+  const { id } = await makeProvider(env, u.hr);
+  const THU = '2026-11-05';
+  const add = await j(env, u.hr, 'POST', `/api/providers/${id}/moves`, { date: THU, note: 'اختبار', moves: [{ type: 'حضور', time: '10:00' }, { type: 'انصراف', time: '12:30' }] });
+  assert.equal(add.status, 201, JSON.stringify(add.body));
+  const month = async () => (await j(env, u.hr, 'GET', `/api/providers/${id}/month?month=2026-11`)).body;
+  const dayOf = (m) => m.days.find((d) => d.date === THU);
+  let m = await month();
+  assert.equal(dayOf(m).status, 'extra');
+  assert.equal(dayOf(m).countedMin, 0);
+
+  // الاعتماد: سبب إلزامي، وللمخوَّلين فقط، ولا اعتماد ليوم لم ينتهِ
+  assert.equal((await j(env, u.hr, 'POST', `/api/providers/${id}/extra-days/approve`, { date: THU })).status, 400);
+  assert.equal((await j(env, u.dir, 'POST', `/api/providers/${id}/extra-days/approve`, { date: THU, note: 'x' })).status, 403);
+  assert.equal((await j(env, u.hr, 'POST', `/api/providers/${id}/extra-days/approve`, { date: '2026-11-09', note: 'x' })).status, 400);
+  const ok = await j(env, u.hr, 'POST', `/api/providers/${id}/extra-days/approve`, { date: THU, note: 'كُلّف بعمل إضافي' });
+  assert.equal(ok.status, 201, JSON.stringify(ok.body));
+  assert.deepEqual([ok.body.start, ok.body.end], ['10:00', '12:30']);
+  m = await month();
+  assert.equal(dayOf(m).countedMin, 150);
+  assert.equal(dayOf(m).status, 'ok');
+  assert.equal(dayOf(m).extras[0].source, 'approved');
+  // لا اعتماد مكرر (لليوم حصة الآن)
+  assert.equal((await j(env, u.hr, 'POST', `/api/providers/${id}/extra-days/approve`, { date: THU, note: 'x' })).status, 400);
+
+  // إلغاء الاعتماد يعيده خارج الجدول وغير محتسب
+  assert.equal((await j(env, u.hr, 'DELETE', `/api/providers/${id}/extra-sessions/${dayOf(m).extras[0].id}`)).status, 200);
+  m = await month();
+  assert.equal(dayOf(m).status, 'extra');
+  assert.equal(dayOf(m).countedMin, 0);
+  assert.ok(await env.DB.prepare("SELECT COUNT(*) AS n FROM audit_log WHERE action IN ('provider.extra.approve','provider.extra.delete')").first('n') >= 2);
+});
+
+test('حصة استثنائية بتاريخ محدد: تخضع للغياب ولا تغيّر الجدول، وتُرفض المتداخلة', async () => {
+  const { env, u } = await world('2026-11-09T09:00:00Z');
+  const { id } = await makeProvider(env, u.hr);
+  const SAT = '2026-11-07';
+  const body = { date: SAT, start: '09:00', end: '11:00', note: 'تعويض عن حصة' };
+  assert.equal((await j(env, u.dir, 'POST', `/api/providers/${id}/extra-sessions`, body)).status, 403);
+  assert.equal((await j(env, u.hr, 'POST', `/api/providers/${id}/extra-sessions`, { ...body, note: '' })).status, 400);
+  assert.equal((await j(env, u.hr, 'POST', `/api/providers/${id}/extra-sessions`, { ...body, end: '08:00' })).status, 400);
+  assert.equal((await j(env, u.hr, 'POST', `/api/providers/${id}/extra-sessions`, { ...body, date: '2027-05-01' })).status, 400);
+  assert.equal((await j(env, u.hr, 'POST', `/api/providers/${id}/extra-sessions`, body)).status, 201);
+  // تتداخل مع حصة الإثنين الدائمة (09:00-13:00)
+  assert.equal((await j(env, u.hr, 'POST', `/api/providers/${id}/extra-sessions`, { ...body, date: '2026-11-09', start: '10:00', end: '11:00' })).status, 400);
+  const m = (await j(env, u.hr, 'GET', `/api/providers/${id}/month?month=2026-11`)).body;
+  const d = m.days.find((x) => x.date === SAT);
+  assert.equal(d.status, 'absent');
+  assert.equal(d.scheduledMin, 120);
+  assert.equal(m.schedule.length, 2); // الجدول الدائم كما هو
+});

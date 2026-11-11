@@ -47,15 +47,16 @@ export function contractState(p, today) {
 
 /**
  * حصص اليوم (بالدقائق) من الجدول. emergency: null، أو { dismissMin } حيث null = إغلاق اليوم كاملاً.
- * خارج العقد أو في عطلة رسمية: لا حصص.
+ * خارج العقد: لا حصص. في عطلة رسمية: لا حصص الجدول الدائم، وتبقى الحصص الاستثنائية.
  */
-export function sessionsOn(date, p, schedule, { holiday = false, emergency = null } = {}) {
-  if (date < p.contractStart || date > p.contractEnd || holiday) return [];
+export function sessionsOn(date, p, schedule, { holiday = false, emergency = null, extras = [] } = {}) {
+  if (date < p.contractStart || date > p.contractEnd) return [];
   const dow = new Date(`${date}T00:00:00Z`).getUTCDay();
-  let list = schedule
-    .filter((s) => s.weekday === dow)
-    .map((s) => ({ start: toMin(s.start), end: toMin(s.end) }))
-    .sort((a, b) => a.start - b.start);
+  // الحصص الاستثنائية (مخططة أو معتمدة) تُضاف إلى جدول اليوم، ولو في عطلة لأن الموارد البشرية قصدتها
+  let list = [
+    ...(holiday ? [] : schedule.filter((s) => s.weekday === dow).map((s) => ({ start: toMin(s.start), end: toMin(s.end) }))),
+    ...extras.map((x) => ({ start: toMin(x.start), end: toMin(x.end), extra: x.source })),
+  ].sort((a, b) => a.start - b.start);
   if (emergency) {
     if (emergency.dismissMin === null || emergency.dismissMin === undefined) return [];
     const cut = emergency.dismissMin;

@@ -53,6 +53,18 @@ export async function loadProviders(db, user, { id = null, activeOnly = false } 
   return (await db.prepare(`${PROVIDER_SELECT} WHERE ${where.join(' AND ')} ORDER BY p.active DESC, p.contract_end DESC, p.name`).bind(...params).all()).results;
 }
 
+/** الحصص الاستثنائية في مدى تاريخي: خريطة `${pid}|${date}` ← [{id,start,end,source,note}] */
+async function loadExtras(db, ids, from, to) {
+  const map = new Map();
+  if (!ids.length) return map;
+  const rows = (await db.prepare('SELECT id, provider_id AS pid, date, start_time AS start, end_time AS end, source, note FROM provider_extra_sessions WHERE date >= ? AND date <= ? AND provider_id IN (SELECT value FROM json_each(?)) ORDER BY start_time').bind(from, to, JSON.stringify(ids)).all()).results;
+  for (const r of rows) {
+    const k = `${r.pid}|${r.date}`;
+    (map.get(k) || map.set(k, []).get(k)).push({ id: r.id, start: r.start, end: r.end, source: r.source, note: r.note });
+  }
+  return map;
+}
+
 async function loadSchedules(db, ids) {
   const map = new Map(ids.map((i) => [i, []]));
   if (!ids.length) return map;
@@ -81,8 +93,8 @@ function emergencyFor(emergencies, date, centerId) {
 const moveOut = (r) => ({ id: r.id, type: r.type, time: r.time, device: r.device_id, manual: r.device_id === 'MANUAL', note: r.note });
 const sessOut = (s) => ({ start: toHHMM(s.start), end: toHHMM(s.end), minutes: s.minutes, status: s.status, lateMin: s.lateMin, earlyMin: s.earlyMin, outMin: s.outMin, countedMin: s.countedMin });
 
-function dayFor({ p, schedule, date, moves, cal, today, nowMin }) {
-  const sessions = sessionsOn(date, p, schedule, { holiday: cal.holidays.has(date), emergency: emergencyFor(cal.emergencies, date, p.centerId) });
+function dayFor({ p, schedule, date, moves, cal, today, nowMin, extras = [] }) {
+  const sessions = sessionsOn(date, p, schedule, { holiday: cal.holidays.has(date), emergency: emergencyFor(cal.emergencies, date, p.centerId), extras });
   const presence = presenceOf(moves);
   const live = date === today;
   return { sessions, presence, report: dayReport({ sessions, presence, nowMin: live ? nowMin : null }), live };
@@ -108,9 +120,10 @@ export async function boardFor(env, providers, { now = nowOf(env) } = {}) {
   const live = providers.filter((p) => p.active && contractState(p, today).state === 'active');
   if (!live.length) return { date: today, nowMin, counts: {}, items: [] };
   const ids = live.map((p) => p.id);
-  const [schedules, cal, moves] = await Promise.all([
+  const [schedules, cal, extraMap, moves] = await Promise.all([
     loadSchedules(db, ids),
     loadCalendar(db, today, today),
+    loadExtras(db, ids, today, today),
     db.prepare('SELECT provider_id AS pid, id, type, date, time, device_id, note FROM provider_movements WHERE date = ? AND provider_id IN (SELECT value FROM json_each(?)) ORDER BY time').bind(today, JSON.stringify(ids)).all(),
   ]);
   const by = groupMoves(moves.results);
@@ -118,7 +131,7 @@ export async function boardFor(env, providers, { now = nowOf(env) } = {}) {
   for (const p of live) {
     const mv = by.get(`${p.id}|${today}`) || [];
     const sched = schedules.get(p.id);
-    const sessions = sessionsOn(today, p, sched, { holiday: cal.holidays.has(today), emergency: emergencyFor(cal.emergencies, today, p.centerId) });
+    const sessions = sessionsOn(today, p, sched, { holiday: cal.holidays.has(today), emergency: emergencyFor(cal.emergencies, today, p.centerId), extras: extraMap.get(`${p.id}|${today}`) || [] });
     if (!sessions.length && !mv.length) continue;
     const ls = liveState({ sessions, presence: presenceOf(mv), nowMin });
     const rep = ls.report;
@@ -234,9 +247,10 @@ export function registerProviderRoutes(add, kit) {
     let totals = new Map();
     let scheduleMap = new Map();
     if (ids.length) {
-      const [schedules, cal, moves] = await Promise.all([
+      const [schedules, cal, extraMap, moves] = await Promise.all([
         loadSchedules(db, ids),
         loadCalendar(db, from, to),
+        loadExtras(db, ids, from, to),
         db.prepare('SELECT provider_id AS pid, id, type, date, time, device_id, note FROM provider_movements WHERE date >= ? AND date <= ? AND provider_id IN (SELECT value FROM json_each(?)) ORDER BY time').bind(from, to, JSON.stringify(ids)).all(),
       ]);
       scheduleMap = schedules;
@@ -250,10 +264,10 @@ export function registerProviderRoutes(add, kit) {
         let planned = 0;
         for (const date of datesBetween(lo, p.contractEnd < to ? p.contractEnd : to)) {
           if (date > hi) {
-            planned += sessionsOn(date, p, sched, { holiday: cal.holidays.has(date), emergency: emergencyFor(cal.emergencies, date, p.centerId) }).reduce((a, s) => a + (s.end - s.start), 0);
+            planned += sessionsOn(date, p, sched, { holiday: cal.holidays.has(date), emergency: emergencyFor(cal.emergencies, date, p.centerId), extras: extraMap.get(`${p.id}|${date}`) || [] }).reduce((a, s) => a + (s.end - s.start), 0);
             continue;
           }
-          const d = dayFor({ p, schedule: sched, date, moves: by.get(`${p.id}|${date}`) || [], cal, today, nowMin });
+          const d = dayFor({ p, schedule: sched, date, moves: by.get(`${p.id}|${date}`) || [], cal, today, nowMin, extras: extraMap.get(`${p.id}|${date}`) || [] });
           planned += d.sessions.reduce((a, s) => a + (s.end - s.start), 0);
           reports.push(d.report);
         }
@@ -377,9 +391,10 @@ export function registerProviderRoutes(add, kit) {
     const today = localDate(tz, now);
     const nowMin = nowMinOf(tz, now);
     const { from, to } = monthBounds(month);
-    const [schedules, cal, moves] = await Promise.all([
+    const [schedules, cal, extraMap, moves] = await Promise.all([
       loadSchedules(db, [id]),
       loadCalendar(db, from, to),
+      loadExtras(db, [id], from, to),
       db.prepare('SELECT provider_id AS pid, id, type, date, time, device_id, note FROM provider_movements WHERE provider_id = ? AND date >= ? AND date <= ? ORDER BY time').bind(id, from, to).all(),
     ]);
     const sched = schedules.get(id);
@@ -389,7 +404,8 @@ export function registerProviderRoutes(add, kit) {
     let planned = 0;
     for (const date of datesBetween(from, to)) {
       const mv = by.get(`${id}|${date}`) || [];
-      const d = dayFor({ p, schedule: sched, date, moves: mv, cal, today, nowMin });
+      const ex = extraMap.get(`${id}|${date}`) || [];
+      const d = dayFor({ p, schedule: sched, date, moves: mv, cal, today, nowMin, extras: ex });
       planned += d.sessions.reduce((a, s) => a + (s.end - s.start), 0);
       if (!d.sessions.length && !mv.length) continue;
       const future = date > today;
@@ -402,6 +418,7 @@ export function registerProviderRoutes(add, kit) {
         arrive: toHHMM(rep.arrive), depart: toHHMM(rep.depart),
         exits: rep.exits.map((x) => ({ out: toHHMM(x.out), back: toHHMM(x.back) })),
         scheduledMin: rep.scheduledMin, countedMin: rep.countedMin, actualMin: rep.actualMin, lateMin: rep.lateMin, earlyMin: rep.earlyMin,
+        extras: ex.map((x) => ({ id: x.id, start: x.start, end: x.end, source: x.source, note: x.note })),
         flags: rep.flags, outsideContract: (date < p.contractStart || date > p.contractEnd) && mv.length > 0,
         moves: mv.map(moveOut),
       });
@@ -454,6 +471,75 @@ export function registerProviderRoutes(add, kit) {
     await db.batch([
       db.prepare('DELETE FROM provider_movements WHERE id = ? AND provider_id = ?').bind(moveId, id),
       auditStmt(db, user, 'provider.move.delete', 'provider', p.code, { id: m.id, type: m.type, date: m.date, time: m.time, device: m.device_id }),
+    ]);
+    return json({ ok: true });
+  });
+  // حصة استثنائية بتاريخ محدد (مسبقاً أو لاحقاً) لا تغيّر الجدول الدائم؛ تخضع للتأخر والغياب كأي حصة.
+  add('POST', '/api/providers/:id/extra-sessions', async ({ request, db, user, params }) => {
+    if (!can(user, 'provider.manage')) return forbidden();
+    const id = Number(params.id);
+    const p = await readProvider(db, user, id);
+    if (!p) return notFound('المزوّد');
+    const { body, error } = await readJson(request);
+    if (error) return error;
+    if (!isDate(body.date)) return bad('التاريخ غير صالح');
+    if (body.date < p.contractStart || body.date > p.contractEnd) return bad('التاريخ خارج مدة العقد');
+    if (!isTime(body.start) || !isTime(body.end) || toMin(body.end) <= toMin(body.start)) return bad('وقت الحصة غير صالح (النهاية بعد البداية)');
+    const note = clip(body.note, 200);
+    if (!note) return bad('اكتب سبب الحصة الاستثنائية');
+    const [sched, extraMap] = await Promise.all([loadSchedules(db, [id]), loadExtras(db, [id], body.date, body.date)]);
+    const dow = new Date(`${body.date}T00:00:00Z`).getUTCDay();
+    const clash = [...(sched.get(id) || []).filter((s) => s.weekday === dow), ...(extraMap.get(`${id}|${body.date}`) || [])]
+      .some((s) => toMin(body.start) < toMin(s.end) && toMin(body.end) > toMin(s.start));
+    if (clash) return bad('الحصة تتداخل مع حصة أخرى في اليوم نفسه');
+    const r = await db.prepare('INSERT INTO provider_extra_sessions (provider_id, date, start_time, end_time, source, note, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .bind(id, body.date, body.start, body.end, 'planned', note, user.email || null).run();
+    await auditStmt(db, user, 'provider.extra.add', 'provider', p.code, { date: body.date, start: body.start, end: body.end, note }).run();
+    return json({ ok: true, id: r.meta?.last_row_id ?? null }, 201);
+  });
+
+  // اعتماد حضور «خارج الجدول»: تُنشأ حصة من وصوله وانصرافه الفعليين فتُحتسب ساعاته.
+  add('POST', '/api/providers/:id/extra-days/approve', async ({ request, env, db, user, params }) => {
+    if (!can(user, 'provider.manage')) return forbidden();
+    const id = Number(params.id);
+    const p = await readProvider(db, user, id);
+    if (!p) return notFound('المزوّد');
+    const { body, error } = await readJson(request);
+    if (error) return error;
+    if (!isDate(body.date)) return bad('التاريخ غير صالح');
+    const today = localDate(tzOf(env), nowOf(env));
+    if (body.date >= today) return bad('يُعتمد حضور اليوم بعد انتهائه (من الغد)');
+    if (body.date < p.contractStart || body.date > p.contractEnd) return bad('التاريخ خارج مدة العقد');
+    const note = clip(body.note, 200);
+    if (!note) return bad('اكتب سبب الاعتماد');
+    const [sched, cal, extraMap, mv] = await Promise.all([
+      loadSchedules(db, [id]), loadCalendar(db, body.date, body.date), loadExtras(db, [id], body.date, body.date),
+      db.prepare('SELECT type, time FROM provider_movements WHERE provider_id = ? AND date = ? ORDER BY time').bind(id, body.date).all(),
+    ]);
+    const sessions = sessionsOn(body.date, p, sched.get(id), { holiday: cal.holidays.has(body.date), emergency: null, extras: extraMap.get(`${id}|${body.date}`) || [] });
+    if (sessions.length) return bad('لهذا اليوم حصص مجدولة؛ الاعتماد لأيام الحضور خارج الجدول فقط');
+    const pr = presenceOf(mv.results);
+    if (pr.arrive === null || pr.depart === null || pr.depart <= pr.arrive) return bad('لا يُعتمد يوم بلا وصول وانصراف مسجّلين؛ صحّح الحركات أولاً');
+    const start = toHHMM(pr.arrive);
+    const end = toHHMM(pr.depart);
+    await db.batch([
+      db.prepare('INSERT INTO provider_extra_sessions (provider_id, date, start_time, end_time, source, note, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(id, body.date, start, end, 'approved', note, user.email || null),
+      auditStmt(db, user, 'provider.extra.approve', 'provider', p.code, { date: body.date, start, end, note }),
+    ]);
+    return json({ ok: true, start, end }, 201);
+  });
+
+  add('DELETE', '/api/providers/:id/extra-sessions/:sid', async ({ db, user, params }) => {
+    if (!can(user, 'provider.manage')) return forbidden();
+    const id = Number(params.id);
+    const p = await readProvider(db, user, id);
+    if (!p) return notFound('المزوّد');
+    const sid = Number(params.sid);
+    const r = await db.prepare('SELECT id, date, start_time AS start, end_time AS end, source FROM provider_extra_sessions WHERE id = ? AND provider_id = ?').bind(sid, id).first();
+    if (!r) return notFound('الحصة');
+    await db.batch([
+      db.prepare('DELETE FROM provider_extra_sessions WHERE id = ? AND provider_id = ?').bind(sid, id),
+      auditStmt(db, user, 'provider.extra.delete', 'provider', p.code, { date: r.date, start: r.start, end: r.end, source: r.source }),
     ]);
     return json({ ok: true });
   });

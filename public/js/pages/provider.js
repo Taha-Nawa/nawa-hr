@@ -74,6 +74,67 @@ export default async function render({ params }) {
     const dlg = dialog({ title: date ? `حركات ${AR_DAYS[new Date(`${date}T00:00:00Z`).getUTCDay()]} ${dmy(date)}` : 'تسجيل حضور يدوي', content: form, wide: true });
   }
 
+  // ---- حصة استثنائية بتاريخ محدد (لا تغيّر الجدول الدائم)
+  function extraDialog() {
+    const p = detail.provider;
+    const dateInput = h('input', { type: 'date', required: true, min: p.contractStart, max: p.contractEnd });
+    const from = timeField({ label: 'من' });
+    const to = timeField({ label: 'إلى' });
+    const note = h('input', { type: 'text', maxlength: 200, required: true, placeholder: 'السبب (إلزامي): مثال: تعويض عن حصة، ورشة طارئة' });
+    const err = h('div', { class: 'notice notice-err', role: 'alert', hidden: true });
+    const submit = h('button', { type: 'submit', class: 'btn btn-primary' }, 'إضافة الحصة');
+    const form = h('form', { class: 'form-grid', novalidate: true, onsubmit: async (e) => {
+      e.preventDefault();
+      err.hidden = true;
+      const fail = (m) => { err.textContent = m; err.hidden = false; };
+      if (!dateInput.value) return fail('حدّد التاريخ');
+      if (!from.value || !to.value) return fail('حدّد وقت البداية والنهاية');
+      if (!note.value.trim()) return fail('اكتب السبب');
+      submit.disabled = true;
+      try {
+        await post(`/api/providers/${id}/extra-sessions`, { date: dateInput.value, start: from.value, end: to.value, note: note.value });
+        dlg.close();
+        toast('أُضيفت الحصة الاستثنائية');
+        await load();
+      } catch (ex) { fail(ex.message); submit.disabled = false; }
+    } },
+    h('p', { class: 'field-hint span-all' }, 'حصة ليوم واحد بتاريخ محدد، تُضاف إلى جدوله الدائم وتخضع للتأخر والغياب كأي حصة. لا يتغيّر جدوله في بقية الأسابيع.'),
+    field('التاريخ', dateInput), field('السبب', note),
+    h('div', { class: 'sched-row span-all' }, field('من', from), field('إلى', to)),
+    h('div', { class: 'span-all' }, err),
+    h('div', { class: 'dlg-actions span-all' }, h('button', { type: 'button', class: 'btn', onclick: () => dlg.close() }, 'إغلاق'), submit));
+    const dlg = dialog({ title: 'حصة استثنائية', content: form });
+  }
+
+  // ---- اعتماد حضور خارج الجدول: تُحتسب ساعاته من وصوله وانصرافه الفعليين
+  function approveDialog(d) {
+    const note = h('input', { type: 'text', maxlength: 200, required: true, placeholder: 'السبب (إلزامي): مثال: كُلّف بعمل إضافي' });
+    const err = h('div', { class: 'notice notice-err', role: 'alert', hidden: true });
+    const submit = h('button', { type: 'submit', class: 'btn btn-primary' }, 'اعتماد الحضور');
+    const form = h('form', { class: 'form-grid', novalidate: true, onsubmit: async (e) => {
+      e.preventDefault();
+      err.hidden = true;
+      if (!note.value.trim()) { err.textContent = 'اكتب سبب الاعتماد'; err.hidden = false; return; }
+      submit.disabled = true;
+      try {
+        await post(`/api/providers/${id}/extra-days/approve`, { date: d.date, note: note.value });
+        dlg.close();
+        toast('اعتُمد الحضور وصارت ساعاته محتسبة');
+        await load();
+      } catch (ex) { err.textContent = ex.message; err.hidden = false; submit.disabled = false; }
+    } },
+    h('p', { class: 'span-all' }, `سيُحتسب له ${fmtRange12(d.arrive, d.depart)} (زمن وجوده الفعلي، دون الخروج المؤقت) في ${AR_DAYS[d.dow]} ${dmy(d.date)}. تُسجَّل العملية في سجل التدقيق ويمكن إلغاؤها.`),
+    h('div', { class: 'span-all' }, field('السبب', note)),
+    h('div', { class: 'span-all' }, err),
+    h('div', { class: 'dlg-actions span-all' }, h('button', { type: 'button', class: 'btn', onclick: () => dlg.close() }, 'إغلاق'), submit));
+    const dlg = dialog({ title: 'اعتماد حضور خارج الجدول', content: form });
+  }
+
+  async function dropExtra(x, d) {
+    if (!(await confirmBox(`إلغاء الحصة الاستثنائية ${fmtRange12(x.start, x.end)} في ${dmy(d.date)}؟ ${x.source === 'approved' ? 'ستعود ساعاته إلى «خارج الجدول» وغير محتسبة.' : ''}`, 'ألغِها', true))) return;
+    try { await del(`/api/providers/${id}/extra-sessions/${x.id}`); toast('أُلغيت الحصة'); await load(); } catch (e) { toast(e.message, 'err'); }
+  }
+
   async function edit() {
     let centers = [];
     let employees = [];
@@ -137,13 +198,15 @@ export default async function render({ params }) {
         const notes = dayNotes(d);
         return h('tr', { class: d.future ? 'is-future' : '' },
           h('td', null, h('strong', null, AR_DAYS[d.dow]), h('div', { class: 'code' }, dmy(d.date))),
-          h('td', null, d.sessions.length ? d.sessions.map((s) => h('div', null, fmtRange12(s.start, s.end))) : '—'),
+          h('td', null, d.sessions.length ? d.sessions.map((s) => h('div', null, fmtRange12(s.start, s.end))) : '—',
+            (d.extras || []).map((x) => h('div', { class: 'alert-text' }, x.source === 'approved' ? 'معتمد خارج الجدول' : 'حصة استثنائية', detail.canManage ? [' ', h('button', { type: 'button', class: 'oc-link', onclick: () => dropExtra(x, d) }, 'إلغاء')] : null))),
           h('td', null, d.arrive ? fmt12(d.arrive) : '—'),
           h('td', null, exitsText(d.exits) || '—'),
           h('td', null, d.depart ? fmt12(d.depart) : '—'),
           h('td', { class: 'num' }, d.future ? '—' : d.sessions.length ? [h('strong', null, fmtMin(d.countedMin)), h('div', { class: 'code' }, `من ${fmtMin(d.scheduledMin)}`)] : '—'),
           h('td', null, h('span', { class: `chip ${info.chip}` }, info.label), notes.length ? h('div', { class: 'alert-text' }, notes.join(' · ')) : null),
-          detail.canManage ? h('td', { class: 'row-actions' }, d.future ? null : h('button', { type: 'button', class: 'btn btn-sm', onclick: () => movesDialog({ date: d.date, moves: d.moves }) }, 'الحركات')) : null);
+          detail.canManage ? h('td', { class: 'row-actions' }, d.future ? null : h('button', { type: 'button', class: 'btn btn-sm', onclick: () => movesDialog({ date: d.date, moves: d.moves }) }, 'الحركات'),
+            !d.future && d.status === 'extra' && d.arrive && d.depart && d.date < todayLocal() ? h('button', { type: 'button', class: 'btn btn-sm btn-primary', onclick: () => approveDialog(d) }, 'اعتماد') : null) : null);
       }))));
   }
 
@@ -160,7 +223,7 @@ export default async function render({ params }) {
           h('a', { class: 'btn', href: `#/providers/${id}/${shiftMonthStr(month, -1)}` }, 'الشهر السابق'),
           h('strong', { class: 'month-label' }, monthLabel(month)),
           h('a', { class: 'btn', href: `#/providers/${id}/${shiftMonthStr(month, 1)}` }, 'الشهر التالي'),
-          detail.canManage ? h('button', { type: 'button', class: 'btn btn-sm', onclick: () => movesDialog({}) }, icon('plus'), 'تسجيل حضور يدوي') : null)),
+          detail.canManage ? [h('button', { type: 'button', class: 'btn btn-sm', onclick: () => movesDialog({}) }, icon('plus'), 'تسجيل حضور يدوي'), h('button', { type: 'button', class: 'btn btn-sm', onclick: extraDialog }, icon('plus'), 'حصة استثنائية')] : null)),
       drawTotals(),
       drawTable(),
       h('p', { class: 'field-hint' }, `الساعات المحتسبة هي زمن وجوده في المركز خلال حصصه فقط (الوصول المبكر والبقاء بعد النهاية لا يُحتسبان). التأخر والانصراف المبكر ضمن ${data.rules.lateGraceMin} دقائق لا يُخصمان. يوم فيه حضور بلا انصراف لا تُحتسب ساعاته حتى يُصحَّح.`));
