@@ -314,6 +314,14 @@ function onCode(code){
   for(var j=0;j<log.length;j++){
     var L=log[j];
     if(L.code===b.code&&L.type===move&&L.date===today){
+      /* انصراف سُجّل قبل 11 صباحاً (غالباً بوضع خاطئ) لا يمنع الانصراف الحقيقي بعد 12 ظهراً: يُطلب مسح ثانٍ للتأكيد */
+      if(move==="انصراف"&&L.time<"11:00"&&tstr(d)>="12:00"){
+        var dk="dup|"+b.code;
+        if(!warnAt[dk]||now-warnAt[dk]>60000){
+          warnAt[dk]=now;
+          reject(code,"سُجّل لـ"+b.name+" انصراف الساعة "+t12(L.time)+" (ربما بالخطأ) — امسح ثانيةً لتسجيل الانصراف الآن",b); return }
+        delete warnAt[dk]; warnAt[b.code]=now; continue; /* أُكّد الانصراف: لا يُسأل مرة ثانية عن غياب الحضور */
+      }
       if(move==="حضور"||move==="انصراف"){ reject(code,"سبق تسجيل "+lbl(move)+" اليوم — "+b.name,b); return }
       if(now-new Date(L.iso).getTime()<180000){ reject(code,"مسح مكرر خلال ٣ دقائق",b); return }
     }
