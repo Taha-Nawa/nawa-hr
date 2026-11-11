@@ -15,6 +15,7 @@ const SUBTREE = `WITH RECURSIVE sub(id, depth) AS (
 ) `;
 const MAX_BODY = 400;
 const MAX_HOURS = 24 * 30;
+const MAX_AHEAD_DAYS = 90;
 
 const parseIds = (s) => { try { const a = JSON.parse(s); return Array.isArray(a) ? a.map(Number) : []; } catch { return []; } };
 
@@ -126,8 +127,26 @@ export function registerAnnouncementRoutes(add, kit) {
     if (error) return error;
     const text = clip(body.body, MAX_BODY);
     if (!text || text.length < 2) return bad('اكتب نص الرسالة');
-    const hours = Number(body.hours);
-    if (!Number.isFinite(hours) || hours < 1 || hours > MAX_HOURS) return bad(`المدة بالساعات بين 1 و${MAX_HOURS}`);
+    // وقت الظهور والاختفاء: startsAt وendsAt (تاريخ وساعة)، أو hours من الآن للتوافق مع الاستعمال السابق
+    const now = nowOf(env);
+    let start;
+    let end;
+    if (body.endsAt !== undefined) {
+      const parse = (v) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v) ? new Date(v) : null);
+      end = parse(body.endsAt);
+      start = body.startsAt ? parse(body.startsAt) : now;
+      if (!end || !start || Number.isNaN(+end) || Number.isNaN(+start)) return bad('وقت الظهور أو الاختفاء غير صالح');
+      if (start < now) start = now; // بداية في الماضي = الآن
+      if (start.getTime() > now.getTime() + MAX_AHEAD_DAYS * 86400000) return bad(`لا يُجدوَل الظهور أبعد من ${MAX_AHEAD_DAYS} يوماً`);
+      if (end <= start) return bad('وقت الاختفاء يجب أن يكون بعد وقت الظهور');
+      if (end.getTime() - start.getTime() > MAX_HOURS * 3600000) return bad('أقصى مدة ظهور شهر واحد');
+      if (end.getTime() - start.getTime() < 5 * 60000) return bad('أقل مدة ظهور 5 دقائق');
+    } else {
+      const hours = Number(body.hours);
+      if (!Number.isFinite(hours) || hours < 1 || hours > MAX_HOURS) return bad(`المدة بالساعات بين 1 و${MAX_HOURS}`);
+      start = now;
+      end = new Date(start.getTime() + hours * 3600000);
+    }
     const audience = ['all', 'center', 'employees', 'team'].includes(body.audience) ? body.audience : null;
     if (!audience) return bad('اختر الفئة المستهدفة');
     if (!admin && !['team', 'employees'].includes(audience)) return forbidden(); // مسؤول الفريق لفريقه فقط
@@ -139,15 +158,13 @@ export function registerAnnouncementRoutes(add, kit) {
       if (ids.length > 400) return bad('عدد كبير: اختر المركز بدل تحديد الأشخاص');
       if (!admin && ids.some((i) => !team.includes(i))) return forbidden(); // أشخاص من فريقه فقط
     }
-    const start = nowOf(env);
-    const end = new Date(start.getTime() + hours * 3600000);
     const title = clip(body.title, 80);
     // الرسالة الصادرة من مسؤول فريق أو الموجَّهة لفريق تحمل اسم مرسِلها؛ رسائل الإدارة العامة تبقى «من الإدارة»
     const sender = !admin || audience === 'team' ? user.employeeId : null;
     const r = await db.prepare('INSERT INTO announcements (title, body, starts_at, ends_at, audience, audience_ids, created_by, sender_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
       .bind(title || null, text, start.toISOString(), end.toISOString(), audience, JSON.stringify(ids), user.email || null, sender).run();
-    await auditStmt(db, user, 'announcement.add', 'announcement', String(r.meta.last_row_id), { audience, hours, count: ids.length }).run();
-    return json({ ok: true, id: r.meta.last_row_id, endsAt: end.toISOString() });
+    await auditStmt(db, user, 'announcement.add', 'announcement', String(r.meta.last_row_id), { audience, startsAt: start.toISOString(), endsAt: end.toISOString(), count: ids.length }).run();
+    return json({ ok: true, id: r.meta.last_row_id, startsAt: start.toISOString(), endsAt: end.toISOString() });
   });
 
   // سحب الرسالة قبل انتهاء مدتها: الإدارة أي رسالة، ومسؤول الفريق رسائله فقط

@@ -22,7 +22,13 @@ export default async function render({ user }) {
   const body = h('textarea', { rows: '4', maxlength: String(MAX), placeholder: 'اكتب رسالتك للموظفين…' });
   const count = h('span', { class: 'muted small' }, `0 من ${MAX}`);
   body.addEventListener('input', () => { count.textContent = `${body.value.length} من ${MAX}`; });
-  const dur = select(DURATIONS, 24, { 'aria-label': 'المدة' });
+  // وقت الظهور والاختفاء: تاريخ وساعة لكل منهما (بتوقيت الجهاز)، وأزرار سريعة تحدّد الاختفاء بعد مدة من الظهور
+  const pad = (n) => String(n).padStart(2, '0');
+  const local = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const soon = new Date(Date.now() + 5 * 60000); soon.setSeconds(0, 0);
+  const fromAt = h('input', { type: 'datetime-local', value: local(soon), 'aria-label': 'يظهر في' });
+  const toAt = h('input', { type: 'datetime-local', value: local(new Date(soon.getTime() + 86400000)), 'aria-label': 'يختفي في' });
+  const quick = h('div', { class: 'ann-quick' }, DURATIONS.map(([hrs, t]) => h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { const s = new Date(fromAt.value); if (!Number.isNaN(+s)) toAt.value = local(new Date(s.getTime() + hrs * 3600000)); } }, t)));
   const aud = h('div', { class: 'seg-tabs', role: 'tablist' });
   const pick = h('div', { class: 'ann-pick' });
   const listBox = h('div', { class: 'ann-list' });
@@ -57,9 +63,10 @@ export default async function render({ user }) {
     }
   }
 
-  const payload = () => ({ title: title.value.trim(), body: body.value.trim(), hours: Number(dur.value), audience: st.audience, ids: st.audience === 'team' ? [] : st.audience === 'center' ? [...st.centers] : st.audience === 'employees' ? [...st.people] : [] });
+  const payload = () => ({ title: title.value.trim(), body: body.value.trim(), startsAt: new Date(fromAt.value).toISOString(), endsAt: new Date(toAt.value).toISOString(), audience: st.audience, ids: st.audience === 'team' ? [] : st.audience === 'center' ? [...st.centers] : st.audience === 'employees' ? [...st.people] : [] });
   const preview = h('button', { type: 'button', class: 'btn', onclick: () => { if (!body.value.trim()) { toast('اكتب نص الرسالة أولاً', 'err'); return; } dailyPop(user, { preview: true, messages: [{ title: title.value.trim(), body: body.value.trim(), label: admin ? undefined : `رسالة من ${user.employeeName || 'مسؤولك'}` }] }); } }, 'معاينة الفانوس');
   const send = h('button', { type: 'button', class: 'btn btn-primary', onclick: async () => {
+    if (Number.isNaN(+new Date(fromAt.value)) || Number.isNaN(+new Date(toAt.value))) { toast('حدّد تاريخ وساعة الظهور والاختفاء', 'err'); return; }
     const p = payload();
     try { send.disabled = true; await post('/api/announcements', p); toast('نُشرت الرسالة وستظهر للمستهدفين عند فتحهم للنظام'); body.value = ''; title.value = ''; count.textContent = `0 من ${MAX}`; await load(); }
     catch (e) { toast(e.message, 'err'); } finally { send.disabled = false; }
@@ -90,7 +97,7 @@ export default async function render({ user }) {
       h('h2', null, 'رسالة جديدة'),
       field('العنوان', title), field('نص الرسالة', body, count),
       h('div', null, h('label', { class: 'lbl' }, 'تظهر لـ'), aud, pick),
-      field('مدة الظهور', dur, 'تُحسب من لحظة النشر، وتظهر للموظف مرة واحدة فقط'),
+      h('div', { class: 'ann-when' }, field('يظهر في', fromAt), field('يختفي في', toAt)), quick,
       h('div', { class: 'row-actions' }, preview, send)),
     h('section', { class: 'panel' }, h('h2', null, 'الرسائل المنشورة'), listBox));
 }

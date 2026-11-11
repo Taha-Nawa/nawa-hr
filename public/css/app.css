@@ -1677,3 +1677,8 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
 .oc-flag-act { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .panel .plain li .btn-sm { margin-inline-start: 8px; }
 .panel .plain li .oc-flag-act { display: inline-flex; margin: 0 10px; vertical-align: middle; }
+.dg-lantern { display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--gold); color: #3a2a00; box-shadow: 0 0 0 3px rgba(230, 169, 1, 0.35); transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.dg-lantern:hover { transform: scale(1.08); box-shadow: 0 0 0 5px rgba(230, 169, 1, 0.45); }
+.dg-lantern .ic { width: 20px; height: 20px; }
+.ann-when { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.ann-quick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }

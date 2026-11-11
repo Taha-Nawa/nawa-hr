@@ -1,5 +1,5 @@
 // لوحة اليوم الذكية: تتغير حسب الدور. الموظف: يومه وإجراءاته. المدير: فريقه والمعلّق عنده. الموارد البشرية والمدير العام: المؤسسة والتنبيهات. مسؤول النظام: وصحة النظام.
-import { h, clear, longDate } from '../dom.js';
+import { h, clear, longDate, icon } from '../dom.js';
 import { get } from '../api.js';
 import { donut, COLORS } from '../charts-lib.js';
 import { groupOf } from './today.js';
@@ -37,12 +37,19 @@ export function dashboard({ user, today, onPick = () => {}, onCenter = () => {} 
   const alertsCard = h('div', { class: 'dg-card dg-wide' });
   const state = { rows: [], date: today, att: {}, alerts: null, watch: null, health: {} };
 
+  // أيقونة «فانوس جديد»: للموارد البشرية والمسؤول، ولمن له فريق يراسله (يُعرف من الخادم)
+  let lanternHref = ['hr', 'admin'].includes(role) ? '#/announcements' : null;
+  if (!lanternHref && lead) {
+    get('/api/announcements/scope').then((r) => { if (r.all || r.team) { lanternHref = ['manager', 'director'].includes(role) ? '#/announcements' : '#/team-message'; drawHero(); } }).catch(() => {});
+  }
+
   function drawHero() {
     clear(hero).append(
       h('div', null,
         h('p', { class: 'dg-hello' }, `${greeting()}${user.employeeName ? `، ${firstName(user.employeeName)}` : ''}`),
         h('p', { class: 'dg-sub' }, `${ROLE_LABEL[role] || role} · ${longDate(state.date)}`)),
-      h('div', { class: 'dg-actions' }, (ACTIONS[role] || ACTIONS.employee).map(([t, href, main]) => h('a', { class: `btn${main ? ' btn-primary' : ''}`, href }, t))));
+      h('div', { class: 'dg-actions' }, (ACTIONS[role] || ACTIONS.employee).map(([t, href, main]) => h('a', { class: `btn${main ? ' btn-primary' : ''}`, href }, t)),
+        lanternHref ? h('a', { class: 'dg-lantern', href: lanternHref, title: 'فانوس جديد', 'aria-label': 'إنشاء فانوس جديد' }, icon('plus')) : null));
   }
 
   function drawAtt() {

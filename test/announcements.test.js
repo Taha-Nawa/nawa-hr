@@ -93,3 +93,26 @@ test('رسائل الفريق: مسؤول الفريق يرسل لفريقه ف�
   assert.equal((await j(w.env, m, 'DELETE', `/api/announcements/${t.body.id}`)).status, 200);
   assert.equal((await j(w.env, e2, 'GET', '/api/announcements/active')).body.items.filter((x) => x.from).length, 0);
 });
+
+test('رسائل البوب: وقت ظهور واختفاء محدد (تاريخ وساعة) ومجدولة للمستقبل', async () => {
+  const { env, u } = await world();
+  const post = (b) => j(env, u.hr, 'POST', '/api/announcements', { body: 'رسالة مجدولة', audience: 'all', ...b });
+  const at = (m) => new Date(Date.parse('2026-11-11T08:00:00Z') + m * 60000).toISOString();
+  assert.equal((await post({ startsAt: at(60), endsAt: at(30) })).status, 400, 'الاختفاء قبل الظهور');
+  assert.equal((await post({ startsAt: at(60), endsAt: at(62) })).status, 400, 'أقل من 5 دقائق');
+  assert.equal((await post({ startsAt: at(0), endsAt: at(60 * 24 * 31) })).status, 400, 'أكثر من شهر');
+  assert.equal((await post({ startsAt: at(60 * 24 * 100), endsAt: at(60 * 24 * 101) })).status, 400, 'أبعد من 90 يوماً');
+  assert.equal((await post({ startsAt: 'غد', endsAt: at(60) })).status, 400);
+  const ok = await post({ startsAt: at(120), endsAt: at(180) });
+  assert.equal(ok.status, 200);
+  assert.equal(ok.body.startsAt, at(120));
+  assert.equal((await j(env, u.emp2, 'GET', '/api/announcements/active')).body.items.length, 0, 'لم يحن وقتها');
+  const past = await post({ startsAt: at(-500), endsAt: at(60) }); // بداية في الماضي تصير الآن
+  assert.equal(past.body.startsAt, at(0));
+  assert.equal((await j(env, u.emp2, 'GET', '/api/announcements/active')).body.items.length, 1);
+  const list = (await j(env, u.hr, 'GET', '/api/announcements')).body.items;
+  assert.ok(list.some((x) => x.status === 'scheduled'));
+  env.__NOW = '2026-11-11T10:30:00Z'; // بعد ساعتين ونصف: المجدولة ظاهرة والأخرى انتهت
+  const later = (await j(env, u.emp2, 'GET', '/api/announcements/active')).body.items;
+  assert.equal(later.length, 1);
+});
