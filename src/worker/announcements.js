@@ -120,19 +120,20 @@ export function registerAnnouncementRoutes(add, kit) {
       } else if (r.audience === 'team') { target = (await teamIds(db, r.sender_id)).length; audienceText = 'فريقه كاملاً'; }
       else if (r.audience === 'employees') { target = ids.length; audienceText = `${ids.length} موظفاً محدَّداً`; }
       const status = r.revoked ? 'revoked' : r.ends_at <= now ? 'ended' : r.starts_at > now ? 'scheduled' : 'live';
-      items.push({ id: r.id, title: r.title, body: r.body, startsAt: r.starts_at, endsAt: r.ends_at, audience: r.audience, audienceText, status, seen: r.seen, target, repeatMinutes: r.repeat_minutes ?? null });
+      items.push({ id: r.id, title: r.title, body: r.body, startsAt: r.starts_at, endsAt: r.ends_at, audience: r.audience, audienceText, status, seen: r.seen, target, repeatMinutes: r.repeat_minutes ?? null, ids: r.audience === 'center' || r.audience === 'employees' ? ids : [] });
     }
     return json({ ok: true, items });
   });
 
-  add('POST', '/api/announcements', async ({ env, request, db, user }) => {
+  /** يتحقق من حقول رسالة (إنشاء أو تعديل) ويعيد { res } عند الخطأ أو { m } بالقيم الجاهزة للحفظ. */
+  async function parseMessage({ env, request, db, user }) {
     const admin = isAdmin(user);
     const team = await teamIds(db, user.employeeId);
-    if (!admin && !team.length) return forbidden();
+    if (!admin && !team.length) return { res: forbidden() };
     const { body, error } = await readJson(request);
-    if (error) return error;
+    if (error) return { res: error };
     const text = clip(body.body, MAX_BODY);
-    if (!text || text.length < 2) return bad('اكتب نص الرسالة');
+    if (!text || text.length < 2) return { res: bad('اكتب نص الرسالة') };
     // وقت الظهور والاختفاء: startsAt وendsAt (تاريخ وساعة)، أو hours من الآن للتوافق مع الاستعمال السابق
     const now = nowOf(env);
     let start;
@@ -141,50 +142,84 @@ export function registerAnnouncementRoutes(add, kit) {
       const parse = (v) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v) ? new Date(v) : null);
       end = parse(body.endsAt);
       start = body.startsAt ? parse(body.startsAt) : now;
-      if (!end || !start || Number.isNaN(+end) || Number.isNaN(+start)) return bad('وقت الظهور أو الاختفاء غير صالح');
+      if (!end || !start || Number.isNaN(+end) || Number.isNaN(+start)) return { res: bad('وقت الظهور أو الاختفاء غير صالح') };
       if (start < now) start = now; // بداية في الماضي = الآن
-      if (start.getTime() > now.getTime() + MAX_AHEAD_DAYS * 86400000) return bad(`لا يُجدوَل الظهور أبعد من ${MAX_AHEAD_DAYS} يوماً`);
-      if (end <= start) return bad('وقت الاختفاء يجب أن يكون بعد وقت الظهور');
-      if (end.getTime() - start.getTime() > MAX_HOURS * 3600000) return bad('أقصى مدة ظهور شهر واحد');
-      if (end.getTime() - start.getTime() < 5 * 60000) return bad('أقل مدة ظهور 5 دقائق');
+      if (start.getTime() > now.getTime() + MAX_AHEAD_DAYS * 86400000) return { res: bad(`لا يُجدوَل الظهور أبعد من ${MAX_AHEAD_DAYS} يوماً`) };
+      if (end <= start) return { res: bad('وقت الاختفاء يجب أن يكون بعد وقت الظهور') };
+      if (end.getTime() - start.getTime() > MAX_HOURS * 3600000) return { res: bad('أقصى مدة ظهور شهر واحد') };
+      if (end.getTime() - start.getTime() < 5 * 60000) return { res: bad('أقل مدة ظهور 5 دقائق') };
     } else {
       const hours = Number(body.hours);
-      if (!Number.isFinite(hours) || hours < 1 || hours > MAX_HOURS) return bad(`المدة بالساعات بين 1 و${MAX_HOURS}`);
+      if (!Number.isFinite(hours) || hours < 1 || hours > MAX_HOURS) return { res: bad(`المدة بالساعات بين 1 و${MAX_HOURS}`) };
       start = now;
       end = new Date(start.getTime() + hours * 3600000);
     }
     const audience = ['all', 'center', 'employees', 'team'].includes(body.audience) ? body.audience : null;
-    if (!audience) return bad('اختر الفئة المستهدفة');
-    if (!admin && !['team', 'employees'].includes(audience)) return forbidden(); // مسؤول الفريق لفريقه فقط
-    if (audience === 'team' && !team.length) return bad('لا فريق لك لترسل إليه');
+    if (!audience) return { res: bad('اختر الفئة المستهدفة') };
+    if (!admin && !['team', 'employees'].includes(audience)) return { res: forbidden() }; // مسؤول الفريق لفريقه فقط
+    if (audience === 'team' && !team.length) return { res: bad('لا فريق لك لترسل إليه') };
     let ids = [];
     if (audience === 'center' || audience === 'employees') {
       ids = [...new Set((Array.isArray(body.ids) ? body.ids : []).map(Number))].filter((n) => Number.isInteger(n) && n > 0);
-      if (!ids.length) return bad(audience === 'center' ? 'اختر مركزاً واحداً على الأقل' : 'اختر موظفاً واحداً على الأقل');
-      if (ids.length > 400) return bad('عدد كبير: اختر المركز بدل تحديد الأشخاص');
-      if (!admin && ids.some((i) => !team.includes(i))) return forbidden(); // أشخاص من فريقه فقط
+      if (!ids.length) return { res: bad(audience === 'center' ? 'اختر مركزاً واحداً على الأقل' : 'اختر موظفاً واحداً على الأقل') };
+      if (ids.length > 400) return { res: bad('عدد كبير: اختر المركز بدل تحديد الأشخاص') };
+      if (!admin && ids.some((i) => !team.includes(i))) return { res: forbidden() }; // أشخاص من فريقه فقط
     }
     let repeat = null;
     if (body.repeatMinutes !== undefined && body.repeatMinutes !== null && body.repeatMinutes !== '') {
       repeat = Number(body.repeatMinutes);
-      if (!Number.isInteger(repeat) || repeat < 1 || repeat > MAX_HOURS * 60) return bad('زمن التكرار بين دقيقة واحدة وشهر');
+      if (!Number.isInteger(repeat) || repeat < 1 || repeat > MAX_HOURS * 60) return { res: bad('زمن التكرار بين دقيقة واحدة وشهر') };
       if (repeat * 60000 >= end.getTime() - start.getTime()) repeat = null; // لا يتسع للتكرار داخل المدة: تظهر مرة واحدة
     }
-    const title = clip(body.title, 80);
     // الرسالة الصادرة من مسؤول فريق أو الموجَّهة لفريق تحمل اسم مرسِلها؛ رسائل الإدارة العامة تبقى «من الإدارة»
     const sender = !admin || audience === 'team' ? user.employeeId : null;
+    return { m: { title: clip(body.title, 80) || null, text, start, end, audience, ids, repeat, sender } };
+  }
+
+  add('POST', '/api/announcements', async (ctx) => {
+    const { db, user } = ctx;
+    const r0 = await parseMessage(ctx);
+    if (r0.res) return r0.res;
+    const { title, text, start, end, audience, ids, repeat, sender } = r0.m;
     const r = await db.prepare('INSERT INTO announcements (title, body, starts_at, ends_at, audience, audience_ids, created_by, sender_id, repeat_minutes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .bind(title || null, text, start.toISOString(), end.toISOString(), audience, JSON.stringify(ids), user.email || null, sender, repeat).run();
+      .bind(title, text, start.toISOString(), end.toISOString(), audience, JSON.stringify(ids), user.email || null, sender, repeat).run();
     await auditStmt(db, user, 'announcement.add', 'announcement', String(r.meta.last_row_id), { audience, startsAt: start.toISOString(), endsAt: end.toISOString(), repeat, count: ids.length }).run();
     return json({ ok: true, id: r.meta.last_row_id, startsAt: start.toISOString(), endsAt: end.toISOString() });
   });
 
-  // سحب الرسالة قبل انتهاء مدتها: الإدارة أي رسالة، ومسؤول الفريق رسائله فقط
-  add('DELETE', '/api/announcements/:id', async ({ db, user, params }) => {
+  // تعديل رسالة مجدولة لم يحن وقت ظهورها بعد (الإدارة أي رسالة، ومسؤول الفريق رسائله فقط)
+  add('PATCH', '/api/announcements/:id', async (ctx) => {
+    const { env, db, user, params } = ctx;
     const id = Number(params.id);
-    const row = await db.prepare('SELECT id, created_by FROM announcements WHERE id = ?').bind(id).first();
+    const row = await db.prepare('SELECT id, created_by, starts_at, revoked FROM announcements WHERE id = ?').bind(id).first();
     if (!row) return notFound('الرسالة');
     if (!isAdmin(user) && row.created_by !== user.email) return forbidden();
+    if (row.revoked || row.starts_at <= nowOf(env).toISOString()) return bad('لا تُعدَّل إلا الرسالة المجدولة التي لم يحن وقت ظهورها');
+    const r0 = await parseMessage(ctx);
+    if (r0.res) return r0.res;
+    const { title, text, start, end, audience, ids, repeat, sender } = r0.m;
+    await db.batch([
+      db.prepare('UPDATE announcements SET title = ?, body = ?, starts_at = ?, ends_at = ?, audience = ?, audience_ids = ?, sender_id = ?, repeat_minutes = ? WHERE id = ?')
+        .bind(title, text, start.toISOString(), end.toISOString(), audience, JSON.stringify(ids), sender, repeat, id),
+      auditStmt(db, user, 'announcement.edit', 'announcement', String(id), { audience, startsAt: start.toISOString(), endsAt: end.toISOString(), repeat }),
+    ]);
+    return json({ ok: true, id, startsAt: start.toISOString(), endsAt: end.toISOString() });
+  });
+
+  // الرسالة المجدولة التي لم يحن وقتها تُحذف نهائياً؛ والسارية تُسحب قبل انتهاء مدتها. الإدارة أي رسالة، ومسؤول الفريق رسائله فقط
+  add('DELETE', '/api/announcements/:id', async ({ env, db, user, params }) => {
+    const id = Number(params.id);
+    const row = await db.prepare('SELECT id, created_by, starts_at, revoked FROM announcements WHERE id = ?').bind(id).first();
+    if (!row) return notFound('الرسالة');
+    if (!isAdmin(user) && row.created_by !== user.email) return forbidden();
+    if (!row.revoked && row.starts_at > nowOf(env).toISOString()) {
+      await db.batch([
+        db.prepare('DELETE FROM announcement_seen WHERE announcement_id = ?').bind(id),
+        db.prepare('DELETE FROM announcements WHERE id = ?').bind(id),
+        auditStmt(db, user, 'announcement.delete', 'announcement', String(id), {}),
+      ]);
+      return json({ ok: true, deleted: true });
+    }
     await db.prepare('UPDATE announcements SET revoked = 1 WHERE id = ?').bind(id).run();
     await auditStmt(db, user, 'announcement.revoke', 'announcement', String(id), {}).run();
     return json({ ok: true });

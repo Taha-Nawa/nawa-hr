@@ -148,3 +148,29 @@ test('رسائل البوب: التكرار داخل المدة يعيد ظهو�
   const long = await j(env, u.hr, 'POST', '/api/announcements', { body: 'قصيرة', audience: 'all', startsAt: at(700), endsAt: at(730), repeatMinutes: 60 });
   assert.equal((await j(env, u.hr, 'GET', '/api/announcements')).body.items.find((x) => x.id === long.body.id).repeatMinutes, null);
 });
+
+test('رسائل البوب: المجدولة تُعدَّل وتُحذف نهائياً قبل وقتها، والسارية تُسحب ولا تُعدَّل', async () => {
+  const { env, db, u } = await world();
+  const at = (m) => new Date(Date.parse('2026-11-11T08:00:00Z') + m * 60000).toISOString();
+  const mk = (b) => j(env, u.hr, 'POST', '/api/announcements', { body: 'نص', audience: 'all', ...b });
+  const sched = await mk({ title: 'قبل', startsAt: at(120), endsAt: at(240) });
+  const live = await mk({ startsAt: at(0), endsAt: at(240) });
+  // تعديل المجدولة: نص ووقت وفئة وتكرار
+  const ed = await j(env, u.hr, 'PATCH', `/api/announcements/${sched.body.id}`, { title: 'بعد', body: 'نص معدّل', audience: 'employees', ids: [2], startsAt: at(180), endsAt: at(300), repeatMinutes: 30 });
+  assert.equal(ed.status, 200);
+  const row = (await j(env, u.hr, 'GET', '/api/announcements')).body.items.find((x) => x.id === sched.body.id);
+  assert.deepEqual([row.title, row.body, row.audience, row.ids, row.repeatMinutes, row.startsAt], ['بعد', 'نص معدّل', 'employees', [2], 30, at(180)]);
+  assert.equal((await j(env, u.hr, 'PATCH', `/api/announcements/${sched.body.id}`, { body: 'x', audience: 'all', startsAt: at(180), endsAt: at(100) })).status, 400);
+  assert.equal((await j(env, u.hr, 'PATCH', `/api/announcements/${live.body.id}`, { body: 'x', audience: 'all', startsAt: at(10), endsAt: at(100) })).status, 400, 'السارية لا تُعدَّل');
+  assert.equal((await j(env, u.emp2, 'PATCH', `/api/announcements/${sched.body.id}`, { body: 'x', audience: 'all', endsAt: at(300) })).status, 403);
+  assert.equal((await j(env, u.hr, 'PATCH', '/api/announcements/9999', { body: 'x', audience: 'all', endsAt: at(300) })).status, 404);
+  // حذف نهائي للمجدولة، وسحب للسارية (تبقى بحالة مسحوبة)
+  assert.equal((await j(env, u.emp2, 'DELETE', `/api/announcements/${sched.body.id}`)).status, 403);
+  const del1 = await j(env, u.hr, 'DELETE', `/api/announcements/${sched.body.id}`);
+  assert.equal(del1.body.deleted, true);
+  assert.equal(await db.prepare('SELECT COUNT(*) AS n FROM announcements WHERE id = ?').bind(sched.body.id).first('n'), 0);
+  const del2 = await j(env, u.hr, 'DELETE', `/api/announcements/${live.body.id}`);
+  assert.equal(del2.body.deleted, undefined);
+  assert.equal((await j(env, u.hr, 'GET', '/api/announcements')).body.items.find((x) => x.id === live.body.id).status, 'revoked');
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM audit_log WHERE action IN ('announcement.edit','announcement.delete','announcement.revoke')").first()).n, 3);
+});

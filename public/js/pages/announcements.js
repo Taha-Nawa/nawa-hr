@@ -1,6 +1,6 @@
 // رسائل البوب للموظفين (الموارد البشرية والمسؤول): نصّ قصير في فانوس يظهر للمستهدفين عند فتح النظام لمدة محددة كالستوري.
 import { h, clear, select, toast, confirmBox, field } from '../dom.js';
-import { get, post, put, del } from '../api.js';
+import { get, post, put, patch, del } from '../api.js';
 import { dailyPop } from '../daily-pop.js';
 import { SHAPES, ITEMS, KINDS } from '../daily-pop-lib.js';
 
@@ -38,6 +38,9 @@ export default async function render({ user }) {
   repUnit.addEventListener('change', syncRep);
   syncRep();
   const repeatMinutes = () => (repUnit.value === 'none' ? null : Math.round(Number(repN.value) * (repUnit.value === 'hour' ? 60 : 1)));
+  let editing = null; // رقم الرسالة المجدولة قيد التعديل
+  const formTitle = h('h2', null, 'رسالة جديدة');
+  const cancelEdit = h('button', { type: 'button', class: 'btn', hidden: true, onclick: () => endEdit() }, 'إلغاء التعديل');
   const aud = h('div', { class: 'seg-tabs', role: 'tablist' });
   const pick = h('div', { class: 'ann-pick' });
   const listBox = h('div', { class: 'ann-list' });
@@ -78,9 +81,38 @@ export default async function render({ user }) {
     if (Number.isNaN(+new Date(fromAt.value)) || Number.isNaN(+new Date(toAt.value))) { toast('حدّد تاريخ وساعة الظهور والاختفاء', 'err'); return; }
     if (repUnit.value !== 'none' && !(repeatMinutes() >= 1)) { toast('حدّد زمن التكرار بعدد صحيح', 'err'); return; }
     const p = payload();
-    try { send.disabled = true; await post('/api/announcements', p); toast('نُشرت الرسالة وستظهر للمستهدفين فور حلول وقتها، وهم في النظام أو عند فتحه'); body.value = ''; title.value = ''; count.textContent = `0 من ${MAX}`; await load(); }
+    try { send.disabled = true; if (editing) await patch(`/api/announcements/${editing}`, p); else await post('/api/announcements', p); toast(editing ? 'حُفظ التعديل' : 'نُشرت الرسالة وستظهر للمستهدفين فور حلول وقتها، وهم في النظام أو عند فتحه'); endEdit(false); body.value = ''; title.value = ''; count.textContent = `0 من ${MAX}`; await load(); }
     catch (e) { toast(e.message, 'err'); } finally { send.disabled = false; }
   } }, 'نشر الرسالة');
+
+  function endEdit(clearForm = true) {
+    editing = null;
+    formTitle.textContent = 'رسالة جديدة';
+    send.textContent = 'نشر الرسالة';
+    cancelEdit.hidden = true;
+    if (clearForm) { body.value = ''; title.value = ''; count.textContent = `0 من ${MAX}`; }
+  }
+  // تعديل رسالة مجدولة: تُحمَّل بياناتها في النموذج نفسه ويُحفظ التعديل عليها
+  function startEdit(a) {
+    editing = a.id;
+    formTitle.textContent = 'تعديل رسالة مجدولة';
+    send.textContent = 'حفظ التعديل';
+    cancelEdit.hidden = false;
+    title.value = a.title || '';
+    body.value = a.body || '';
+    count.textContent = `${body.value.length} من ${MAX}`;
+    fromAt.value = local(new Date(a.startsAt));
+    toAt.value = local(new Date(a.endsAt));
+    const m = a.repeatMinutes;
+    repUnit.value = !m ? 'none' : m % 60 === 0 ? 'hour' : 'min';
+    repN.value = String(!m ? 15 : m % 60 === 0 ? m / 60 : m);
+    syncRep();
+    st.audience = a.audience;
+    st.centers = new Set(a.audience === 'center' ? a.ids : []);
+    st.people = new Set(a.audience === 'employees' ? a.ids : []);
+    drawAud();
+    formTitle.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   async function load() {
     const r = await get('/api/announcements');
@@ -88,7 +120,9 @@ export default async function render({ user }) {
       const [t, g] = STATUS[a.status] || [a.status, 'none'];
       return h('li', { class: 'ann-item' },
         h('div', { class: 'ann-top' }, h('span', { class: `chip chip-${g}` }, t), a.title ? h('b', null, a.title) : null,
-          a.status === 'live' ? h('button', { type: 'button', class: 'btn btn-sm', onclick: async () => { if (await confirmBox('تُسحب الرسالة فلا تظهر لمن لم يرها بعد. متابعة؟', 'سحب', true)) { await del(`/api/announcements/${a.id}`); toast('سُحبت الرسالة'); load(); } } }, 'سحب') : null),
+          a.status === 'live' ? h('button', { type: 'button', class: 'btn btn-sm', onclick: async () => { if (await confirmBox('تُسحب الرسالة فلا تظهر لمن لم يرها بعد. متابعة؟', 'سحب', true)) { await del(`/api/announcements/${a.id}`); toast('سُحبت الرسالة'); load(); } } }, 'سحب') : null,
+          a.status === 'scheduled' ? h('button', { type: 'button', class: 'btn btn-sm', onclick: () => startEdit(a) }, 'تعديل') : null,
+          a.status === 'scheduled' ? h('button', { type: 'button', class: 'btn btn-sm', onclick: async () => { if (await confirmBox('تُحذف الرسالة المجدولة نهائياً ولن تظهر لأحد. متابعة؟', 'حذف', true)) { await del(`/api/announcements/${a.id}`); if (editing === a.id) endEdit(); toast('حُذفت الرسالة'); load(); } } }, 'حذف') : null),
         h('p', null, a.body),
         h('p', { class: 'muted small' }, `${a.audienceText} · حتى ${when(a.endsAt)} · شاهدها ${a.seen} من ${a.target}${a.repeatMinutes ? ` · تتكرر كل ${repText(a.repeatMinutes)}` : ''}`));
     })) : h('p', { class: 'empty' }, 'لم تُنشر رسائل بعد.'));
@@ -104,10 +138,10 @@ export default async function render({ user }) {
       h('p', { class: 'muted' }, 'الآية خضراء، والحديث ذهبي، والحكمة زرقاء، ورسالة الإدارة ياقوتية، بأي شكل تختاره.'),
       shapeBox, h('div', { class: 'row-actions' }, previewShape, saveShape)) : null,
     h('section', { class: 'panel ann-form' },
-      h('h2', null, 'رسالة جديدة'),
+      formTitle,
       field('العنوان', title), field('نص الرسالة', body, count),
       h('div', null, h('label', { class: 'lbl' }, 'تظهر لـ'), aud, pick),
       h('div', { class: 'ann-when' }, field('يظهر في', fromAt), field('يختفي في', toAt)), quick, repWrap,
-      h('div', { class: 'row-actions' }, preview, send)),
+      h('div', { class: 'row-actions' }, preview, send, cancelEdit)),
     h('section', { class: 'panel' }, h('h2', null, 'الرسائل المنشورة'), listBox));
 }
