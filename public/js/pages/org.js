@@ -48,6 +48,7 @@ export default async function render({ user }) {
   let showInactive = false;
   let pendingFit = true;
   let scrollTo = null;
+  let paper = 'A4';
   let panelMin = false;
   let panelPos = null;
   try { panelPos = JSON.parse(localStorage.getItem('nawa.org.panel') || 'null'); } catch { panelPos = null; }
@@ -140,7 +141,7 @@ export default async function render({ user }) {
     savedZoom = canvas.style.zoom;
     canvas.style.zoom = '1';
     const w = canvas.scrollWidth;
-    canvas.style.zoom = String(Math.min(1, 1040 / Math.max(w, 1)));
+    canvas.style.zoom = String(Math.min(1, (paper === 'A3' ? 1500 : 1040) / Math.max(w, 1)));
   });
   window.addEventListener('afterprint', () => { if (savedZoom != null && canvas) canvas.style.zoom = savedZoom; savedZoom = null; });
 
@@ -276,7 +277,9 @@ export default async function render({ user }) {
       h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { for (const nn of data.org.nodes) if (nn.reports) open.add(nn.id); pendingFit = true; draw(); } }, 'فتح الكل'),
       h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { open.clear(); for (const nn of data.org.nodes) if (nn.depth === 0 || nn.depth === 1) open.add(nn.id); pendingFit = true; draw(); } }, 'طيّ للمستوى الثاني'),
       h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { try { (wrap.requestFullscreen || (() => {})).call(wrap); } catch { /* غير مدعوم */ } } }, 'ملء الشاشة'),
-      h('button', { type: 'button', class: 'btn btn-sm', onclick: () => window.print() }, icon('printer'), 'طباعة'));
+      h('select', { class: 'oc-paper', 'aria-label': 'حجم ورق الطباعة', title: 'حجم ورق الطباعة (أفقي)', onchange: (ev) => { paper = ev.target.value; page.classList.toggle('pp-a3', paper === 'A3'); } },
+        h('option', { value: 'A4', selected: paper === 'A4' }, 'ورق A4'), h('option', { value: 'A3', selected: paper === 'A3' }, 'ورق A3')),
+      h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { page.classList.toggle('pp-a3', paper === 'A3'); window.print(); } }, icon('printer'), 'طباعة / حفظ PDF'));
     const crumbs = focus != null ? h('div', { class: 'oc-crumbs' }, 'عرض فريق: ', pathUp(focus).reverse().map((id, i) => [i ? ' ‹ ' : '', id === focus ? h('b', null, byId.get(id).name) : h('button', { type: 'button', class: 'oc-link', onclick: () => { focus = node.get(id).parent == null ? null : id; pendingFit = true; draw(); } }, byId.get(id).name)]), h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { focus = null; pendingFit = true; draw(); } }, 'عرض الكل')) : null;
     const strayed = data.employees.filter((e) => e.status !== 'active' && sevOf(e.id) >= 3);
     wrap.append(

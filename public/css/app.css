@@ -594,7 +594,9 @@ a.btn.is-disabled { opacity: 0.5; }
 
 @page { size: A4; margin: 0; }
 @page org { size: A4 landscape; margin: 10mm; }
+@page org3 { size: A3 landscape; margin: 12mm; }
 .org-page { page: org; }
+.org-page.pp-a3 { page: org3; }
 @media print {
   html, body { background: #fff !important; }
   .side, .topbar, .tabbar, .no-print, .toasts { display: none !important; }
@@ -1493,3 +1495,4 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
 }
 @media print { .oc-scroll { overflow: visible; max-height: none; background: #fff; border: 0; } .oc-canvas { zoom: 0.7; margin: 0; } .oc-act, .oc-tg, .oc-panel, .oc-tools, .oc-legend, .oc-hint, .oc-strip, .tools { display: none; } .oc-new { animation: none; } }
 .col-gap { display: flex; flex-direction: column; gap: 12px; }
+.oc-paper { height: 34px; min-height: 34px; padding: 0 10px; font-size: 0.88rem; }
