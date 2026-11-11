@@ -36,3 +36,20 @@ test('بطاقات دفعة واحدة: للموارد البشرية والمس
   assert.deepEqual(some.body.cards.map((c) => c.id), [2]);
   assert.equal((await call(env, 'GET', '/api/employees/cards?ids=x', { cookie: hr.cookie })).status, 400);
 });
+
+test('بطاقة الهوية: المسمى الطويل يصغر أو يلتف على سطرين ولا يُقصّ', async () => {
+  const { lineFit } = await import('../public/js/id-card.js');
+  const opt = { base: 3, min: 2.4 };
+  assert.deepEqual(lineFit('موظف', 'landscape', opt), { size: 3, wrap: false });
+  const mid = lineFit('منسق إداري - تكنولوجيا المعلومات', 'landscape', opt);
+  assert.ok(mid.size >= 2.4 || mid.wrap);
+  for (const t of ['مديرة دائرة الشؤون الإدارية والمالية', 'مديرة دائرة البرامج والجودة والتعلم المؤسسي والتطوير', 'مدير']) {
+    for (const o of ['landscape', 'portrait']) {
+      const f = lineFit(t, o, opt);
+      assert.ok(f.size >= 2 && f.size <= 3, `${t} ${o} ${f.size}`);
+      const avail = o === 'portrait' ? 46 : 36;
+      const chars = f.wrap ? Math.ceil([...t].length / 2) + 2 : [...t].length;
+      assert.ok(chars * f.size * 0.52 <= avail + 0.2 || f.size <= 2.1, `${t} ${o}`);
+    }
+  }
+});

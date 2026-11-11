@@ -1682,3 +1682,6 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
 .dg-lantern .ic { width: 20px; height: 20px; }
 .ann-when { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
 .ann-quick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.id-who .id-place { margin-top: 1.1mm; }
+.id-portrait .id-who .id-place { margin-top: 1.3mm; }
+.id-card:not(.id-portrait) .id-bd { padding-block: 2.4mm 2.2mm; }
