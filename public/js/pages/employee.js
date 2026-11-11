@@ -5,6 +5,7 @@ import { statusChip, groupOf } from './today.js';
 import { employeeForm } from './employees.js';
 import { openLifecycleDialog, historyPanel } from './lifecycle.js';
 import { openManualDialog } from './manual.js';
+import { mySummary } from './my-summary.js';
 import { fmt12 } from '../time12.js';
 import { initials, serviceSpan, activeAllocations, projectSummary, dmy } from '../employee-lib.js';
 
@@ -487,6 +488,7 @@ export default async function render({ user, params }) {
   const histBox = canEdit ? await historyPanel(emp.id) : null;
   const page = h('div', { class: 'page' },
     hero,
+    mySummary({ employeeId: id, own: user.employeeId === id, title: user.employeeId === id ? 'أدائي هذا الشهر' : `أداء ${emp.name} هذا الشهر` }),
     cards,
     enBox,
     allocBox,

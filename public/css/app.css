@@ -1506,3 +1506,23 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
 @media print { .oc-scroll { overflow: visible; max-height: none; background: #fff; border: 0; } .oc-canvas { zoom: 0.7; margin: 0; } .oc-act, .oc-tg, .oc-panel, .oc-tools, .oc-legend, .oc-hint, .oc-strip, .tools { display: none; } .oc-new { animation: none; } }
 .col-gap { display: flex; flex-direction: column; gap: 12px; }
 .oc-paper { height: 34px; min-height: 34px; padding: 0 10px; font-size: 0.88rem; }
+
+/* لوحة الأداء الشهري للموظف */
+.ms-panel { display: grid; gap: 14px; }
+.ms-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ms-head h2 { margin: 0; }
+.ms-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.ms-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ms-tile { display: grid; gap: 2px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); border-inline-start: 4px solid var(--line); min-width: 0; }
+.ms-label { font-size: 0.82rem; color: var(--muted); }
+.ms-value { font-size: 1.55rem; line-height: 1.1; }
+.ms-sub { font-size: 0.78rem; color: var(--muted); }
+.ms-ok { border-inline-start-color: #2f7d4f; }
+.ms-warn { border-inline-start-color: #e6a901; }
+.ms-bad { border-inline-start-color: #a21008; }
+.ms-hours { display: grid; gap: 6px; }
+.ms-hours-top { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.ms-bar { height: 10px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.ms-bar-fill { display: block; height: 100%; border-radius: 99px; background: #a21008; }
+.ms-bal h3, .ms-req h3 { margin: 0 0 8px; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+@media (max-width: 700px) { .ms-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ms-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

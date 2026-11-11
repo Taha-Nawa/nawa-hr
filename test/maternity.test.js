@@ -172,3 +172,17 @@ test('واجهة الإجازات الخاصة: صلاحيات، تسجيل، ت
   assert.equal((await j(env, u.hr, 'DELETE', `/api/special-leaves/${c.body.id}`)).status, 200);
   assert.equal(await n(), 0);
 });
+
+import { summarize, balanceCards } from '../public/js/month-summary-lib.js';
+test('ملخص الأداء الشهري: يحسب الحضور والتأخر والغياب والإجازات والساعات حتى اليوم فقط', () => {
+  const d = (date, status, o = {}) => ({ date, dayType: 'عمل', status, approvedHours: 6.5, requiredHours: 6.5, lateMinutes: 0, overtimeHours: 0, deficitHours: 0, ...o });
+  const s = summarize([
+    d('2026-11-01', 'حاضر'), d('2026-11-02', 'متأخر', { lateMinutes: 20, approvedHours: 6 }), d('2026-11-03', 'غياب', { approvedHours: 0 }),
+    d('2026-11-04', 'إجازة سنوية', { approvedHours: 0, requiredHours: 0 }), { date: '2026-11-05', dayType: 'عطلة أسبوعية', status: 'عطلة أسبوعية' },
+    d('2026-11-30', 'حاضر'),
+  ], '2026-11-10');
+  assert.deepEqual([s.workDays, s.present, s.late, s.lateMinutes, s.absent, s.leave], [4, 2, 1, 20, 1, 1]);
+  assert.equal(s.approved, 12.5);
+  assert.equal(s.pct, 64);
+  assert.deepEqual(balanceCards({ balances: { annual: { total: 21, used: 3, pending: 0, remaining: 18 }, sick: { total: null }, emergency: { total: 7, used: 0, pending: 1, remaining: 7 } } }).map((b) => b.key), ['annual', 'emergency']);
+});

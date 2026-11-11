@@ -2,6 +2,7 @@ import { h, clear, todayLocal, addDays, longDate, hrs, dash } from '../dom.js';
 import { get } from '../api.js';
 import { fmt12, fmtRange12 } from '../time12.js';
 import { monthLabel } from '../monthly-report-lib.js';
+import { mySummary } from './my-summary.js';
 import { unclosedPanel } from './unclosed-panel.js';
 
 // تصنيف الحالة القادمة من المحرك إلى مجموعة للعرض واللون.
@@ -53,7 +54,7 @@ export default async function render({ user }) {
   const tools = h('div', { class: 'tools' });
   const tableBox = h('div', { class: 'table-wrap' });
   const unclosed = unclosedPanel({ user, work: settings?.work || null, onChange: () => go(date) });
-  const root = h('div', { class: 'page' }, head, notice, strip, tools, tableBox, unclosed.el);
+  const root = h('div', { class: 'page' }, head, notice, user.employeeId != null ? mySummary({ employeeId: user.employeeId, own: true }) : null, strip, tools, tableBox, unclosed.el);
 
   const dateInput = h('input', { type: 'date', value: date, 'aria-label': 'التاريخ', onchange: (e) => e.target.value && go(e.target.value) });
 
