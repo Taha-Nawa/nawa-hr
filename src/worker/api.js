@@ -444,7 +444,7 @@ add('GET', '/api/employees/:id/badges', async ({ db, user, params }) => {
 add('GET', '/api/employees/:id/card', async ({ db, user, params }) => {
   if (!can(user, 'badge.manage')) return forbidden();
   const id = Number(params.id);
-  const e = await db.prepare('SELECT e.id, e.code, e.name, e.name_en AS nameEn, e.job_title AS jobTitle, e.status, c.name AS center FROM employees e LEFT JOIN centers c ON c.id = e.center_id WHERE e.id = ?').bind(id).first();
+  const e = await db.prepare('SELECT e.id, e.code, e.name, e.name_en AS nameEn, e.job_title AS jobTitle, e.photo_url AS photo, e.status, c.name AS center FROM employees e LEFT JOIN centers c ON c.id = e.center_id WHERE e.id = ?').bind(id).first();
   if (!e) return notFound('الموظف');
   const card = await db.prepare("SELECT card FROM badges WHERE employee_id = ? AND status = 'active' ORDER BY created_at DESC, rowid DESC").bind(id).first('card');
   return json({ ok: true, employee: e, card: card || null });

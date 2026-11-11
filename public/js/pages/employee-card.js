@@ -2,16 +2,9 @@
 import { h, icon, select, toast, confirmBox } from '../dom.js';
 import { get, post } from '../api.js';
 import { qrSvg } from '../qr.js';
+import { idCard } from '../id-card.js';
 
-function cardEl(e, qr) {
-  return h('article', { class: 'id-card', 'aria-label': `بطاقة ${e.name}` },
-    h('div', { class: 'id-main' },
-      h('header', { class: 'id-head' }, h('img', { src: '/logo.png', alt: '' }), h('div', null, h('strong', null, 'جمعية نوى للثقافة والفنون'), h('span', null, 'بطاقة موظف'))),
-      h('h2', { class: 'id-name' }, e.name),
-      h('p', { class: 'id-meta' }, [e.jobTitle, e.center].filter(Boolean).join(' · ')),
-      h('p', { class: 'id-code', dir: 'ltr' }, e.code)),
-    h('div', { class: 'id-qr' }, qr.cloneNode(true), h('span', null, 'امسحها على البوابة عند الحضور والانصراف')));
-}
+const cardEl = (e, qr) => idCard({ kind: 'employee', name: e.name, line: [e.jobTitle, e.center].filter(Boolean).join(' · '), code: e.code, photo: e.photo, qr });
 
 export default async function render({ params }) {
   const id = Number(params.id);

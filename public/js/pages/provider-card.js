@@ -3,18 +3,10 @@
 import { h, icon, select } from '../dom.js';
 import { get } from '../api.js';
 import { qrSvg } from '../qr.js';
+import { idCard } from '../id-card.js';
 import { dmy, scheduleLines } from '../providers-lib.js';
 
-function cardEl(p, qr) {
-  return h('article', { class: 'id-card', 'aria-label': `بطاقة ${p.name}` },
-    h('div', { class: 'id-main' },
-      h('header', { class: 'id-head' }, h('img', { src: '/logo.png', alt: '' }), h('div', null, h('strong', null, 'جمعية نوى للثقافة والفنون'), h('span', null, 'بطاقة مزوّد خدمة'))),
-      h('h2', { class: 'id-name' }, p.name),
-      h('p', { class: 'id-meta' }, [p.service, p.center].filter(Boolean).join(' · ')),
-      h('p', { class: 'id-code', dir: 'ltr' }, p.code),
-      h('p', { class: 'id-valid' }, `صالحة حتى ${dmy(p.contractEnd)}`)),
-    h('div', { class: 'id-qr' }, qr.cloneNode(true), h('span', null, 'امسحها على البوابة عند الحضور والانصراف')));
-}
+const cardEl = (p, qr) => idCard({ kind: 'provider', name: p.name, line: [p.service, p.center].filter(Boolean).join(' · '), code: p.code, valid: `صالحة حتى ${dmy(p.contractEnd)}`, qr });
 
 export default async function render({ params }) {
   const id = Number(params.id);
