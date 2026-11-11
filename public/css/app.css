@@ -886,6 +886,27 @@ table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; w
 .id-code { font-size: 3.3mm; font-weight: 700; letter-spacing: 0.03em; color: var(--cd); white-space: nowrap; unicode-bidi: plaintext; }
 .id-kind { font-style: normal; font-size: 2.7mm; font-weight: 700; background: var(--pb); color: var(--pf); border-radius: 99px; padding: 0.5mm 1.9mm; white-space: nowrap; }
 
+/* النسخة الطولية للبطاقة (54×85.6 مم): الهوية في الأعلى، واللوحة الملوّنة بالرمز والشريط في الأسفل */
+.id-card.id-portrait { width: 54mm; height: 85.6mm; display: block; }
+.id-portrait::before { left: 0; right: 0; top: 0; bottom: auto; width: auto; height: 41mm; -webkit-mask: url(/img/card-pat-p.svg) 0 0 / 54mm 85.6mm no-repeat; mask: url(/img/card-pat-p.svg) 0 0 / 54mm 85.6mm no-repeat; }
+.id-portrait .id-qrp { position: absolute; top: 41mm; left: 0; right: 0; width: auto; height: 44.6mm; display: flex; justify-content: center; align-items: flex-start; padding-top: 3.4mm; box-sizing: border-box; }
+.id-portrait .id-qrp::before { -webkit-mask: url(/img/card-pat-p.svg) 0 -41mm / 54mm 85.6mm no-repeat; mask: url(/img/card-pat-p.svg) 0 -41mm / 54mm 85.6mm no-repeat; }
+.id-portrait .id-qr svg { width: 28mm; height: 28mm; padding: 2mm; border-radius: 2.2mm; }
+.id-portrait .id-bd { display: contents; }
+.id-portrait .id-brand { position: absolute; top: 4.6mm; left: 0; right: 0; z-index: 2; gap: 1.3mm; }
+.id-portrait .id-brand img { height: 12mm; }
+.id-portrait.id-tall .id-brand img { height: 9.6mm; }
+.id-portrait .id-brand span { font-size: 3.3mm; }
+.id-portrait .id-who { position: absolute; top: 24mm; left: 0; right: 0; z-index: 2; gap: 0.8mm; }
+.id-portrait.id-tall .id-who { top: 21.4mm; }
+.id-portrait .id-name { font-size: 7mm; }
+.id-portrait .id-meta { font-size: 2.8mm; }
+.id-portrait .id-valid { font-size: 2.6mm; }
+.id-portrait .id-foot { position: absolute; left: 5mm; right: 5mm; bottom: 4.4mm; width: auto; z-index: 2; padding: 1.3mm 2.4mm; gap: 1.4mm; }
+.id-portrait .id-code { font-size: 3.4mm; }
+.id-portrait .id-kind { font-size: 2.8mm; padding: 0.55mm 2.1mm; }
+.id-card.id-portrait.id-provider { --fb: #7f0d07; }
+
 /* كشف المزوّد المطبوع */
 .prov-paper { height: auto; min-height: 296mm; }
 .prov-ident { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5mm 8mm; }

@@ -10,9 +10,18 @@ export function shortName(name) {
   return t.length > 2 ? `${t[0]} ${t[t.length - 1]}` : t.join(' ');
 }
 
+/** خيارات اتجاه البطاقة للطباعة: عرضية 85.6×54 مم، طولية 54×85.6 مم، أو الاثنتان معاً. */
+export const ORIENT_OPTIONS = [['landscape', 'عرضية'], ['portrait', 'طولية'], ['both', 'الاثنتان معاً']];
+
+/** عناصر الورقة: لكل نسخة بطاقة بالاتجاه المختار (أو الاثنتان). make(orientation) يبني البطاقة. */
+export function cardSheet(make, copies, orient) {
+  const kinds = orient === 'both' ? ['landscape', 'portrait'] : [orient === 'portrait' ? 'portrait' : 'landscape'];
+  return Array.from({ length: copies }, () => kinds.map((o) => make(o))).flat();
+}
+
 /** kind: employee|volunteer|provider — line: المسمى/الخدمة والمركز — valid: نص الصلاحية (اختياري) */
-export function idCard({ kind, name, line, code, valid, qr }) {
-  return h('article', { class: `id-card id-${kind}${valid ? ' id-tall' : ''}`, 'aria-label': `بطاقة ${name}` },
+export function idCard({ kind, name, line, code, valid, qr, orientation = 'landscape' }) {
+  return h('article', { class: `id-card id-${kind}${valid ? ' id-tall' : ''}${orientation === 'portrait' ? ' id-portrait' : ''}`, 'aria-label': `بطاقة ${name}` },
     h('div', { class: 'id-qrp' }, h('div', { class: 'id-qr' }, qr.cloneNode(true))),
     h('div', { class: 'id-bd' },
       h('header', { class: 'id-brand' }, h('img', { src: '/logo.png', alt: '' }), h('span', null, 'جمعية نوى للثقافة والفنون')),

@@ -2,9 +2,9 @@
 import { h, icon, select, toast, confirmBox } from '../dom.js';
 import { get, post } from '../api.js';
 import { qrSvg } from '../qr.js';
-import { idCard } from '../id-card.js';
+import { idCard, cardSheet, ORIENT_OPTIONS } from '../id-card.js';
 
-const cardEl = (v, qr) => idCard({ kind: 'volunteer', name: v.name, line: [v.project, v.center].filter(Boolean).join(' · '), code: v.code, qr });
+const cardEl = (v, qr, orientation) => idCard({ kind: 'volunteer', name: v.name, line: [v.project, v.center].filter(Boolean).join(' · '), code: v.code, qr, orientation });
 
 export default async function render({ params }) {
   const id = Number(params.id);
@@ -16,10 +16,12 @@ export default async function render({ params }) {
   }
   let qr = await qrSvg(d.card);
   let copies = 1;
+  let orient = 'landscape';
   const sheet = h('div', { class: 'id-sheet' });
-  const draw = () => sheet.replaceChildren(...Array.from({ length: copies }, () => cardEl(d.volunteer, qr)));
+  const draw = () => sheet.replaceChildren(...cardSheet((o) => cardEl(d.volunteer, qr, o), copies, orient));
   draw();
   const count = select([['1', 'نسخة واحدة'], ['2', 'نسختان'], ['4', '4 نسخ'], ['8', '8 نسخ']], '1', { 'aria-label': 'عدد النسخ على الورقة', onchange: (e) => { copies = Number(e.target.value); draw(); } });
+  const orientSel = select(ORIENT_OPTIONS, 'landscape', { 'aria-label': 'اتجاه البطاقة', onchange: (e) => { orient = e.target.value; draw(); } });
   const reissue = async () => {
     if (!(await confirmBox('تُلغى البطاقة الحالية فوراً وتصدر بطاقة جديدة (للضياع أو التلف). متابعة؟', 'أصدر بطاقة جديدة', true))) return;
     try {
@@ -34,7 +36,7 @@ export default async function render({ params }) {
   return h('div', { class: 'page print-page' },
     h('header', { class: 'page-head no-print' },
       h('div', null, h('a', { href: '#/volunteers', class: 'back' }, 'المتطوعون'), h('h1', null, `بطاقة ${d.volunteer.name}`)),
-      h('div', { class: 'row-actions' }, count, h('button', { type: 'button', class: 'btn', onclick: reissue }, icon('key'), 'بطاقة جديدة (ضاعت)'), h('button', { type: 'button', class: 'btn btn-primary', onclick: () => window.print() }, icon('printer'), 'طباعة'))),
+      h('div', { class: 'row-actions' }, orientSel, count, h('button', { type: 'button', class: 'btn', onclick: reissue }, icon('key'), 'بطاقة جديدة (ضاعت)'), h('button', { type: 'button', class: 'btn btn-primary', onclick: () => window.print() }, icon('printer'), 'طباعة'))),
     h('div', { class: 'notice no-print' }, h('b', null, 'للمتطوع: '), 'يمسح رمز بطاقته على البوابة: «حضور» عند الوصول و«انصراف» عند النهاية، فيُملأ كشفه الشهري تلقائياً. أي تصحيح تدخله الموارد البشرية يدوياً له الأولوية على المسح.'),
     sheet);
 }

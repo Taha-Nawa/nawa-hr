@@ -2,9 +2,9 @@
 import { h, icon, select, toast, confirmBox } from '../dom.js';
 import { get, post } from '../api.js';
 import { qrSvg } from '../qr.js';
-import { idCard } from '../id-card.js';
+import { idCard, cardSheet, ORIENT_OPTIONS } from '../id-card.js';
 
-const cardEl = (e, qr) => idCard({ kind: 'employee', name: e.name, line: [e.jobTitle, e.center].filter(Boolean).join(' · '), code: e.code, qr });
+const cardEl = (e, qr, orientation) => idCard({ kind: 'employee', name: e.name, line: [e.jobTitle, e.center].filter(Boolean).join(' · '), code: e.code, qr, orientation });
 
 export default async function render({ params }) {
   const id = Number(params.id);
@@ -16,13 +16,15 @@ export default async function render({ params }) {
   }
   let qr = d.card ? await qrSvg(d.card) : null;
   let copies = 1;
+  let orient = 'landscape';
   const sheet = h('div', { class: 'id-sheet' });
   const draw = () => {
     if (!qr) { sheet.replaceChildren(h('div', { class: 'empty' }, h('b', null, 'لا بطاقة سارية'), h('p', { class: 'muted' }, 'اضغط «إصدار بطاقة جديدة» لإنشائها.'))); return; }
-    sheet.replaceChildren(...Array.from({ length: copies }, () => cardEl(d.employee, qr)));
+    sheet.replaceChildren(...cardSheet((o) => cardEl(d.employee, qr, o), copies, orient));
   };
   draw();
   const count = select([['1', 'نسخة واحدة'], ['2', 'نسختان'], ['4', '4 نسخ'], ['8', '8 نسخ']], '1', { 'aria-label': 'عدد النسخ على الورقة', onchange: (e) => { copies = Number(e.target.value); draw(); } });
+  const orientSel = select(ORIENT_OPTIONS, 'landscape', { 'aria-label': 'اتجاه البطاقة', onchange: (e) => { orient = e.target.value; draw(); } });
   const reissue = async () => {
     const msg = d.card ? 'تُلغى البطاقة الحالية فوراً (فتُرفض عند المسح) وتصدر بطاقة جديدة، للضياع أو التلف. متابعة؟' : 'إصدار بطاقة جديدة لهذا الموظف؟';
     if (!(await confirmBox(msg, 'أصدر بطاقة جديدة', !!d.card))) return;
@@ -39,6 +41,6 @@ export default async function render({ params }) {
   return h('div', { class: 'page print-page' },
     h('header', { class: 'page-head no-print' },
       h('div', null, h('a', { href: `#/employees/${id}`, class: 'back' }, d.employee.name), h('h1', null, `بطاقة ${d.employee.name}`)),
-      h('div', { class: 'row-actions' }, count, h('button', { type: 'button', class: 'btn', onclick: reissue }, icon('key'), d.card ? 'بطاقة جديدة (ضاعت)' : 'إصدار بطاقة جديدة'), h('button', { type: 'button', class: 'btn btn-primary', onclick: () => window.print() }, icon('printer'), 'طباعة'))),
+      h('div', { class: 'row-actions' }, orientSel, count, h('button', { type: 'button', class: 'btn', onclick: reissue }, icon('key'), d.card ? 'بطاقة جديدة (ضاعت)' : 'إصدار بطاقة جديدة'), h('button', { type: 'button', class: 'btn btn-primary', onclick: () => window.print() }, icon('printer'), 'طباعة'))),
     sheet);
 }
