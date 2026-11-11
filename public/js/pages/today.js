@@ -55,7 +55,11 @@ export default async function render({ user }) {
   const tools = h('div', { class: 'tools' });
   const tableBox = h('div', { class: 'table-wrap' });
   const unclosed = unclosedPanel({ user, work: settings?.work || null, onChange: () => go(date) });
-  const dash2 = dashboard({ user, today });
+  const dash2 = dashboard({
+    user, today,
+    onPick: (g) => { filter = g; q = ''; draw(); tools.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
+    onCenter: (c) => { center = c; filter = 'all'; q = ''; draw(); tools.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
+  });
   const root = h('div', { class: 'page' }, head, notice, dash2.el, user.employeeId != null ? mySummary({ employeeId: user.employeeId, own: true }) : null, strip, tools, tableBox, unclosed.el);
 
   const dateInput = h('input', { type: 'date', value: date, 'aria-label': 'التاريخ', onchange: (e) => e.target.value && go(e.target.value) });

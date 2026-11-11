@@ -31,6 +31,28 @@ export function registerDashboardRoutes(add, kit) {
     return json({ ok: true, from, to, days: rows.map((r) => ({ ...r, present: r.present || 0, late: r.late || 0, absent: r.absent || 0, off: r.off || 0, leave: r.leave || 0, lateMinutes: r.lateMinutes || 0, approved: Math.round((r.approved || 0) * 100) / 100, required: Math.round((r.required || 0) * 100) / 100, overtime: Math.round((r.overtime || 0) * 100) / 100 })) });
   });
 
+  // يحتاج متابعة: من تكرر غيابه أو تأخره منذ أول الشهر حتى أمس (اليوم لم ينتهِ بعد)، مرتّبين، مع نسبة الالتزام بالساعات
+  add('GET', '/api/dashboard/watch', async ({ env, db, user }) => {
+    const today = localDate(tzOf(env), nowOf(env));
+    const first = `${today.slice(0, 7)}-01`;
+    const to = addDays(today, -1);
+    if (to < first) return json({ ok: true, from: first, to, people: [], totals: { approved: 0, required: 0, pct: null } });
+    const scope = employeeScope(user, 'e');
+    const rows = (await db.prepare(
+      `SELECT e.id, e.name, c.name AS center,
+         SUM(r.status = 'غياب') AS absent, SUM(r.status = 'متأخر') AS late, SUM(r.late_minutes) AS lateMinutes,
+         SUM(r.approved_hours) AS approved, SUM(r.required_hours) AS required
+       FROM daily_results r JOIN employees e ON e.id = r.employee_id AND e.status = 'active' LEFT JOIN centers c ON c.id = e.center_id
+       WHERE r.date BETWEEN ? AND ? AND ${scope.sql} GROUP BY e.id`,
+    ).bind(first, to, ...scope.params).all()).results;
+    const approved = rows.reduce((s, r) => s + (r.approved || 0), 0);
+    const required = rows.reduce((s, r) => s + (r.required || 0), 0);
+    const people = rows.filter((r) => r.absent > 0 || r.late > 1)
+      .sort((a, b) => b.absent - a.absent || b.lateMinutes - a.lateMinutes || b.late - a.late).slice(0, 8)
+      .map((r) => ({ id: r.id, name: r.name, center: r.center, absent: r.absent || 0, late: r.late || 0, lateMinutes: r.lateMinutes || 0 }));
+    return json({ ok: true, from: first, to, people, totals: { approved: Math.round(approved * 10) / 10, required: Math.round(required * 10) / 10, pct: required > 0 ? Math.round((approved / required) * 100) : null } });
+  });
+
   add('GET', '/api/dashboard/alerts', async ({ env, db, user }) => {
     if (!(can(user, 'employee.update') || ['director', 'admin'].includes(user.role))) return forbidden();
     const today = localDate(tzOf(env), nowOf(env));

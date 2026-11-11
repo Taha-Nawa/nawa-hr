@@ -91,3 +91,17 @@ test('لوحة اليوم: الاتجاه محصور بنطاق المستخدم
   assert.equal(al.body.maternity[0].state, 'returning');
   assert.deepEqual(al.body.staffEnding.map((x) => x.id), [3]);
 });
+
+test('لوحة اليوم: «يحتاج متابعة» ترتّب الغياب والتأخر حتى أمس ضمن نطاق المستخدم', async () => {
+  const { db, env, u } = await world('2026-11-12T07:00:00Z');
+  const dts = ['2026-11-09', '2026-11-10', '2026-11-11'];
+  const ins = (e, d, st, l) => db.prepare('INSERT INTO daily_results (employee_id, date, day_type, status, approved_hours, required_hours, late_minutes) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(e, d, 'عمل', st, st === 'غياب' ? 0 : 6, 6.5, l).run();
+  for (const d of dts) await ins(3, d, 'غياب', 0);
+  await ins(2, dts[0], 'متأخر', 25);
+  const r = await j(env, u.hr, 'GET', '/api/dashboard/watch');
+  assert.equal(r.status, 200);
+  assert.equal(r.body.people[0].id, 3);
+  assert.equal(r.body.people[0].absent, dts.length);
+  const e = await j(env, u.emp2, 'GET', '/api/dashboard/watch');
+  assert.ok(e.body.people.every((p) => p.id === 2), 'الموظف يرى نفسه فقط');
+});
