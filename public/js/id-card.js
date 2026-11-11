@@ -29,5 +29,5 @@ export function idCard({ kind, name, line, code, valid, qr, orientation = 'lands
         h('h2', { class: 'id-name' }, shortName(name)),
         h('p', { class: 'id-meta' }, line || ''),
         valid ? h('p', { class: 'id-valid' }, valid) : null),
-      h('footer', { class: 'id-foot' }, h('em', { class: 'id-kind' }, KIND[kind] || ''), h('span', { class: 'id-code', dir: 'ltr' }, code))));
+      h('footer', { class: `id-foot${code ? '' : ' id-nocode'}` }, h('em', { class: 'id-kind' }, KIND[kind] || ''), code ? h('span', { class: 'id-code', dir: 'ltr' }, code) : null)));
 }

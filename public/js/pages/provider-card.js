@@ -6,7 +6,7 @@ import { qrSvg } from '../qr.js';
 import { idCard, cardSheet, ORIENT_OPTIONS } from '../id-card.js';
 import { dmy, scheduleLines } from '../providers-lib.js';
 
-const cardEl = (p, qr, orientation) => idCard({ kind: 'provider', name: p.name, line: [p.service, p.center].filter(Boolean).join(' · '), code: p.code, valid: `صالحة حتى ${dmy(p.contractEnd)}`, qr, orientation });
+const cardEl = (p, qr, orientation) => idCard({ kind: 'provider', name: p.name, line: [p.service, p.center].filter(Boolean).join(' · '), valid: `صالحة حتى ${dmy(p.contractEnd)}`, qr, orientation });
 
 export default async function render({ params }) {
   const id = Number(params.id);

@@ -887,6 +887,7 @@ table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; w
 .id-meta { margin: 0; font-size: 2.65mm; font-weight: 500; white-space: nowrap; color: var(--mt); line-height: 1.2; }
 .id-valid { margin: 0; font-size: 2.5mm; font-weight: 500; color: var(--mt); }
 .id-foot { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 1.2mm; background: var(--fb); padding: 1.2mm 2.2mm; border-radius: 2mm; box-sizing: border-box; }
+.id-nocode { justify-content: center; }
 .id-code { font-size: 3.3mm; font-weight: 700; letter-spacing: 0.03em; color: var(--cd); white-space: nowrap; unicode-bidi: plaintext; }
 .id-kind { font-style: normal; font-size: 2.7mm; font-weight: 700; background: var(--pb); color: var(--pf); border-radius: 99px; padding: 0.5mm 1.9mm; white-space: nowrap; }
 
