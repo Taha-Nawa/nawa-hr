@@ -57,7 +57,12 @@ export async function loadProviders(db, user, { id = null, activeOnly = false } 
 async function loadExtras(db, ids, from, to) {
   const map = new Map();
   if (!ids.length) return map;
-  const rows = (await db.prepare('SELECT id, provider_id AS pid, date, start_time AS start, end_time AS end, source, note FROM provider_extra_sessions WHERE date >= ? AND date <= ? AND provider_id IN (SELECT value FROM json_each(?)) ORDER BY start_time').bind(from, to, JSON.stringify(ids)).all()).results;
+  let rows;
+  try {
+    rows = (await db.prepare('SELECT id, provider_id AS pid, date, start_time AS start, end_time AS end, source, note FROM provider_extra_sessions WHERE date >= ? AND date <= ? AND provider_id IN (SELECT value FROM json_each(?)) ORDER BY start_time').bind(from, to, JSON.stringify(ids)).all()).results;
+  } catch {
+    return map; // الترحيل 0024 لم يُطبَّق بعد: تبقى صفحات المزوّدين تعمل بلا حصص استثنائية
+  }
   for (const r of rows) {
     const k = `${r.pid}|${r.date}`;
     (map.get(k) || map.set(k, []).get(k)).push({ id: r.id, start: r.start, end: r.end, source: r.source, note: r.note });
