@@ -10,6 +10,14 @@ export function shortName(name) {
   return t.length > 2 ? `${t[0]} ${t[t.length - 1]}` : t.join(' ');
 }
 
+/** حجم خط الاسم (مم) ليبقى في سطر واحد: يبدأ من الحجم المعتاد ويصغر بقدر طول الاسم والعرض المتاح. */
+export function nameSize(text, orientation) {
+  const base = orientation === 'portrait' ? 8.2 : 7.8;
+  const avail = orientation === 'portrait' ? 45 : 35;
+  const len = Math.max(1, [...String(text)].length);
+  return Math.round(Math.min(base, avail / (len * 0.5)) * 100) / 100;
+}
+
 /** خيارات اتجاه البطاقة للطباعة: عرضية 85.6×54 مم، طولية 54×85.6 مم، أو الاثنتان معاً. */
 export const ORIENT_OPTIONS = [['landscape', 'عرضية'], ['portrait', 'طولية'], ['both', 'الاثنتان معاً']];
 
@@ -34,7 +42,7 @@ export function idCard({ kind, name, line, code, valid, qr, orientation = 'lands
     h('div', { class: 'id-bd' },
       h('header', { class: 'id-brand' }, h('img', { src: '/logo.png', alt: '' }), h('span', null, 'جمعية نوى للثقافة والفنون')),
       h('div', { class: 'id-who' },
-        h('h2', { class: 'id-name' }, shortName(name)),
+        h('h2', { class: 'id-name', style: { fontSize: `${nameSize(shortName(name), orientation)}mm` } }, shortName(name)),
         ...[].concat(line || []).filter(Boolean).map((l, i) => h('p', { class: `id-meta${i ? ' id-place' : ''}` }, l)),
         valid ? h('p', { class: 'id-valid' }, valid) : null),
       h('footer', { class: `id-foot${code ? '' : ' id-nocode'}` }, h('em', { class: 'id-kind' }, KIND[kind] || ''), code ? h('span', { class: 'id-code', dir: 'ltr' }, code) : null)));

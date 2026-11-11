@@ -66,3 +66,28 @@ test('النائب يعتمد طلب فريق المدير خلال المدة �
   assert.equal((await j(env, u.dep, 'POST', `/api/requests/${r2.body.id}/approve`, {})).status, 403, 'انتهت مدة النيابة');
   assert.equal((await j(env, u.hr, 'DELETE', `/api/deputies/${a.body.id}`)).status, 200);
 });
+
+// ---------------------------------------------------------------- لوحة اليوم الذكية
+test('لوحة اليوم: الاتجاه محصور بنطاق المستخدم، والتنبيهات الإدارية للموارد البشرية والمدير العام فقط', async () => {
+  const { db, env, u } = await world();
+  const ins = (e, d, st, o = {}) => db.prepare('INSERT INTO daily_results (employee_id, date, day_type, status, approved_hours, required_hours, late_minutes) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(e, d, 'عمل', st, o.a ?? 6.5, 6.5, o.l ?? 0).run();
+  await ins(2, '2026-11-01', 'حاضر'); await ins(2, '2026-11-02', 'متأخر', { l: 20 }); await ins(3, '2026-11-02', 'غياب', { a: 0 }); await ins(4, '2026-11-02', 'إجازة سنوية', { a: 0 });
+  const hrT = await j(env, u.hr, 'GET', '/api/dashboard/trend?days=7');
+  assert.equal(hrT.status, 200);
+  const d2 = hrT.body.days.find((d) => d.date === '2026-11-02');
+  assert.deepEqual([d2.late, d2.absent, d2.leave, d2.lateMinutes], [1, 1, 1, 20]);
+  const mgrT = await j(env, u.mgr, 'GET', '/api/dashboard/trend?days=7'); // 1 يدير 2 و3
+  assert.equal(mgrT.body.days.find((d) => d.date === '2026-11-02').leave, 0, 'الموظف 4 خارج فريقه');
+  const empT = await j(env, u.emp2, 'GET', '/api/dashboard/trend?days=7');
+  assert.equal(empT.body.days.find((d) => d.date === '2026-11-02').absent, 0, 'نفسه فقط');
+  assert.equal((await j(env, u.hr, 'GET', '/api/dashboard/trend?days=99')).status, 400);
+  assert.equal((await j(env, u.mgr, 'GET', '/api/dashboard/alerts')).status, 403);
+  assert.equal((await j(env, u.emp2, 'GET', '/api/dashboard/alerts')).status, 403);
+  await j(env, u.hr, 'PUT', '/api/employees/2/gender', { gender: 'F' });
+  await j(env, u.hr, 'POST', '/api/employees/2/maternity', { deliveryDate: '2026-08-30', leaveDays: 70 }); // العودة 2026-11-08
+  await db.prepare("UPDATE employees SET end_date = '2026-11-20' WHERE id = 3").run();
+  const al = await j(env, u.dir, 'GET', '/api/dashboard/alerts');
+  assert.equal(al.status, 200);
+  assert.equal(al.body.maternity[0].state, 'returning');
+  assert.deepEqual(al.body.staffEnding.map((x) => x.id), [3]);
+});
