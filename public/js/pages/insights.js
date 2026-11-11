@@ -96,7 +96,7 @@ export default async function render({ user }) {
             h('td', null, h('a', { href: r.kind === 'provider' ? `#/providers/${r.id}` : r.kind === 'volunteer' ? '#/volunteers' : `#/employees/${r.id}` }, `${r.code} — ${r.name}`), r.kind === 'employee' ? null : h('span', { class: 'chip chip-none' }, r.kind === 'provider' ? 'مزوّد خدمة' : 'متطوع')),
             h('td', null, r.date),
             h('td', null, ...flagChips(r.flags)),
-            h('td', { class: 'muted' }, [r.maxFromCenter !== null ? `أبعد حركة ${r.maxFromCenter} م عن ${r.center} (المسموح ${r.radius})` : (r.noCenterLocation ? `موقع ${r.center} غير محدَّد` : ''), r.maxSpread ? `أقصى تباعد بين حركاته ${r.maxSpread} م` : ''].filter(Boolean).join(' — '))))))
+            h('td', { class: 'muted' }, [r.maxFromCenter !== null ? `أبعد حركة ${r.maxFromCenter} م عن ${r.center} (المسموح ${r.radius})` : (r.noCenterLocation ? `موقع ${r.center} غير محدَّد` : ''), r.maxSpread ? `أقصى تباعد بين حركاته ${r.maxSpread} م` : ''].filter(Boolean).join(' — ')))))))
         : h('div', { class: 'empty' }, h('b', null, 'لا مواقع مشبوهة'), h('p', { class: 'muted' }, 'لا حركات خرجت عن النطاق أو تغيّر موقعها في آخر 14 يوماً.')));
     } catch (e) {
       clear(locBox).append(h('div', { class: 'notice notice-err' }, e.message));
