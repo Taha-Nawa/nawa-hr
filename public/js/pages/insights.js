@@ -110,11 +110,11 @@ export default async function render({ user }) {
       clear(intBox).append(
         open.length === 0
           ? h('div', { class: 'empty' }, h('b', null, 'بياناتك سليمة'), h('p', { class: 'muted' }, 'لا نواقص تعطّل التقارير الآن.'))
-          : open.map((c) => h('details', { class: 'panel', open: c.level === 'high' },
+          : h('div', { class: 'col-gap' }, open.map((c) => h('details', { class: 'panel', open: c.level === 'high' },
             h('summary', null, h('span', { class: `chip ${LEVEL[c.level][0]}` }, LEVEL[c.level][1]), ' ', h('b', null, c.title), h('span', { class: 'muted' }, `  (${c.items.length})`)),
             h('p', { class: 'muted' }, c.why),
             h('ul', { class: 'plain' }, c.items.slice(0, 50).map((it) => h('li', null, typeof it.id === 'number' && c.key !== 'gate' ? h('a', { href: `#/employees/${it.id}` }, it.name) : it.name, it.detail ? h('span', { class: 'muted' }, `  ${it.detail}`) : null))),
-            c.items.length > 50 ? h('p', { class: 'muted' }, `و${c.items.length - 50} غيرهم…`) : null)));
+            c.items.length > 50 ? h('p', { class: 'muted' }, `و${c.items.length - 50} غيرهم…`) : null))));
     } catch (e) {
       clear(intBox).append(h('div', { class: 'notice notice-err' }, e.message));
     }
@@ -126,7 +126,9 @@ export default async function render({ user }) {
     h('section', { class: 'panel' }, h('h2', null, 'يحتاجون انتباهاً مبكراً'), patBox),
     h('section', { class: 'panel' }, h('h2', null, 'مراجعة المواقع (آخر 14 يوماً)'), h('p', { class: 'muted' }, 'تُعلَّم الأيام التي خرجت فيها حركة عن نطاق المركز، أو تباعدت فيها حركات الموظف بعضها عن بعض. إن بقي الموقع نفسه فلا علامة.'), locBox),
     full ? h('section', { class: 'panel' }, h('h2', null, 'تسوية الممولين'), h('p', { class: 'muted' }, 'ساعات كل ممول في الشهر المختار أعلاه كما تخرج في التايم شيت نفسه (المعتمدة موزّعة بنسب كل موظف).'), fundBox) : null,
-    full ? h('section', { class: 'panel-plain' }, h('h2', null, 'سلامة البيانات'), h('p', { class: 'muted' }, 'نواقص إن تُركت عطّلت التقارير أو الحضور.'), intBox) : null);
+    full ? h('section', { class: 'panel-plain', id: 'integrity-sec' }, h('h2', null, 'سلامة البيانات'), h('p', { class: 'muted' }, 'نواقص إن تُركت عطّلت التقارير أو الحضور.'), intBox) : null);
   await Promise.all([loadTrends(), loadPatterns(), loadLocations(), full ? loadFunders() : null, full ? loadIntegrity() : null]);
+  // الوصول من الجرس: #/insights?focus=integrity ينزل إلى القسم
+  if (location.hash.includes('focus=integrity')) setTimeout(() => document.getElementById('integrity-sec')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 350);
   return page;
 }

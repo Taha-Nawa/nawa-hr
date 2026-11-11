@@ -1453,3 +1453,4 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
   .oc-panel { position: fixed; inset-inline: 0; bottom: 0; top: auto; z-index: 40; max-height: 68vh; border-radius: 18px 18px 0 0; padding-bottom: max(16px, env(safe-area-inset-bottom)); box-shadow: 0 -12px 30px -12px rgba(42, 20, 16, 0.45); }
 }
 @media print { .oc-scroll { overflow: visible; max-height: none; background: #fff; border: 0; } .oc-canvas { zoom: 0.7; } .oc-act, .oc-tg, .oc-panel, .oc-tools, .oc-legend, .oc-hint, .oc-strip, .tools { display: none; } .oc-new { animation: none; } }
+.col-gap { display: flex; flex-direction: column; gap: 12px; }

@@ -59,7 +59,7 @@ async function gather(me) {
     { n: unclosed, text: 'يوم بلا تسجيل انصراف في آخر 7 أيام', href: '#/today', level: 'mid' },
     { n: pats, text: 'موظف يحتاج انتباهاً (تأخر أو غياب متكرر)', href: '#/insights', level: 'mid' },
     { n: locs, text: 'يوم بموقع مشبوه في آخر 7 أيام', href: '#/insights', level: 'high' },
-    { n: integ, text: 'ملاحظة مهمة على سلامة البيانات', href: '#/insights', level: 'mid' },
+    { n: integ, text: 'ملاحظة مهمة على سلامة البيانات', href: '#/insights?focus=integrity', level: 'mid' },
   ].filter((a) => a.n > 0);
 }
 
