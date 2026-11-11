@@ -5,6 +5,9 @@ import { closeDay, purgeAuth } from './close.js';
 import { alertGates, GATE_CRON } from './gates.js';
 import { backupReminder } from './backup.js';
 import { reportReminders } from './report-reminders.js';
+import { maternityReminders } from './maternity.js';
+import { localTime } from './util.js';
+import { tzOf } from './close.js';
 import { alertProviders, EVENING_CRON } from './provider-alerts.js';
 
 const REMINDER_HOUR_UTC = 5;
@@ -42,6 +45,12 @@ export default {
       const t = new Date(controller.scheduledTime ?? Date.now());
       if (t.getUTCHours() === REMINDER_HOUR_UTC && t.getUTCMinutes() === 0) {
         ctx.waitUntil(reportReminders(env).catch((e) => console.error('report reminders failed', e?.stack || e)));
+        return;
+      }
+      // تذكير إجازة الوضع: أول تشغيل بعد التاسعة صباحاً محلياً (نصف الساعة الأولى) يأخذ التشغيل وحده
+      const lt = localTime(tzOf(env), t);
+      if (lt >= '09:00' && lt < '09:30') {
+        ctx.waitUntil(maternityReminders(env).catch((e) => console.error('maternity reminders failed', e?.stack || e)));
         return;
       }
       ctx.waitUntil(alertGates(env).catch((e) => console.error('gate alert failed', e?.stack || e)));

@@ -13,6 +13,8 @@
  *  - «الإجازة المرضية»: F في أي يوم نوع إجازته يحتوي «مرض».
  *  - الإضافي X: في كل يوم له ساعات معتمدة، في صف «الطارئة» أو «أخرى» حسب الفترة (تُكمِّل يوم الشيت إلى F).
  *  - ساعات الدوام الموزّعة على الممولين = الساعات المعتمدة × (D ÷ الدوام الرسمي)؛ وعند D = الدوام الرسمي (الافتراضي) هي المعتمدة نفسها.
+ *  - إجازة الوضع (نوعها يحتوي «وضع»): في يوم عمل F في صف «Others» لا في الإجازة السنوية؛ وساعة الأمومة (matHours في اليوم) تُضاف إلى «Others»
+ *    وتُستثنى من نقص الدوام فلا تُحتسب إجازة سنوية.
  *  - «بدون راتب»: صف يدوي بلا خلايا يومية. و«أخرى» يدوي إلا إن اختار المسؤول توجيه الساعات الإضافية إليه.
  *  - عمود «Cost Center» = حصة الصف من إجمالي ساعات الممولين؛ وإن كان الإجمالي صفراً فنسبة التوزيع المدخلة.
  */
@@ -126,6 +128,8 @@ export function buildTimesheet({ year, month, days, allocations, dayHours, confi
     const dt = row ? row.dayType : '';
     const leave = row?.leaveType || '';
     const isSick = leave.includes('مرض');
+    const isMat = leave.includes('وضع'); // إجازة الوضع تظهر في صف Others
+    const mh = row && wk > 0 ? num(row.matHours) : 0; // ساعة الأمومة (في صف Others)
 
     const hf = hoursFor(date, config, dayHours);
     const worked = wk * hf.factor; // الساعات الموزّعة على الممولين (= المعتمدة عند الافتراضي)
@@ -139,14 +143,16 @@ export function buildTimesheet({ year, month, days, allocations, dayHours, confi
     });
 
     if (dt === 'عطلة رسمية') official[i] = hf.full;
-    if (row && dt === 'عمل' && !row.exceptional && !isSick) {
+    if (row && dt === 'عمل' && !row.exceptional && !isSick && !isMat) {
       if (wk > 0) {
-        const short = hf.attendance - worked;
+        const short = hf.attendance - worked - mh;
         annual[i] = short > SHORTFALL_EPS ? short : null;
       } else annual[i] = hf.full;
     }
     if (row && isSick) sick[i] = hf.full;
+    if (row && isMat && dt === 'عمل' && !row.exceptional) others[i] = hf.full;
     if (row && wk > 0 && hf.extra > 0) (hf.extraRow === 'other' ? others : emergency)[i] = hf.extra;
+    if (mh > 0) others[i] = (others[i] || 0) + mh;
   });
 
   const fRows = funders.map((a, k) => ({ funder: a.funder, allocationShare: a.share, values: funderVals[k], total: sum(funderVals[k]), costCenter: 0 }));

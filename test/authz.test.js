@@ -158,7 +158,7 @@ for (const [action, expected] of Object.entries(MATRIX)) {
 }
 
 test('المصفوفة تغطي كل إجراءات authz.ACTIONS الفعلية (لا إجراء بلا اختبار)', () => {
-  const covered = new Set(['backup.export', 'volunteer.manage', 'volunteer.read', 'provider.manage', 'provider.read', 'gates.read', 'employee.create', 'employee.update', 'badge.manage', 'center.manage', 'settings.read', 'settings.write', 'device.manage', 'user.manage', 'audit.read', 'holiday.write', 'import.run', 'recompute.run', 'links.manage', 'balance.manage', 'emergency.manage', 'exception.manage', 'insights.read', 'header.manage', 'day.correct', 'org.read', 'employee.lifecycle']);
+  const covered = new Set(['backup.export', 'volunteer.manage', 'volunteer.read', 'provider.manage', 'provider.read', 'gates.read', 'employee.create', 'employee.update', 'badge.manage', 'center.manage', 'settings.read', 'settings.write', 'device.manage', 'user.manage', 'audit.read', 'holiday.write', 'import.run', 'recompute.run', 'links.manage', 'balance.manage', 'emergency.manage', 'exception.manage', 'insights.read', 'header.manage', 'day.correct', 'org.read', 'employee.lifecycle', 'maternity.manage']);
   const uncovered = Object.keys(ACTIONS).filter((a) => !covered.has(a));
   assert.deepEqual(uncovered.sort(), []);
 });

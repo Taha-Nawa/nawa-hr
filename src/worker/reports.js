@@ -3,6 +3,7 @@
  * يُرجع البيانات منظّمة (JSON) والمتصفح يبني ملف الإكسل، فلا تُستهلك حصة المعالج في الخادم على توليد الملفات.
  */
 import { json } from './util.js';
+import { loadMaternityMap, applyMatHours } from './maternity.js';
 import { loadWorkSettings } from './settings.js';
 import { toMin } from '../engine/attendance.js';
 import { buildTimesheet, daysInMonth, mergeTimesheetConfig } from '../engine/timesheet.js';
@@ -91,6 +92,8 @@ export async function timesheetReport({ db, user, url }) {
     if (!daysBy.has(d.employeeId)) daysBy.set(d.employeeId, {});
     daysBy.get(d.employeeId)[d.date] = { dayType: d.dayType, approvedHours: d.approvedHours, leaveType: d.leaveType || '', exceptional: !!d.exceptional };
   }
+
+  applyMatHours(daysBy, await loadMaternityMap(db, ids));
 
   const sheets = emps.map((e) => ({
     employee: {

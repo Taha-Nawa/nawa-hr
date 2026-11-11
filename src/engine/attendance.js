@@ -70,6 +70,7 @@ const sum = (a) => a.reduce((s, x) => s + x, 0);
  * @param {{exit?:number,late?:number}} [input.permit]  دقائق أذونات المغادرة والتأخير المعتمدة لهذا اليوم (تُعفى من العجز والتأخير)
  * @param {string} [input.dismissAt]          إخلاء فوري معلَن لهذا اليوم (HH:MM): ينتهي الدوام الفعلي عنده، فلا عجز ولا انصراف مبكر لمن بقي حتى ذلك الوقت،
  *                                            ومن لم يسجّل انصرافه يُعدّ منصرفاً عنده. لا أثر له على يوم عليه إجازة (تُحتسب الإجازة يوماً كاملاً).
+ * @param {'start'|'end'|null} [input.matHour] ساعة الأمومة سارية في هذا اليوم: تُقصَّر ساعات الدوام المطلوبة ساعة من أوله أو آخره
  * @param {boolean} [input.exception]       دوام استثنائي معتمد (work_exceptions.counted = 1) في يوم عطلة
  * @param {object} settings
  */
@@ -91,7 +92,11 @@ export function computeDay(input, settings) {
 
   // الإخلاء الفوري: يسري على يوم دوام بلا إجازة فقط. نهاية الدوام الفعلية = وقت الإخلاء، ومن حضر قبله ولم يسجّل انصرافاً يُعدّ منصرفاً عنده.
   const dismissMin = has(input.dismissAt) && dayType === DAY_WORK && leaveType === '' ? toMin(input.dismissAt) : null;
-  const eff = dismissMin !== null && dismissMin < toMin(settings.end) ? { ...settings, end: toHHMM(dismissMin) } : settings;
+  let eff = dismissMin !== null && dismissMin < toMin(settings.end) ? { ...settings, end: toHHMM(dismissMin) } : settings;
+  // ساعة الأمومة (للموظفة بعد إجازة الوضع): يُقصَّر دوامها ساعة في أوله أو آخره، فلا تأخر ولا انصراف مبكر على تلك الساعة
+  if (dayType === DAY_WORK && leaveType === '' && (input.matHour === 'start' || input.matHour === 'end')) {
+    eff = input.matHour === 'start' ? { ...eff, start: toHHMM(toMin(eff.start) + 60) } : { ...eff, end: toHHMM(toMin(eff.end) - 60) };
+  }
   if (eff !== settings && checkIn !== null && checkIn < dismissMin && departure === null) departure = dismissMin;
 
   const anyManual = has(manual.in) || has(manual.out) || has(manual.ret) || has(manual.dep);
@@ -117,7 +122,7 @@ export function computeDay(input, settings) {
   //  - بلا إجازة: min(المطلوب، الصافي + دقائق التأخير المسموحة/60)، والباقي إضافي
   //  - إجازة محتسبة: المطلوب كاملاً، وما زاد عن الصافي فوق المطلوب إضافي
   //  - إجازة غير محتسبة: min(المطلوب، الصافي)
-  const start0 = toMin(settings.start);
+  const start0 = toMin(eff.start);
   const lateGross = !isWork || checkIn === null || leaveType !== '' ? 0 : Math.max(0, checkIn - start0);
   // الأذونات المعتمدة: إذن التأخير يعفي من دقائق التأخير بمقداره، وكل إذن (مغادرة/تأخير) يعوّض نقص الساعات بقدر نقصه الفعلي
   // ولا يعوّض غياب اليوم كله (يلزم حضور). بلا أذونات تبقى النتائج كما في إكسل تماماً.

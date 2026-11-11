@@ -1,5 +1,5 @@
 import { h, clear, icon, todayLocal, dayName, AR_MONTHS, hrs, dash, toast, confirmBox, field, dialog } from '../dom.js';
-import { get, post, put } from '../api.js';
+import { get, post, put, patch, del } from '../api.js';
 import { allocationCheck, MAX_CONCURRENT } from '../allocations-lib.js';
 import { statusChip, groupOf } from './today.js';
 import { employeeForm } from './employees.js';
@@ -323,6 +323,76 @@ export default async function render({ user, params }) {
       h('button', { type: 'submit', class: 'btn' }, 'تسجيل')));
   }
 
+  // إجازة الوضع وساعة الأمومة: للموظفات فقط؛ تحدّدها الموارد البشرية والمسؤول
+  const matBox = h('section', { class: 'panel' });
+  const POS = { start: 'بداية الدوام (تحضر متأخرة ساعة)', end: 'نهاية الدوام (تنصرف مبكرة ساعة)' };
+  async function loadMaternity() {
+    if (!canEdit) return;
+    const { gender, records } = await get(`/api/employees/${id}/maternity`);
+    const sel = h('select', { 'aria-label': 'الجنس', onchange: async (e) => {
+      try {
+        await put(`/api/employees/${id}/gender`, { gender: e.target.value || null });
+        toast('حُفظ');
+      } catch (ex) {
+        toast(ex.message, 'err');
+      }
+      loadMaternity();
+    } }, h('option', { value: '' }, 'غير محدّد'), h('option', { value: 'F', selected: gender === 'F' }, 'أنثى'), h('option', { value: 'M', selected: gender === 'M' }, 'ذكر'));
+    const head = [h('h2', null, 'إجازة الوضع وساعة الأمومة'), h('div', { class: 'inline-form' }, field('الجنس', sel))];
+    if (gender !== 'F') {
+      clear(matBox).append(...head, h('p', { class: 'muted' }, 'تُتاح إجازة الوضع وساعة الأمومة للموظفات فقط؛ حدّد الجنس «أنثى» لتفعيلها.'));
+      return;
+    }
+    const delivery = h('input', { type: 'date', required: true, 'aria-label': 'تاريخ الولادة' });
+    const days = h('input', { type: 'number', min: '1', max: '365', value: '70', inputmode: 'numeric', 'aria-label': 'عدد الأيام' });
+    const note = h('input', { maxlength: '200', placeholder: 'ملاحظة (اختياري)', 'aria-label': 'ملاحظة' });
+    const posSel = (cur) => h('select', { 'aria-label': 'موضع ساعة الأمومة' }, h('option', { value: '' }, 'لم تُحدَّد بعد'), Object.entries(POS).map(([v, t]) => h('option', { value: v, selected: cur === v }, t)));
+    clear(matBox).append(
+      ...head,
+      h('p', { class: 'muted' }, 'إجازة الوضع تُحسب بالأيام التقويمية من يوم الولادة (70 يوماً عادةً) وتظهر في صف Others بالتايم شيت. بعد العودة تسري ساعة الأمومة سنة تقويمية كاملة: يُقصَّر الدوام ساعة في بدايته أو نهايته وتظهر الساعة في Others.'),
+      records.length
+        ? h('ul', { class: 'plain' }, records.map((r) => {
+          const ps = posSel(r.hourPos);
+          return h('li', { class: 'badge-row' },
+            h('strong', null, `ولادة ${dmy(r.deliveryDate)}`),
+            h('span', { class: 'muted' }, `${r.leaveDays} يوماً · حتى ${dmy(r.leaveEnd)} · العودة ${dmy(r.returnDate)}${r.hourPos ? ` · الساعة حتى ${dmy(r.hourEnd)}` : ''}`),
+            ps,
+            h('button', { type: 'button', class: 'btn btn-sm', onclick: async () => {
+              try {
+                await patch(`/api/maternity/${r.id}`, { hourPos: ps.value || null });
+                toast('حُفظ موضع الساعة');
+                loadMaternity();
+                loadMonth();
+              } catch (e) {
+                toast(e.message, 'err');
+              }
+            } }, 'حفظ الساعة'),
+            h('button', { type: 'button', class: 'btn btn-sm btn-danger-ghost', onclick: async () => {
+              if (!(await confirmBox('حذف سجل إجازة الوضع؟ تُزال أيام الإجازة وساعة الأمومة ويُعاد حساب الأيام.', 'حذف', true))) return;
+              try {
+                await del(`/api/maternity/${r.id}`);
+                toast('حُذف السجل');
+                loadMaternity();
+                loadMonth();
+              } catch (e) {
+                toast(e.message, 'err');
+              }
+            } }, 'حذف'));
+        }))
+        : h('p', { class: 'muted' }, 'لا سجلات لهذه الموظفة.'),
+      h('form', { class: 'inline-form', onsubmit: async (e) => {
+        e.preventDefault();
+        try {
+          await post(`/api/employees/${id}/maternity`, { deliveryDate: delivery.value, leaveDays: Number(days.value), note: note.value });
+          toast('سُجّلت إجازة الوضع');
+          loadMaternity();
+          loadMonth();
+        } catch (ex) {
+          toast(ex.message, 'err');
+        }
+      } }, field('تاريخ الولادة', delivery), field('عدد الأيام التقويمية', days), field('ملاحظة', note), h('button', { type: 'submit', class: 'btn' }, 'تسجيل إجازة الوضع')));
+  }
+
   const histBox = canEdit ? await historyPanel(emp.id) : null;
   const page = h('div', { class: 'page' },
     hero,
@@ -331,8 +401,9 @@ export default async function render({ user, params }) {
     allocBox,
     canEdit ? badgeBox : null,
     canEdit ? excBox : null,
+    canEdit ? matBox : null,
     histBox,
     h('section', { class: 'panel-plain' }, h('div', { class: 'page-head' }, h('h2', null, 'سجل الدوام'), monthBar), sums, tableBox));
-  await Promise.all([loadMonth(), loadBadges(), loadExceptions().catch(() => {}), loadAllocations().catch(() => {})]);
+  await Promise.all([loadMonth(), loadBadges(), loadExceptions().catch(() => {}), loadMaternity().catch(() => {}), loadAllocations().catch(() => {})]);
   return page;
 }

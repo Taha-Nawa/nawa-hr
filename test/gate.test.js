@@ -184,7 +184,7 @@ test('ميزانية D1: 100 حركة لـ 100 موظف في طلب واحد ض�
   const r = await gatePost(env, moves); // الشيم يرمي خطأ إن تجاوز الحدود
   assert.equal(r.status, 200);
   assert.equal(r.body.saved, 100);
-  assert.ok(r.queries <= 13, `استعلامات الطلب: ${r.queries}`); // 12 + استعلام فرز بطاقات مزوّدي الخدمة
+  assert.ok(r.queries <= 14, `استعلامات الطلب: ${r.queries}`); // 12 + فرز بطاقات مزوّدي الخدمة + سجلات ساعة الأمومة
   assert.equal(await db.prepare('SELECT COUNT(*) AS n FROM daily_results').first('n'), 100);
   // موظف متأخر 1 دقيقة ضمن السماحية → «حاضر» والدقائق من بداية الدوام كما في إكسل
   const one = await db.prepare('SELECT status, late_minutes FROM daily_results WHERE employee_id = 1').first();

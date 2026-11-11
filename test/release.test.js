@@ -124,5 +124,6 @@ test('دفعة بوابة فيها عدة موظفين لهم إجازات: عد
   assert.equal(g.status, 200, JSON.stringify(g.body));
   assert.equal(g.body.releasedLeaveDays, 12);
   assert.ok(g.queries <= 45, `استعلامات ${g.queries}`);
+  db.resetCount?.();
   for (const id of ids) assert.equal((await reqRow(db, id)).days, 1);
 });

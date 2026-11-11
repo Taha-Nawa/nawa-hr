@@ -4,6 +4,7 @@
  *  - GET /api/insights/integrity : سلامة البيانات — نواقص تعطّل التقارير (أسماء إنجليزية، مدير، توزيع المشاريع، بطاقة، بوابة، أيام بلا انصراف).
  * قراءة فقط.
  */
+import { loadMaternityMap, applyMatHours } from './maternity.js';
 import { json, localDate, addDays } from './util.js';
 import { can, employeeScope, ACTIONS } from './authz.js';
 import { tzOf } from './close.js';
@@ -60,6 +61,8 @@ export function registerInsightRoutes(add, { bad, forbidden }) {
       if (!daysBy.has(d.e)) daysBy.set(d.e, {});
       daysBy.get(d.e)[d.date] = { dayType: d.dayType, approvedHours: d.approvedHours, leaveType: d.leaveType || '', exceptional: !!d.exceptional };
     }
+
+    applyMatHours(daysBy, await loadMaternityMap(db, emps.results.map((e) => e.id)));
 
     const byFunder = new Map();
     const problems = [];

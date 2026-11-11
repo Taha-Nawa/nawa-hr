@@ -126,7 +126,9 @@ test('الإقفال الليلي: يكتب الغياب والعطلة الأس
     (await db.prepare('SELECT employee_id, status, deficit_hours FROM daily_results').all()).results,
     [{ employee_id: 2, status: 'غياب', deficit_hours: 6.5 }],
   );
+  db.resetCount?.(); // الطلبات المتتابعة هنا طلبات منفصلة
   await closeDay(env, '2026-03-02'); // مرتين
+  db.resetCount?.();
   assert.equal(await db.prepare('SELECT COUNT(*) AS n FROM daily_results').first('n'), 1);
 
   await closeDay(env, '2026-03-05');
@@ -167,7 +169,7 @@ test('الإقفال لـ 250 موظفاً ضمن حدود D1 (≤ 50 استعل
   const r = await closeDay(env, '2026-03-02');
   const ms = performance.now() - t;
   assert.equal(r.employees, 250);
-  assert.ok(db.queries <= 25, `استعلامات الإقفال: ${db.queries}`);
+  assert.ok(db.queries <= 26, `استعلامات الإقفال: ${db.queries}`);
   assert.ok(ms < 500, `${ms.toFixed(0)}ms`);
   assert.equal(await db.prepare('SELECT COUNT(*) AS n FROM daily_results').first('n'), 250);
 });
