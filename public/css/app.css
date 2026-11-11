@@ -1594,25 +1594,44 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
 .dg-watch li:last-child { border-bottom: 0; } .dg-watch a { color: var(--ink); text-decoration: none; }
 .dg-badges { display: flex; flex-wrap: wrap; gap: 6px; }
 
-/* بوب اليوم (daily-pop.js): فقاعة عائمة بتوهج هادئ، تختفي بالنقر */
-.dp-layer { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 20px; background: rgba(42, 20, 16, 0.28); backdrop-filter: blur(2px); animation: dpFade 0.5s ease both; }
-.dp { --glow: rgba(230, 169, 1, 0.55); position: relative; font: inherit; cursor: pointer; border: 0; width: min(420px, 100%); min-height: 260px; padding: 34px 32px 26px; border-radius: 46% 54% 52% 48% / 52% 46% 54% 48%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; color: var(--ink); background: radial-gradient(circle at 30% 25%, #fffdf6 0%, #fbf0cf 55%, #f6dc98 100%); box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.55), 0 0 46px 10px var(--glow), 0 24px 60px -18px rgba(110, 10, 4, 0.55); animation: dpIn 0.7s cubic-bezier(0.2, 1.2, 0.3, 1) both, dpFloat 6s ease-in-out 0.7s infinite, dpGlow 4s ease-in-out infinite; }
-.dp-quran { --glow: rgba(63, 90, 36, 0.5); background: radial-gradient(circle at 30% 25%, #fbfff4 0%, #e6eedc 55%, #c9dcb0 100%); }
-.dp-hadith { --glow: rgba(230, 169, 1, 0.55); }
-.dp-wisdom { --glow: rgba(255, 151, 152, 0.65); background: radial-gradient(circle at 30% 25%, #fffafa 0%, #fbe9e7 55%, #ffc9c9 100%); }
-.dp:focus-visible { outline: 3px solid var(--red); outline-offset: 6px; }
-.dp::before { content: ""; position: absolute; top: 14%; inset-inline-start: 14%; width: 22%; height: 12%; border-radius: 50%; background: rgba(255, 255, 255, 0.75); transform: rotate(-24deg); filter: blur(2px); }
-.dp-kind { font-size: 0.82rem; font-weight: 700; color: var(--red); letter-spacing: 0.02em; padding: 2px 14px; border-radius: 999px; background: rgba(255, 255, 255, 0.7); }
-.dp-text { font-size: clamp(1.35rem, 4.6vw, 1.75rem); line-height: 1.85; font-weight: 700; text-wrap: balance; }
-.dp-src { font-size: 0.85rem; color: var(--ink-2); }
-.dp-hint { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
-.dp-out { animation: dpOut 0.38s ease both !important; }
-.dp-layer:has(.dp-out) { animation: dpFadeOut 0.38s ease both; }
-@keyframes dpIn { from { opacity: 0; transform: scale(0.4) translateY(40px); } to { opacity: 1; transform: none; } }
-@keyframes dpFloat { 0%, 100% { transform: translateY(0) rotate(-0.6deg); } 50% { transform: translateY(-12px) rotate(0.6deg); } }
-@keyframes dpGlow { 0%, 100% { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.55), 0 0 36px 6px var(--glow), 0 24px 60px -18px rgba(110, 10, 4, 0.55); } 50% { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.7), 0 0 64px 18px var(--glow), 0 24px 60px -18px rgba(110, 10, 4, 0.55); } }
-@keyframes dpOut { to { opacity: 0; transform: scale(0.5) translateY(-60px); } }
+/* بوب اليوم (daily-pop.js): فانوس مضيء معلّق يتأرجح ويشعّ ثم يخفت، يتّسع لنصه بلا فراغ، ويصعد ويختفي بالنقر */
+.dp-layer { position: fixed; inset: 0; z-index: 200; display: grid; place-items: start center; padding: 0 20px; background: rgba(42, 20, 16, 0.3); backdrop-filter: blur(2px); animation: dpFade 0.6s ease both; }
+.dp { --lite: 255, 190, 50; --shell: #e6a901; --shell-d: #b88300; --ink-l: #2a1410; font: inherit; color: var(--ink-l); border: 0; background: none; padding: 0; margin: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; max-width: min(340px, 100%); transform-origin: 50% 0; animation: dpDrop 1.1s cubic-bezier(0.22, 1.25, 0.36, 1) both, dpSwing 5.5s ease-in-out 1.1s infinite; }
+.dp-str { width: 3px; height: 14vh; min-height: 56px; background: linear-gradient(#7a0b04, var(--shell-d)); border-radius: 2px; }
+.dp-cap { width: 58px; height: 24px; background: linear-gradient(#f2c33a, var(--shell)); border-radius: 15px 15px 5px 5px; margin-top: -1px; position: relative; z-index: 1; }
+.dp-lamp { position: relative; width: fit-content; max-width: 100%; display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 26px 30px 28px; margin-top: -2px; text-align: center; border-radius: 48% 48% 44% 44% / 34% 34% 52% 52%; background: radial-gradient(circle at 50% 42%, #fffdf0 0%, #fff1b5 52%, #f4c94f 100%); box-shadow: inset 0 0 0 4px var(--shell); animation: dpLight 3.6s ease-in-out 0.9s infinite; }
+.dp-lamp::before { content: ""; position: absolute; inset: 8px 12px; border-radius: inherit; border: 1.5px dashed rgba(184, 131, 0, 0.45); pointer-events: none; }
+.dp-base { width: 70px; height: 15px; background: linear-gradient(var(--shell), var(--shell-d)); border-radius: 5px 5px 15px 15px; margin-top: -2px; }
+.dp-kind { font-size: 0.74rem; font-weight: 700; color: var(--red); padding: 1px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.78); }
+.dp-text { max-width: 100%; font-size: clamp(1.15rem, 4.2vw, 1.4rem); line-height: 1.75; font-weight: 700; text-wrap: balance; overflow-wrap: anywhere; }
+.dp-src { font-size: 0.78rem; color: var(--ink-2); }
+.dp-hint { font-size: 0.68rem; color: var(--muted); }
+.dp-title { font-size: 0.95rem; font-weight: 800; color: var(--red-d); }
+/* الرسالة الإدارية: فانوس ياقوتي دافئ ليتميّز عن حكمة اليوم */
+.dp-msg { --lite: 255, 120, 110; --shell: #a21008; --shell-d: #6e0a04; }
+.dp-msg .dp-lamp { background: radial-gradient(circle at 50% 42%, #fff6ee 0%, #ffd2c4 52%, #f08a7c 100%); }
+.dp-msg .dp-cap { background: linear-gradient(#c8281a, var(--shell)); }
+.dp-msg .dp-kind { background: var(--red); color: #fff; }
+.dp-quran { --lite: 150, 210, 90; }
+.dp-quran .dp-lamp { background: radial-gradient(circle at 50% 42%, #fbfff2 0%, #e4f0c8 52%, #b7d68a 100%); }
+.dp:focus-visible { outline: 3px solid var(--red); outline-offset: 8px; }
+.dp-out { animation: dpRise 0.75s cubic-bezier(0.5, 0, 0.8, 0.4) both !important; }
+.dp-out .dp-lamp { animation: dpFlash 0.75s ease-out both; }
+.dp-layer.dp-gone { animation: dpFadeOut 0.7s ease both; }
+@keyframes dpDrop { 0% { opacity: 0; transform: translateY(-70vh) rotate(7deg); } 55% { opacity: 1; transform: translateY(1.5vh) rotate(-4deg); } 78% { transform: translateY(-0.6vh) rotate(2deg); } 100% { opacity: 1; transform: none; } }
+@keyframes dpSwing { 0%, 100% { transform: rotate(1.6deg); } 50% { transform: rotate(-1.6deg); } }
+@keyframes dpLight { 0%, 100% { box-shadow: inset 0 0 0 4px var(--shell), 0 0 26px 4px rgba(var(--lite), 0.4); filter: brightness(0.96); } 45% { box-shadow: inset 0 0 0 4px var(--shell), 0 0 74px 22px rgba(var(--lite), 0.85); filter: brightness(1.1); } }
+@keyframes dpFlash { 0% { filter: brightness(1.1); box-shadow: inset 0 0 0 4px var(--shell), 0 0 70px 20px rgba(var(--lite), 0.8); } 40% { filter: brightness(1.4); box-shadow: inset 0 0 0 4px var(--shell), 0 0 120px 40px rgba(var(--lite), 1); } 100% { filter: brightness(1); box-shadow: inset 0 0 0 4px var(--shell), 0 0 20px 2px rgba(var(--lite), 0); } }
+@keyframes dpRise { 0% { opacity: 1; transform: translateY(0) scale(1); } 25% { transform: translateY(8px) scale(1.04); } 100% { opacity: 0; transform: translateY(-85vh) scale(0.7) rotate(-5deg); } }
 @keyframes dpFade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes dpFadeOut { to { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .dp { animation: dpFade 0.4s ease both; } .dp-layer { backdrop-filter: none; } }
+@media (prefers-reduced-motion: reduce) { .dp { animation: dpFade 0.4s ease both; } .dp-lamp { animation: none; box-shadow: inset 0 0 0 4px var(--shell), 0 0 40px 8px rgba(var(--lite), 0.6); } .dp-out { animation: dpFadeOut 0.3s ease both !important; } .dp-layer { backdrop-filter: none; } }
 @media print { .dp-layer { display: none !important; } }
+.ann-form { display: grid; gap: 14px; }
+.ann-form textarea { width: 100%; resize: vertical; }
+.ann-pick { display: grid; gap: 6px; margin-top: 8px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.ann-pick .ec-pick, .ann-pick .search, .ann-pick .small { grid-column: 1 / -1; }
+.ann-ul { display: grid; gap: 10px; }
+.ann-item { padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); }
+.ann-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; } .ann-top .btn { margin-inline-start: auto; }
+.ann-item p { margin: 6px 0 0; }

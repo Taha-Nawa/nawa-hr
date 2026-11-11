@@ -45,6 +45,7 @@ const PAGES = [
   { path: 'providers/:id', title: 'مزوّد الخدمة', roles: ['manager', 'hr', 'director', 'admin'], nav: 'providers', load: () => import('./pages/provider.js') },
   { path: 'providers/:id/:month', title: 'حضور مزوّد الخدمة', roles: ['manager', 'hr', 'director', 'admin'], nav: 'providers', load: () => import('./pages/provider.js') },
   { path: 'settings', group: 'admin', title: 'الإعدادات والعطل', icon: 'sliders', roles: ['hr', 'director', 'admin'], load: () => import('./pages/settings.js') },
+  { path: 'announcements', group: 'admin', title: 'رسائل البوب للموظفين', icon: 'bell', roles: ['hr', 'admin'], load: () => import('./pages/announcements.js') },
   { path: 'import', group: 'admin', title: 'الاستيراد من إكسل', icon: 'upload', roles: ['hr', 'admin'], load: () => import('./pages/import.js') },
   { path: 'devices', group: 'admin', title: 'أجهزة البوابة', icon: 'tablet', roles: ['admin'], load: () => import('./pages/devices.js') },
   { path: 'center-locations', group: 'admin', title: 'المراكز والنقاط', icon: 'gate', roles: ['hr', 'admin'], load: () => import('./pages/center-locations.js') },
