@@ -53,7 +53,13 @@ export function registerOrgRoutes(add, kit) {
     ]);
     const pendOf = new Map(pend.results.map((r) => [r.id, r.n]));
     const onLeave = new Set(leave.results.map((r) => r.id));
-    const org = analyzeOrg({ employees: emps.results, users: users.results, centers: centers.results, badges: badges.results });
+    let dismissed = [];
+    try { // الهجرة 0030 قد لا تكون طُبّقت بعد: يبقى الهيكل يعمل دون «تجاهل»
+      dismissed = (await db.prepare('SELECT employee_id AS employeeId, check_id AS checkId FROM org_dismissed').all()).results;
+    } catch (err) {
+      if (!/no such table: org_dismissed/.test(String(err?.message || err))) throw err;
+    }
+    const org = analyzeOrg({ employees: emps.results, users: users.results, centers: centers.results, badges: badges.results, dismissed });
     const roleOf = new Map();
     for (const u of users.results) if (u.employeeId != null && u.active && !roleOf.has(u.employeeId)) roleOf.set(u.employeeId, u.role);
     return json({
@@ -62,6 +68,35 @@ export function registerOrgRoutes(add, kit) {
       centers: centers.results,
       org,
     });
+  });
+
+  // «مقصود، تجاهل» ملاحظة موظف في الهيكلية، و«إعادة» لإرجاعها (الموارد البشرية والمسؤول)
+  const dismissInput = async (ctx) => {
+    if (!can(ctx.user, 'employee.lifecycle')) return { res: forbidden() };
+    const { body, error } = await readJson(ctx.request);
+    if (error) return { res: error };
+    const id = body.employeeId;
+    if (!Number.isInteger(id) || id <= 0 || typeof body.check !== 'string' || !/^[a-z_]{2,40}$/.test(body.check)) return { res: bad('البيانات غير صالحة') };
+    if (!(await ctx.db.prepare('SELECT 1 AS x FROM employees WHERE id = ?').bind(id).first())) return { res: notFound('الموظف') };
+    return { id, check: body.check };
+  };
+  add('POST', '/api/org/dismiss', async (ctx) => {
+    const r = await dismissInput(ctx);
+    if (r.res) return r.res;
+    await ctx.db.batch([
+      ctx.db.prepare('INSERT OR IGNORE INTO org_dismissed (employee_id, check_id, by_email) VALUES (?, ?, ?)').bind(r.id, r.check, ctx.user.email),
+      auditStmt(ctx.db, ctx.user, 'org.dismiss', 'employee', r.id, { check: r.check }),
+    ]);
+    return json({ ok: true });
+  });
+  add('POST', '/api/org/restore', async (ctx) => {
+    const r = await dismissInput(ctx);
+    if (r.res) return r.res;
+    await ctx.db.batch([
+      ctx.db.prepare('DELETE FROM org_dismissed WHERE employee_id = ? AND check_id = ?').bind(r.id, r.check),
+      auditStmt(ctx.db, ctx.user, 'org.restore', 'employee', r.id, { check: r.check }),
+    ]);
+    return json({ ok: true });
   });
 
   add('POST', '/api/employees/:id/lifecycle', async ({ db, user, request, params, env }) => {

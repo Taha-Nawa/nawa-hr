@@ -162,3 +162,31 @@ test('تعطيل الموظف مباشرة من نموذج التعديل يغل
   assert.equal((await db.prepare("SELECT status FROM badges WHERE employee_id = 3").first()).status, 'revoked');
   assert.equal((await call(env, 'GET', '/api/me', { cookie: u.emp3.cookie })).status, 401);
 });
+
+test('الهيكلية: «مقصود، تجاهل» تخرج الملاحظة من الفحص والدرجة، وتُعاد بـ restore، وللموارد البشرية والمسؤول فقط', async () => {
+  const { db, env, u } = await world();
+  const org = async () => (await call(env, 'GET', '/api/org', { cookie: u.hr.cookie })).body.org;
+  const first = await org();
+  const check = first.checks.find((c) => c.id === 'manager_no_approver');
+  assert.ok(check);
+  const target = check.items[0].id;
+  const body = { employeeId: target, check: 'manager_no_approver' };
+  assert.equal((await call(env, 'POST', '/api/org/dismiss', { cookie: u.director.cookie, body })).status, 403);
+  assert.equal((await call(env, 'POST', '/api/org/dismiss', { cookie: u.mgr2.cookie, body })).status, 403);
+  assert.equal((await call(env, 'POST', '/api/org/dismiss', { cookie: u.hr.cookie, body: { employeeId: target, check: 'BAD!' } })).status, 400);
+  assert.equal((await call(env, 'POST', '/api/org/dismiss', { cookie: u.hr.cookie, body: { employeeId: 999, check: 'no_account' } })).status, 404);
+  assert.equal((await call(env, 'POST', '/api/org/dismiss', { cookie: u.hr.cookie, body })).status, 200);
+  assert.equal((await call(env, 'POST', '/api/org/dismiss', { cookie: u.hr.cookie, body })).status, 200); // تكرارها آمن
+  const after = await org();
+  assert.ok(!(after.checks.find((c) => c.id === 'manager_no_approver')?.items || []).some((i) => i.id === target));
+  assert.deepEqual(after.ignored.filter((i) => i.check === 'manager_no_approver').map((i) => i.id), [target]);
+  assert.equal((await call(env, 'GET', '/api/org', { cookie: u.director.cookie })).body.org.ignored.length, after.ignored.length); // المدير العام يرى ما تُجوهل
+  assert.equal((await call(env, 'POST', '/api/org/restore', { cookie: u.admin.cookie, body })).status, 200);
+  const back = await org();
+  assert.deepEqual(back.ignored, []);
+  assert.ok(back.checks.find((c) => c.id === 'manager_no_approver').items.some((i) => i.id === target));
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM audit_log WHERE action IN ('org.dismiss','org.restore')").first()).n, 3);
+  // قاعدة لم تُطبَّق عليها الهجرة بعد: الهيكل يبقى يعمل
+  await db.prepare('DROP TABLE org_dismissed').run();
+  assert.equal((await call(env, 'GET', '/api/org', { cookie: u.hr.cookie })).status, 200);
+});

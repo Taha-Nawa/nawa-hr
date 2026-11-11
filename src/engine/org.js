@@ -8,7 +8,9 @@
  *   centers   : [{ id, name, active }]
  *   badges    : [{ employeeId, status('active'|'revoked') }]   (اختياري: لكشف بطاقة فعّالة لمنتهي الخدمة)
  *
- * المخرجات: { nodes, roots, stats, checks, score, grade }
+ *   dismissed : [{ employeeId, checkId }]  (اختياري: ملاحظات مقصودة تُستثنى من الفحوص والدرجة وتُعاد في ignored)
+ *
+ * المخرجات: { nodes, roots, stats, checks, score, grade, ignored }
  *   nodes[i] = { id, parent (المدير الفعلي الفعّال أو null), depth (0 للقمة), reports (مرؤوسون فعّالون مباشرون), team (كل من تحته)، flags:[…] }
  *   checks[i] = { id, level('high'|'mid'|'low'), title, why, fix, items:[{ id|null, name, detail }] }
  */
@@ -18,7 +20,8 @@ export const APPROVER_ROLES = new Set(['manager', 'hr', 'director', 'admin']);
 
 const WEIGHT = { high: 1, mid: 1, low: 0 };
 
-export function analyzeOrg({ employees = [], users = [], centers = [], badges = [] } = {}) {
+export function analyzeOrg({ employees = [], users = [], centers = [], badges = [], dismissed = [] } = {}) {
+  const skip = new Set(dismissed.map((d) => `${d.checkId}:${d.employeeId}`));
   const byId = new Map(employees.map((e) => [e.id, e]));
   const active = employees.filter((e) => e.status === 'active');
   const isActive = (id) => byId.get(id)?.status === 'active';
@@ -93,7 +96,12 @@ export function analyzeOrg({ employees = [], users = [], centers = [], badges = 
 
   const item = (e, detail) => ({ id: e.id, name: e.name, detail });
   const checks = [];
-  const add = (id, level, title, why, fix, items) => { if (items.length) checks.push({ id, level, title, why, fix, items }); };
+  const ignored = []; // ملاحظات قرّرت الموارد البشرية تجاهلها: تخرج من الفحوص والدرجة وتبقى للعرض
+  const add = (id, level, title, why, fix, all) => {
+    const items = all.filter((i) => i.id == null || !skip.has(`${id}:${i.id}`));
+    for (const i of all) if (i.id != null && skip.has(`${id}:${i.id}`)) ignored.push({ check: id, level, title, id: i.id, name: i.name, detail: i.detail });
+    if (items.length) checks.push({ id, level, title, why, fix, items });
+  };
 
   add('cycle', 'high', 'حلقة في سلسلة المديرين',
     'كل موظف في الحلقة مدير لمن هو مديره، فلا قمة للسلسلة وتتعطل مسارات الاعتماد.',
@@ -177,5 +185,5 @@ export function analyzeOrg({ employees = [], users = [], centers = [], badges = 
     withAccount: active.filter((e) => activeAccount(e.id)).length,
     flagged: flagged.size,
   };
-  return { nodes, roots, stats, checks, score, grade };
+  return { nodes, roots, stats, checks, score, grade, ignored };
 }

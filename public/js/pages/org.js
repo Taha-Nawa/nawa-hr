@@ -1,7 +1,7 @@
 // الهيكلية الإدارية: مخطط هرمي تفاعلي (بطاقات، تنبيهات لكل موظف، لوحة تفاصيل)، قائمة، حسب المركز، وسلامة الهيكل.
 // للموارد البشرية والمدير العام والمسؤول.
-import { h, clear, icon } from '../dom.js';
-import { get } from '../api.js';
+import { h, clear, icon, toast } from '../dom.js';
+import { get, post } from '../api.js';
 import { openLifecycleDialog } from './lifecycle.js';
 import { initials } from '../employee-lib.js';
 
@@ -61,6 +61,26 @@ export default async function render({ user }) {
   const pass = (e) => matches(e) && flagOk(e);
   const searching = () => !!(q || centerF || flagF);
   const hits = (id) => pass(byId.get(id)) || (children.get(id) || []).some(hits);
+  // «عالج»: يفتح المكان المناسب لكل نوع ملاحظة (نقل/تغيير مدير، ملف الموظف، أو صفحة المستخدمين)
+  const TREAT = { cycle: 'act', self: 'act', manager_gone: 'act', manager_inactive: 'act', multi_root: 'act', no_center: 'act', cross_center: 'act', departed_access: 'file', no_account: 'users', manager_no_approver: 'users' };
+  const treat = (check, e) => {
+    const how = TREAT[check];
+    if (how === 'act' && e.status === 'active') act(e);
+    else if (how === 'users' && user.role === 'admin') location.hash = '#/users';
+    else location.hash = `#/employees/${e.id}`;
+  };
+  const dismissOne = async (check, id, path = '/api/org/dismiss') => {
+    try {
+      await post(path, { employeeId: id, check });
+      toast(path.endsWith('restore') ? 'أُعيدت الملاحظة' : 'تُجوهلت الملاحظة وأُخرجت من الدرجة');
+      setTimeout(() => location.reload(), 600);
+    } catch (err) { toast(err.message || 'تعذّر الحفظ', 'err'); }
+  };
+  const flagButtons = (check, e) => canAct
+    ? h('div', { class: 'oc-flag-act' },
+      TREAT[check] ? h('button', { type: 'button', class: 'btn btn-sm btn-primary', onclick: () => treat(check, e) }, 'عالج') : null,
+      h('button', { type: 'button', class: 'btn btn-sm', onclick: () => dismissOne(check, e.id) }, 'مقصود، تجاهل'))
+    : null;
   const act = (e) => openLifecycleDialog({ emp: e, centers: data.centers, people: data.employees, onDone: () => location.reload() });
 
   function select(id, reveal = true) {
@@ -225,7 +245,7 @@ export default async function render({ user }) {
         h('div', null, h('dt', null, 'الطلبات المعلّقة'), h('dd', null, String(e.pendingRequests || 0))),
         e.startDate ? h('div', null, h('dt', null, 'المباشرة'), h('dd', null, e.startDate)) : null),
       h('h4', null, fl.length ? `الملاحظات (${fl.length})` : 'لا ملاحظات'),
-      fl.length ? fl.map((f) => h('div', { class: `oc-flag-box oc-${f.level}` }, h('div', null, h('span', { class: `chip ${LEVEL[f.level][0]}` }, SEV_LABEL[f.level]), ' ', h('b', null, f.title)), f.detail ? h('p', null, f.detail) : null, h('p', { class: 'muted' }, f.why), h('p', null, h('b', null, 'المعالجة: '), f.fix)))
+      fl.length ? fl.map((f) => h('div', { class: `oc-flag-box oc-${f.level}` }, h('div', null, h('span', { class: `chip ${LEVEL[f.level][0]}` }, SEV_LABEL[f.level]), ' ', h('b', null, f.title)), f.detail ? h('p', null, f.detail) : null, h('p', { class: 'muted' }, f.why), h('p', null, h('b', null, 'المعالجة: '), f.fix), flagButtons(f.check, e)))
         : h('p', { class: 'muted' }, 'بيانات هذا الموظف سليمة في الهيكل.'));
     const panel = h('aside', { class: `oc-panel${panelMin ? ' min' : ''}`, 'aria-label': `تفاصيل ${e.name}` }, bar, panelMin ? null : inner);
     placePanel(panel, bar);
@@ -353,9 +373,21 @@ export default async function render({ user }) {
           h('summary', null, h('span', { class: `chip ${LEVEL[c.level][0]}` }, LEVEL[c.level][1]), ' ', h('b', null, c.title), h('span', { class: 'muted' }, `  (${c.items.length})`)),
           h('p', { class: 'muted' }, c.why),
           h('p', null, h('b', null, 'المعالجة: '), c.fix),
-          h('ul', { class: 'plain' }, c.items.slice(0, 60).map((it) => h('li', null, it.id != null ? h('button', { type: 'button', class: 'oc-link', onclick: () => { tab = 'chart'; select(it.id); } }, it.name) : it.name, it.detail ? h('span', { class: 'muted' }, `  ${it.detail}`) : null))),
+          h('ul', { class: 'plain' }, c.items.slice(0, 60).map((it) => h('li', null, it.id != null ? h('button', { type: 'button', class: 'oc-link', onclick: () => { tab = 'chart'; select(it.id); } }, it.name) : it.name, it.detail ? h('span', { class: 'muted' }, `  ${it.detail}`) : null, it.id != null && byId.get(it.id) ? flagButtons(c.id, byId.get(it.id)) : null))),
           c.items.length > 60 ? h('p', { class: 'muted' }, `و${c.items.length - 60} غيرهم…`) : null))
-        : h('div', { class: 'empty' }, h('b', null, 'الهيكل سليم'), h('p', { class: 'muted' }, 'لا ملاحظات على التوزيع.')));
+        : h('div', { class: 'empty' }, h('b', null, 'الهيكل سليم'), h('p', { class: 'muted' }, 'لا ملاحظات على التوزيع.')),
+      ignoredList());
+  }
+
+  function ignoredList() {
+    const list = data.org.ignored || [];
+    if (!list.length) return null;
+    return h('details', { class: 'panel' },
+      h('summary', null, h('b', null, 'تم تجاهلها'), h('span', { class: 'muted' }, `  (${list.length})`)),
+      h('ul', { class: 'plain' }, list.map((it) => h('li', null,
+        h('button', { type: 'button', class: 'oc-link', onclick: () => { tab = 'chart'; select(it.id); } }, it.name),
+        h('span', { class: 'muted' }, `  ${it.title}${it.detail ? ` — ${it.detail}` : ''}`),
+        canAct ? h('button', { type: 'button', class: 'btn btn-sm', onclick: () => dismissOne(it.check, it.id, '/api/org/restore') }, 'إعادة') : null))));
   }
 
   function draw() {

@@ -105,3 +105,19 @@ test('بلا موظفين: لا انهيار', () => {
   const r = analyzeOrg({});
   assert.deepEqual([r.score, r.stats.active, r.roots.length, r.checks.length], [100, 0, 0, 0]);
 });
+
+test('مقصود، تجاهل: يُخرج الملاحظة من الفحوص والدرجة ويُبقيها في ignored، وتُعاد بـ restore، وللموارد البشرية فقط', async () => {
+  const { analyzeOrg } = await import('../src/engine/org.js');
+  const emps = [
+    { id: 1, code: 'A', name: 'أ', centerId: 1, center: 'م', managerId: null, status: 'active' },
+    { id: 2, code: 'B', name: 'ب', centerId: 1, center: 'م', managerId: 1, status: 'active' },
+    { id: 3, code: 'C', name: 'ج', centerId: 1, center: 'م', managerId: 2, status: 'active' },
+  ];
+  const base = { employees: emps, users: [], centers: [{ id: 1, name: 'م', active: 1 }] };
+  const before = analyzeOrg(base);
+  assert.ok(before.checks.some((c) => c.id === 'single_report' && c.items.some((i) => i.id === 2)));
+  const after = analyzeOrg({ ...base, dismissed: [{ employeeId: 2, checkId: 'single_report' }] });
+  assert.ok(!after.checks.some((c) => c.id === 'single_report'));
+  assert.deepEqual(after.ignored.map((i) => [i.check, i.id]), [['single_report', 2]]);
+  assert.deepEqual(before.ignored, []);
+});

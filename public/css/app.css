@@ -1674,3 +1674,6 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
 @media (prefers-reduced-motion: reduce) { .idle { animation: dpFade 0.3s ease both; } .idle-time { text-shadow: none; } }
 @media print { .idle { display: none !important; } }
 .idle-pin:focus, .idle-pin:focus-visible { outline: 3px solid #e6a901; outline-offset: 2px; }
+.oc-flag-act { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.panel .plain li .btn-sm { margin-inline-start: 8px; }
+.panel .plain li .oc-flag-act { display: inline-flex; margin: 0 10px; vertical-align: middle; }
