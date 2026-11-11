@@ -273,3 +273,23 @@ test('الإجراء centers: المراكز الفعّالة فقط وبرمز 
   assert.ok(!r.body.centers.includes('نقطة موقوفة'));
   assert.equal((await gateGet(env, 'action=centers&token=bad')).status, 401);
 });
+
+test('الإجراء today: حركات اليوم لكل موظف مرتبة بالوقت، وتحمل «now»، ولا تخلط الأيام الأخرى', async () => {
+  const { env, db } = await freshEnv();
+  env.__NOW = '2026-11-10T09:00:00Z';
+  await addEmployee(db, { id: 1, code: 'NW-001' });
+  await addEmployee(db, { id: 2, code: 'NW-002' });
+  await gatePost(env, [
+    mv('NW-001', 'انصراف', '2026-11-10', '14:55'), mv('NW-001', 'حضور', '2026-11-10', '08:30'),
+    mv('NW-002', 'حضور', '2026-11-10', '08:40'), mv('NW-002', 'حضور', '2026-11-09', '08:35'),
+  ]);
+  const r = await gateGet(env, `action=today&token=${DEVICE_TOKEN}`);
+  assert.equal(r.status, 200);
+  assert.equal(r.body.date, '2026-11-10');
+  assert.equal(r.body.now, '2026-11-10T09:00:00.000Z');
+  const by = Object.fromEntries(r.body.items.map((i) => [i.code, i.moves]));
+  assert.deepEqual(by['NW-001'], [['حضور', '08:30'], ['انصراف', '14:55']]);
+  assert.deepEqual(by['NW-002'], [['حضور', '08:40']]);
+  assert.equal((await gateGet(env, 'action=today&token=bad')).status, 401);
+  assert.ok(r.queries <= 3, `استعلامات كثيرة: ${r.queries}`);
+});

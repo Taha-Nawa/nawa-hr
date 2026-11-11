@@ -2,6 +2,7 @@
  * نقطة الربط مع تطبيق البوابة — متوافقة مع صيغة خدمة Apps Script الحالية كي يكفي تبديل الرابط في إعدادات الجهاز:
  *   GET  ?action=ping&token=...      → { ok, msg }
  *   GET  ?action=badges&token=...    → { ok, badges:[{card, code, name, center, status, photo}], count }
+ *   GET  ?action=today&token=...     → { ok, date, now, items:[{code, moves:[[type,time],…]}] } (حركات اليوم لكل موظف: للتحقق من منطقية الحركة على الجهاز)
  *   GET  ?action=unclosed&token=...  → { ok, today, days:[{date, isToday, items:[{kind, code, name, center, checkIn, lastType, lastTime}]}], total, past } (حضور بلا انصراف)
  *   POST (text/plain JSON) { token, moves:[{id,card,code,name,center,type,date,time,iso,device,offline,note}] }
  *                                    → { ok, saved, skipped, rejected?, unmatched?, warning? }
@@ -88,12 +89,13 @@ async function route(request, env, execCtx) {
     if (action === 'ping') {
       // نبض البوابة: يُسجَّل (بحد أقصى مرة كل 4 دقائق) فتعرف لوحة اليوم أن الجهاز متصل
       await env.DB.prepare("UPDATE devices SET last_ping = datetime('now') WHERE id = ? AND (last_ping IS NULL OR last_ping < datetime('now', '-4 minutes'))").bind(device.id).run();
-      return json({ ok: true, msg: 'الخدمة تعمل', device: device.id });
+      return json({ ok: true, msg: 'الخدمة تعمل', device: device.id, now: nowOf(env).toISOString() });
     }
     if (action === 'centers') {
       const r = await env.DB.prepare('SELECT name FROM centers WHERE active = 1 ORDER BY id').all();
       return json({ ok: true, centers: r.results.map((x) => x.name) });
     }
+    if (action === 'today') return json(await gateToday(env));
     if (action === 'badges') return badges(env.DB, localDate(env.TIMEZONE || 'Asia/Hebron', nowOf(env)));
     if (action === 'unclosed') return json(await gateUnclosed(env, device, url.searchParams.get('days')));
     return json({ ok: false, error: 'إجراء غير معروف' }, 400);
@@ -101,6 +103,18 @@ async function route(request, env, execCtx) {
   // إشعار الإجازة الملغاة بعد الرد (ولا يعطّل الحفظ): بلا waitUntil (الاختبارات) يُنتظر الوعد
   const defer = (p) => (execCtx?.waitUntil ? void execCtx.waitUntil(p) : p);
   return ingest(env.DB, device, body, { onReleased: (list) => notifyRelease({ env, db: env.DB, url, defer }, list) });
+}
+
+/**
+ * حالة اليوم لكل موظف (حركاته مرتبة بالوقت) كي تمنع البوابة الحركات غير المنطقية (انصراف بلا حضور، حضور مكرر…)
+ * بعلم الحركات المسجَّلة على بوابات أخرى أيضاً. تحمل «now» ليكشف الجهاز انحراف ساعته عن الخادم.
+ */
+export async function gateToday(env) {
+  const today = localDate(env.TIMEZONE || 'Asia/Hebron', nowOf(env));
+  const r = await env.DB.prepare('SELECT code, type, time FROM movements WHERE date = ? AND employee_id IS NOT NULL ORDER BY time, received_at').bind(today).all();
+  const by = new Map();
+  for (const x of r.results) (by.get(x.code) || by.set(x.code, []).get(x.code)).push([x.type, x.time]);
+  return { ok: true, date: today, now: nowOf(env).toISOString(), items: [...by].map(([code, moves]) => ({ code, moves })) };
 }
 
 async function badges(db, today) {
