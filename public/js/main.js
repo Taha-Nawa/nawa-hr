@@ -1,3 +1,4 @@
+import { dailyPop } from './daily-pop.js';
 import { openPalette, bindPaletteShortcut } from './palette.js';
 import { bellButton } from './bell.js';
 import { maybeTour } from './tour.js';
@@ -271,6 +272,7 @@ async function startApp(known = null) {
   if (!me) return showLogin();
   showShell();
   route();
+  dailyPop(me); // بوب اليوم: يظهر مرة واحدة كل يوم
 }
 
 // انتهت الجلسة أثناء الاستعمال: نحاول الاستئناف الصامت من الجهاز المتذكَّر قبل أن نُظهر شاشة الدخول.

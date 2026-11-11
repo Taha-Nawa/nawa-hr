@@ -1593,3 +1593,26 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
 .dg-watch li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 10px; padding: 8px 0; border-bottom: 1px solid var(--line-2); }
 .dg-watch li:last-child { border-bottom: 0; } .dg-watch a { color: var(--ink); text-decoration: none; }
 .dg-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* بوب اليوم (daily-pop.js): فقاعة عائمة بتوهج هادئ، تختفي بالنقر */
+.dp-layer { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 20px; background: rgba(42, 20, 16, 0.28); backdrop-filter: blur(2px); animation: dpFade 0.5s ease both; }
+.dp { --glow: rgba(230, 169, 1, 0.55); position: relative; font: inherit; cursor: pointer; border: 0; width: min(420px, 100%); min-height: 260px; padding: 34px 32px 26px; border-radius: 46% 54% 52% 48% / 52% 46% 54% 48%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; color: var(--ink); background: radial-gradient(circle at 30% 25%, #fffdf6 0%, #fbf0cf 55%, #f6dc98 100%); box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.55), 0 0 46px 10px var(--glow), 0 24px 60px -18px rgba(110, 10, 4, 0.55); animation: dpIn 0.7s cubic-bezier(0.2, 1.2, 0.3, 1) both, dpFloat 6s ease-in-out 0.7s infinite, dpGlow 4s ease-in-out infinite; }
+.dp-quran { --glow: rgba(63, 90, 36, 0.5); background: radial-gradient(circle at 30% 25%, #fbfff4 0%, #e6eedc 55%, #c9dcb0 100%); }
+.dp-hadith { --glow: rgba(230, 169, 1, 0.55); }
+.dp-wisdom { --glow: rgba(255, 151, 152, 0.65); background: radial-gradient(circle at 30% 25%, #fffafa 0%, #fbe9e7 55%, #ffc9c9 100%); }
+.dp:focus-visible { outline: 3px solid var(--red); outline-offset: 6px; }
+.dp::before { content: ""; position: absolute; top: 14%; inset-inline-start: 14%; width: 22%; height: 12%; border-radius: 50%; background: rgba(255, 255, 255, 0.75); transform: rotate(-24deg); filter: blur(2px); }
+.dp-kind { font-size: 0.82rem; font-weight: 700; color: var(--red); letter-spacing: 0.02em; padding: 2px 14px; border-radius: 999px; background: rgba(255, 255, 255, 0.7); }
+.dp-text { font-size: clamp(1.35rem, 4.6vw, 1.75rem); line-height: 1.85; font-weight: 700; text-wrap: balance; }
+.dp-src { font-size: 0.85rem; color: var(--ink-2); }
+.dp-hint { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+.dp-out { animation: dpOut 0.38s ease both !important; }
+.dp-layer:has(.dp-out) { animation: dpFadeOut 0.38s ease both; }
+@keyframes dpIn { from { opacity: 0; transform: scale(0.4) translateY(40px); } to { opacity: 1; transform: none; } }
+@keyframes dpFloat { 0%, 100% { transform: translateY(0) rotate(-0.6deg); } 50% { transform: translateY(-12px) rotate(0.6deg); } }
+@keyframes dpGlow { 0%, 100% { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.55), 0 0 36px 6px var(--glow), 0 24px 60px -18px rgba(110, 10, 4, 0.55); } 50% { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.7), 0 0 64px 18px var(--glow), 0 24px 60px -18px rgba(110, 10, 4, 0.55); } }
+@keyframes dpOut { to { opacity: 0; transform: scale(0.5) translateY(-60px); } }
+@keyframes dpFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dpFadeOut { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .dp { animation: dpFade 0.4s ease both; } .dp-layer { backdrop-filter: none; } }
+@media print { .dp-layer { display: none !important; } }
