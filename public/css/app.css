@@ -927,10 +927,10 @@ table.team { border-collapse: separate; border-spacing: 0; font-size: 0.74rem; w
 .prov-ident { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5mm 8mm; }
 .prov-ident .pf { width: auto; }
 .prov-tbl .c-sess { width: 33mm; } .prov-tbl .c-exit { width: 31mm; } .prov-tbl .c-hrs { width: 16mm; } .prov-tbl .c-day { width: 14mm; } .prov-tbl .c-date { width: 14mm; } .prov-tbl .c-time { width: 18mm; }
-.prov-tbl td { font-size: 8.5pt; white-space: normal; line-height: 1.15; }
+.prov-tbl td { font-size: 9pt; white-space: normal; line-height: 1.15; }
 .prov-tbl td > div { white-space: nowrap; }
 .prov-tbl td.left { text-align: start; white-space: normal; padding-inline: 1mm; line-height: 1.15; }
-.prov-tbl td { height: 5.4mm; }
+.prov-tbl td { height: 6.4mm; }
 .prov-rule { margin-top: 2mm; font-size: 9pt; color: #444; }
 .prov-foot .pf { width: 100%; }
 
