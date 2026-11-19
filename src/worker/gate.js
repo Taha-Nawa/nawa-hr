@@ -18,7 +18,7 @@ import { gateUnclosed } from './unclosed.js';
 import { loadWorkSettings } from './settings.js';
 import { recomputePairs } from './recompute.js';
 import { releaseOnCheckIn } from './release.js';
-import { notifyRelease } from './notify.js';
+import { notifyRelease, notifyUnapprovedExit } from './notify.js';
 
 const MAX_BODY_BYTES = 256 * 1024;
 export const MAX_MOVES = 100;
@@ -38,7 +38,7 @@ FROM (
 ) j
 LEFT JOIN badges b ON b.card = j.card
 LEFT JOIN employees e ON e.code = j.code
-RETURNING id, employee_id, date, type`;
+RETURNING id, employee_id, date, type, time`;
 
 export async function authDevice(db, token) {
   if (typeof token !== 'string' || token.length < 16 || token.length > 200) return null;
@@ -102,7 +102,10 @@ async function route(request, env, execCtx) {
   }
   // إشعار الإجازة الملغاة بعد الرد (ولا يعطّل الحفظ): بلا waitUntil (الاختبارات) يُنتظر الوعد
   const defer = (p) => (execCtx?.waitUntil ? void execCtx.waitUntil(p) : p);
-  return ingest(env.DB, device, body, { onReleased: (list) => notifyRelease({ env, db: env.DB, url, defer }, list) });
+  return ingest(env.DB, device, body, {
+    onReleased: (list) => notifyRelease({ env, db: env.DB, url, defer }, list),
+    onExits: (list) => notifyUnapprovedExit({ env, db: env.DB, url, defer }, list),
+  });
 }
 
 /**
@@ -160,7 +163,7 @@ async function ingest(db, device, body, hooks = {}) {
  * يحفظ حركات ويعيد حساب أيامها. يُستعمل من البوابة (جهاز مصادَق) ومن استيراد الإدارة (deviceId = 'IMPORT').
  * يُرجع كائن الاستجابة { ok, saved, skipped, rejected?, unmatched?, warning? }.
  */
-export async function ingestMoves(db, deviceId, moves, { touchDevice = false, onReleased = null } = {}) {
+export async function ingestMoves(db, deviceId, moves, { touchDevice = false, onReleased = null, onExits = null } = {}) {
   const good = [];
   const rejected = [];
   for (const m of moves) {
@@ -237,5 +240,8 @@ export async function ingestMoves(db, deviceId, moves, { touchDevice = false, on
     await recomputePairs(db, pairs, settings, touch ? [touch] : []);
   }
   if (released.length && onReleased) await onReleased(released);
+  // مغادرة على البوابة بلا إذن مطابق: إشعار للمدير المباشر (الحركات الجديدة فقط؛ المكرَّرة لا تعيد الإشعار)
+  const exits = ins.results.filter((r) => r.employee_id !== null && r.type === 'خروج').map((r) => ({ e: r.employee_id, d: r.date, time: r.time }));
+  if (exits.length && onExits) await onExits(exits);
   return out;
 }

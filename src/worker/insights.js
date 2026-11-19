@@ -11,6 +11,7 @@ import { tzOf } from './close.js';
 import { loadWorkSettings } from './settings.js';
 import { toMin } from '../engine/attendance.js';
 import { judgeDay } from '../engine/geo.js';
+import { matchExits } from '../engine/exit-link.js';
 import { buildTimesheet, daysInMonth, mergeTimesheetConfig } from '../engine/timesheet.js';
 
 const MONTH_RE = /^(\d{4})-(0[1-9]|1[0-2])$/;
@@ -122,11 +123,46 @@ export function registerInsightRoutes(add, { bad, forbidden }) {
          GROUP BY e.id HAVING n >= 3 ORDER BY n DESC`, since, today),
     ]);
     const emp = (rows, f = (r) => r.detail) => rows.map((r) => ({ id: r.id, name: `${r.code} — ${r.name}`, detail: f(r) }));
+    // مغادرات لا تطابق البوابة: إذن أطول مما اعتُمد، أو مسح «خروج» بلا إذن معتمد خلال 10 دقائق من وقته (يقرّر المعتمِد)
+    let exitItems = [];
+    try {
+      const settings = await loadWorkSettings(db);
+      const [over, rq, mvs] = await Promise.all([
+        q(`SELECT r.id AS rid, e.id, e.code, e.name, r.from_date AS d, r.act_out AS ao, r.act_ret AS ar, r.from_time AS ft, r.to_time AS tt FROM requests r JOIN employees e ON e.id = r.employee_id
+           WHERE r.kind = 'exit' AND r.status = 'approved' AND r.act_state = 'over' AND r.from_date >= ?1 AND ${act} ORDER BY r.from_date DESC LIMIT 100`, since),
+        q(`SELECT r.employee_id AS e, r.from_date AS d, r.id, r.from_time AS ft, r.to_time AS tt, r.original, r.act_state AS st, r.act_out AS ao, r.act_ret AS ar FROM requests r
+           WHERE r.kind = 'exit' AND r.status = 'approved' AND r.from_date >= ?1`, since),
+        q(`SELECT m.employee_id AS e, m.date AS d, m.type, m.time FROM movements m JOIN employees e ON e.id = m.employee_id
+           WHERE m.type IN ('خروج', 'عودة') AND m.date >= ?1 AND ${act} ORDER BY m.date, m.time`, since),
+      ]);
+      const dmy = (d) => d.split('-').reverse().join('/');
+      for (const o of over) exitItems.push({ id: o.id, name: `${o.code} — ${o.name}`, detail: `${dmy(o.d)}: إذن #${o.rid} اعتُمد ${o.ft}–${o.tt}، والفعلي خرج ${o.ao}${o.ar ? ` وعاد ${o.ar}` : ' ولم يعد'}` });
+      const byDay = new Map();
+      const slot = (e, d) => { const k = `${e}|${d}`; if (!byDay.has(k)) byDay.set(k, { e, d, reqs: [], outs: [], rets: [], dropO: new Set(), dropR: new Set() }); return byDay.get(k); };
+      for (const r of rq) {
+        const g = slot(r.e, r.d);
+        if (r.st === 'manual') { if (r.ao) g.dropO.add(r.ao); if (r.ar) g.dropR.add(r.ar); continue; }
+        let o = null; try { o = r.original ? JSON.parse(r.original) : null; } catch { o = null; }
+        g.reqs.push({ id: r.id, from: o?.fromTime || r.ft, to: o?.toTime || r.tt });
+      }
+      for (const m of mvs) slot(m.e, m.d)[m.type === 'خروج' ? 'outs' : 'rets'].push(m.time);
+      const names = new Map((await q(`SELECT e.id, e.code, e.name FROM employees e WHERE ${act}`)).map((x) => [x.id, x]));
+      for (const g of byDay.values()) {
+        if (!g.outs.length) continue;
+        const { unmatched } = matchExits(g.reqs, g.outs.filter((t) => !g.dropO.has(t)), g.rets.filter((t) => !g.dropR.has(t)), { ended: g.d < today, end: settings?.end || '15:00' });
+        const n = names.get(g.e);
+        if (n) for (const t of unmatched) exitItems.push({ id: n.id, name: `${n.code} — ${n.name}`, detail: `${dmy(g.d)}: خروج ${t} بلا إذن مغادرة معتمد يطابقه` });
+      }
+      exitItems = exitItems.slice(0, 200);
+    } catch (e) {
+      if (!/no such column|no such table/.test(String(e?.message || e))) throw e; // الترحيل 0032 لم يُطبَّق بعد
+    }
     const checks = [
       { key: 'allocation', title: 'توزيع المشاريع اليوم لا يساوي 100%', why: 'يفسد صفوف الممولين في التايم شيت', level: 'high', items: emp(allocs, (r) => `${r.pct}%`) },
       { key: 'english', title: 'اسم أو مسمى بالإنجليزية ناقص', why: 'يظهر فارغاً في التايم شيت المرسل للممولين', level: 'high', items: emp(noEn) },
       { key: 'unclosed', title: 'أيام متراكمة بلا تسجيل انصراف (3 فأكثر في 31 يوماً)', why: 'تعني نسيان المسح أو بطاقة تالفة', level: 'mid', items: emp(unclosed, (r) => `${r.n} أيام`) },
       { key: 'manager', title: 'بلا مدير مباشر', why: 'لا يصل طلباته أحد للاعتماد', level: 'mid', items: emp(noMgr) },
+      { key: 'exitlink', title: 'مغادرة لا تطابق إذنها على البوابة', why: 'يُطبع الإذن مع التايم شيت فيجب أن يطابق الحركة الفعلية؛ قرار الاعتماد للمعتمِد', level: 'mid', items: exitItems },
       { key: 'badge', title: 'بلا بطاقة سارية', why: 'لا يستطيع تسجيل الحضور على البوابة', level: 'mid', items: emp(noBadge) },
       { key: 'gate', title: 'مركز بلا بوابة متصلة منذ يومين', why: 'لا حركات تصل من هذا المركز (لا يُعدّ هنا مركزٌ يمسح موظفوه على بوابة مركز آخر في المبنى نفسه)', level: 'high', items: devices.map((d) => ({ id: d.id, name: d.name, detail: d.lastSeen ? `آخر اتصال ${d.lastSeen}` : 'لا بوابة مرتبطة' })) },
       { key: 'email', title: 'بلا بريد دخول', why: 'لا يستطيع دخول النظام بنفسه', level: 'low', items: emp(noEmail) },

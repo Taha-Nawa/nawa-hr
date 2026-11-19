@@ -2,7 +2,7 @@
 import { h, clear, dialog, confirmBox, field, select, toast, addDays, dash, icon } from './dom.js';
 import { get, post } from './api.js';
 import { KIND, kindOf, purposeLabels, purposeText, statusChip, fmtDate, fmtPeriod, fmtLength, calcLines } from './requests-lib.js';
-import { timeField } from './time12.js';
+import { timeField, fmt12 } from './time12.js';
 
 const PURPOSE_ORDER = ['annual', 'emergency', 'sick', 'other'];
 
@@ -64,8 +64,8 @@ export async function openRequestForm({ kind, meta, user, onSaved }) {
   const reason = h('textarea', { rows: '2', maxlength: '300', placeholder: mission ? 'مثال: زيارة ميدانية لمدرسة الشاطئ' : isLeave ? 'مثال: زيارة عائلية' : 'مثال: مراجعة طبيب', oninput: refresh });
   const dFrom = h('input', { type: 'date', required: true, onchange: refresh });
   const dTo = h('input', { type: 'date', required: true, onchange: () => refresh() });
-  const tFrom = timeField({ label: 'من الساعة', required: true, value: kind === 'late' ? meta.work?.start || '' : '', onchange: refresh });
-  const tTo = timeField({ label: 'إلى الساعة', required: true, onchange: refresh });
+  const tFrom = timeField({ label: kind === 'exit' ? 'وقت المغادرة' : 'من الساعة', required: true, value: kind === 'late' ? meta.work?.start || '' : '', onchange: refresh });
+  const tTo = timeField({ label: kind === 'exit' ? 'أقصى وقت للعودة' : 'إلى الساعة', required: true, onchange: refresh });
 
   // ---- اعتماد مباشر
   const approveNow = h('input', { type: 'checkbox', onchange: sync });
@@ -229,7 +229,15 @@ export async function openRequestDetail({ id, meta, onChanged }) {
       parts.push(h('div', { class: `notice${r.managerId && data.managerCanDecide ? '' : ' notice-warn'}` }, who));
     }
 
-    if (r.original) {
+    const gate = r.actState && r.actState !== 'manual';
+    if (gate && (r.actState === 'done' || r.actState === 'exit_only')) {
+      parts.push(h('div', { class: 'notice' }, `الأوقات الفعلية من البوابة: خرج ${fmt12(r.actOut)}${r.actRet ? ` وعاد ${fmt12(r.actRet)}` : ' ولم يعد حتى نهاية الدوام'}.${r.original ? ` المطلوب أصلاً: ${fmtPeriod({ kind: r.kind, ...r.original })}.` : ''}`));
+    } else if (r.actState === 'over') {
+      parts.push(h('div', { class: 'notice notice-warn' }, `المغادرة الفعلية على البوابة (خرج ${fmt12(r.actOut)}${r.actRet ? ` وعاد ${fmt12(r.actRet)}` : ' ولم يعد'}) أطول مما اعتُمد (${fmtPeriod(r)}). الطلب لم يُعدَّل، وقرار قبول الفعلي للمعتمِد.`,
+        r.can.acceptActual ? h('button', { type: 'button', class: 'btn btn-primary', onclick: async () => { try { await post(`/api/requests/${id}/accept-actual`, {}); toast('كُتبت الأوقات الفعلية في الطلب'); changed(); await render(); } catch (e) { toast(e.message, 'err'); } } }, 'اعتماد الفعلي') : null));
+    } else if (r.actState === 'manual') {
+      parts.push(h('div', { class: 'notice' }, 'اعتُمدت الأوقات الفعلية للمغادرة من المعتمِد.'));
+    } else if (r.original) {
       const o = r.original;
       parts.push(h('div', { class: 'notice notice-warn' }, `عدّل المعتمِد ما طلبه الموظف. المطلوب أصلاً: ${fmtPeriod({ kind: r.kind, ...o })}.`));
     }

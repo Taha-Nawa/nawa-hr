@@ -10,6 +10,7 @@ import { computeDay, dayTypeOf } from '../engine/attendance.js';
 import { mergeRules } from '../engine/requests.js';
 import { hourPosOn } from '../engine/maternity.js';
 import { localDate } from './util.js';
+import { linkExitRequests } from './exit-link.js';
 
 const CHUNK = 100;
 
@@ -63,6 +64,7 @@ export async function recomputePairs(db, pairs, settings, extraStatements = []) 
     for (const r of rows) matBy.set(r.e, [...(matBy.get(r.e) || []), r]);
   } catch { /* الترحيل 0025 لم يُطبَّق بعد */ }
   const today = localDate(); // الأيام قبل اليوم انتهى دوامها
+  await linkExitRequests(db, list, settings, today); // أوقات المغادرة الفعلية من البوابة تُكتب في الطلب قبل احتساب الأذونات
   let written = 0;
   for (let i = 0; i < list.length; i += CHUNK) {
     const chunk = list.slice(i, i + CHUNK);

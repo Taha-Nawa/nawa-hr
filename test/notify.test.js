@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { apiEnv, login, call, seedOrg } from './helpers/api.js';
-import { setWork } from './helpers/seed.js';
+import { setWork, gatePost, mv } from './helpers/seed.js';
 
 const NOW = '2026-11-02T07:00:00Z'; // الإثنين 09:00 بتوقيت الخليل
 const SETTINGS = {
@@ -113,4 +113,25 @@ test('نص الطلب يُهرَّب في رسالة HTML', async () => {
   await post(env, u.emp2, '/api/requests', leave({ reason: '<img src=x onerror=alert(1)>' }));
   assert.ok(!sent[0].html.includes('<img'), sent[0].html);
   assert.match(sent[0].html, /&lt;img/);
+});
+
+test('مغادرة على البوابة بلا إذن: إشعار للمدير المباشر، وبإذن مطابق (معلّق أو معتمد) أو ليوم سابق لا إشعار', async () => {
+  const { db, env, sent } = await world();
+  await gatePost(env, [mv('NW-002', 'حضور', '2026-11-02', '08:30'), mv('NW-002', 'خروج', '2026-11-02', '10:00')]);
+  assert.deepEqual(to(sent), ['mgr@nawaculture.org']);
+  assert.match(sent[0].subject, /مغادرة .* على البوابة بلا إذن مغادرة معتمد/);
+  assert.match(sent[0].text, /وقت الخروج على البوابة: 10:00 ص/);
+  // الحركة المكرَّرة لا تعيد الإشعار
+  await gatePost(env, [mv('NW-002', 'خروج', '2026-11-02', '10:00')]);
+  assert.equal(sent.length, 1);
+  // إذن معلّق يطابق وقت الخروج (ضمن 10 دقائق): لا إشعار
+  await db.prepare("INSERT INTO requests (employee_id, kind, purpose, reason, from_date, to_date, from_time, to_time, minutes, status, request_date, created_by) VALUES (3, 'exit', 'other', 'x', '2026-11-02', '2026-11-02', '11:00', '12:00', 60, 'pending', '2026-11-02', 'x')").run();
+  await gatePost(env, [mv('NW-003', 'حضور', '2026-11-02', '08:30'), mv('NW-003', 'خروج', '2026-11-02', '11:07')]);
+  assert.equal(sent.length, 1);
+  // خروج ليوم سابق (بوابة دون اتصال): لا إشعار
+  await gatePost(env, [mv('NW-002', 'خروج', '2026-10-29', '10:00', { offline: true })]);
+  assert.equal(sent.length, 1);
+  // خروج خارج السماحية عن وقت الإذن: إشعار
+  await gatePost(env, [mv('NW-003', 'عودة', '2026-11-02', '11:20'), mv('NW-003', 'خروج', '2026-11-02', '13:00')]);
+  assert.equal(sent.length, 2);
 });

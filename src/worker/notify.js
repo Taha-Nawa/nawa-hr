@@ -7,7 +7,9 @@
  * الإرسال لا يعطّل الطلب ولا يُفشله أبداً: يجري بعد الرد (ctx.defer) وأي خطأ يُسجَّل ويُتجاوز.
  */
 import { mailerFor, logMailFailure } from './mail.js';
-import { fmt12 } from './util.js';
+import { fmt12, localDate, nowOf } from './util.js';
+import { toMin } from '../engine/attendance.js';
+import { TOLERANCE_MIN } from '../engine/exit-link.js';
 import { mergeRules, needsMedical, KINDS, PURPOSES, kindLabel } from '../engine/requests.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -267,6 +269,71 @@ export function notifyPlan(ctx, event, planId, { actor = null } = {}) {
       if (failed) await logMailFailure(ctx.db, `plan.${event}`, planId, failed);
     } catch (e) {
       console.warn('notify: plan failed', event, e?.message);
+    }
+  })();
+  return ctx.defer ? ctx.defer(job) : job;
+}
+
+// ------------------------------------------------------------ مغادرة على البوابة بلا إذن
+const MAX_EXIT_MAILS = 4;
+
+function exitMessage(name, date, time, origin) {
+  const subject = `مغادرة ${name} على البوابة بلا إذن مغادرة معتمد`;
+  const rows = [['الموظف', name], ['اليوم', date], ['وقت الخروج على البوابة', fmt12(time)], ['الحالة', 'لم يُقدَّم إذن مغادرة يطابق هذا الوقت']];
+  const link = `${origin}/#/requests`;
+  const text = `${subject}\n\n${rows.map(([k, v]) => `${k}: ${v}`).join('\n')}\n\nالطلبات: ${link}\n— نظام نوى للشؤون الإدارية، جمعية نوى للثقافة والفنون`;
+  const html = `<div dir="rtl" lang="ar" style="font-family:Segoe UI,Tahoma,Arial,sans-serif;max-width:480px;margin:auto;padding:22px;border:1px solid #e6dccf;border-radius:14px;color:#2a1410">
+<p style="margin:0 0 12px;font-weight:700;font-size:16px">${esc(subject)}</p>
+<table style="border-collapse:collapse;width:100%;margin:0 0 16px">${rows.map(([k, v]) => `<tr><td style="padding:5px 0;color:#72655f;width:34%;vertical-align:top">${esc(k)}</td><td style="padding:5px 0">${esc(v)}</td></tr>`).join('')}</table>
+<p style="margin:0;color:#72655f;font-size:12px">نظام نوى للشؤون الإدارية — جمعية نوى للثقافة والفنون</p></div>`;
+  return { subject, text, html };
+}
+
+/**
+ * مسح «خروج» على البوابة اليوم بلا إذن مغادرة (معلّق أو معتمد) يطابق وقته خلال السماحية: إشعار للمعتمِد (المدير المباشر، وإلا الموارد البشرية).
+ * exits: [{ e: employeeId, d: 'YYYY-MM-DD', time }] — الحركات الجديدة فقط. حركات الأيام السابقة (بوابة كانت دون اتصال) لا تُشعِر.
+ */
+export function notifyUnapprovedExit(ctx, exits) {
+  const mailer = mailerFor(ctx.env);
+  if (!mailer || !exits.length) return undefined;
+  const origin = new URL(ctx.url).origin;
+  const job = (async () => {
+    try {
+      const today = localDate(ctx.env.TIMEZONE || 'Asia/Hebron', nowOf(ctx.env));
+      const todays = exits.filter((x) => x.d === today);
+      if (!todays.length) return;
+      const stored = await ctx.db.prepare("SELECT value FROM settings WHERE key = 'requests'").first();
+      let rules;
+      try { rules = mergeRules(stored ? JSON.parse(stored.value) : null); } catch { rules = mergeRules(null); }
+      if (!rules.notify.enabled) return;
+      const key = JSON.stringify([...new Set(todays.map((x) => x.e))]);
+      const [emps, reqs] = await ctx.db.batch([
+        ctx.db.prepare('SELECT id, name, manager_id FROM employees WHERE status = \'active\' AND id IN (SELECT value FROM json_each(?))').bind(key),
+        ctx.db.prepare(`SELECT employee_id AS e, from_time AS ft, original, act_out AS ao FROM requests
+                        WHERE kind = 'exit' AND status IN ('pending', 'approved') AND from_date = ? AND employee_id IN (SELECT value FROM json_each(?))`).bind(today, key),
+      ]);
+      const byEmp = new Map(emps.results.map((x) => [x.id, x]));
+      const covered = (x) => reqs.results.some((r) => {
+        if (r.e !== x.e) return false;
+        let o = null; try { o = r.original ? JSON.parse(r.original) : null; } catch { o = null; }
+        const from = o?.fromTime || r.ft;
+        return r.ao === x.time || (from && Math.abs(toMin(x.time) - toMin(from)) <= TOLERANCE_MIN);
+      });
+      const todo = todays.filter((x) => byEmp.has(x.e) && !covered(x)).slice(0, MAX_EXIT_MAILS);
+      for (const x of todo) {
+        const emp = byEmp.get(x.e);
+        const own = await emailsOf(ctx.db, 'SELECT email FROM users WHERE employee_id = ?', emp.id);
+        const to = await dropDeparted(ctx.db, dedupe((await approverEmails(ctx.db, emp.manager_id)).filter((e) => !own.includes(e)), null));
+        if (!to.length) continue;
+        const m = exitMessage(emp.name, x.d, x.time, origin);
+        let failed = null;
+        for (const addr of to) {
+          try { await mailer.send({ to: addr, ...m }); } catch (e) { failed ||= e; console.warn('notify: exit send failed', e?.message); }
+        }
+        if (failed) await logMailFailure(ctx.db, 'gate.exit-no-permit', emp.id, failed);
+      }
+    } catch (e) {
+      console.warn('notify: unapproved exit failed', e?.message);
     }
   })();
   return ctx.defer ? ctx.defer(job) : job;

@@ -18,6 +18,7 @@ import { can, canReadEmployee, canManageRequests, canDecideRequest, canRevokeReq
 import { employeeBalance } from './balances.js';
 import { notifyRequest } from './notify.js';
 import { validateRequest, mergeRules, workingDates, suggestLeaveType, monthOf, monthBounds, needsMedical, KINDS, PURPOSES } from '../engine/requests.js';
+import { toMin } from '../engine/attendance.js';
 
 const LIST_LIMIT = 300;
 
@@ -25,7 +26,8 @@ const COLS = `r.id, r.employee_id AS employeeId, r.kind, r.purpose, r.purpose_ot
   r.from_date AS fromDate, r.to_date AS toDate, r.from_time AS fromTime, r.to_time AS toTime, r.days, r.minutes,
   r.leave_type AS leaveType, r.status, r.request_date AS requestDate, r.created_by AS createdBy, r.created_at AS createdAt,
   r.decided_by AS decidedBy, r.decided_at AS decidedAt, r.decision_note AS decisionNote, r.original,
-  r.medical_proof AS medicalProof, r.medical_by AS medicalBy, r.medical_at AS medicalAt, r.mission`;
+  r.medical_proof AS medicalProof, r.medical_by AS medicalBy, r.medical_at AS medicalAt, r.mission,
+  r.act_state AS actState, r.act_out AS actOut, r.act_ret AS actRet`;
 
 const NAME_OF_EMAIL = (col) => `(SELECT ee.name FROM users uu JOIN employees ee ON ee.id = uu.employee_id WHERE uu.email = ${col})`;
 
@@ -217,6 +219,7 @@ export function registerRequestRoutes(add, kit) {
     const owner = (user.employeeId != null && user.employeeId === row.employeeId) || row.createdBy === user.email;
     row.can = {
       decide: row.status === 'pending' && decideAllowed(user, medicalOk, target, row, rules),
+      acceptActual: row.kind === 'exit' && row.status === 'approved' && row.actState === 'over' && canRevokeRequest(user, target),
       cancel: (row.status === 'pending' && (owner || canManageRequests(user, target))) || (row.status === 'approved' && canRevokeRequest(user, target)),
     };
     return { row, target };
@@ -509,6 +512,26 @@ export function registerRequestRoutes(add, kit) {
     ]);
     if (!r.meta.changes) return bad('الطلب لم يعد معلّقاً', 409);
     await notifyRequest({ env, db, url, defer }, 'rejected', id, { actor: user.email, note });
+    return json({ ok: true });
+  });
+
+  // اعتماد الفعلي: المغادرة الفعلية على البوابة أطول مما اعتُمد؛ المعتمِد يقبلها فتُكتب أوقاتها في الطلب (يطابق النموذج المطبوع البوابة)
+  add('POST', '/api/requests/:id/accept-actual', async ({ env, db, user, params }) => {
+    const id = Number(params.id);
+    const row = await db.prepare('SELECT r.*, e.manager_id AS managerId FROM requests r JOIN employees e ON e.id = r.employee_id WHERE r.id = ?').bind(id).first();
+    if (!row) return notFound('الطلب');
+    if (!canRevokeRequest(user, { id: row.employee_id, manager_id: row.managerId })) return forbidden();
+    if (row.kind !== 'exit' || row.status !== 'approved' || row.act_state !== 'over' || !row.act_out) return bad('لا فرق معلّق على هذا الطلب', 409);
+    const settings = await loadWorkSettings(db);
+    const end = row.act_ret || settings?.end;
+    if (!end) return bad('أدخل إعدادات الدوام أولاً', 409);
+    const minutes = toMin(end) - toMin(row.act_out);
+    if (minutes <= 0) return bad('الأوقات الفعلية غير صالحة', 409);
+    await db.batch([
+      db.prepare("UPDATE requests SET from_time = ?, to_time = ?, minutes = ?, act_state = 'manual' WHERE id = ? AND act_state = 'over'").bind(row.act_out, end, minutes, id),
+      auditStmt(db, user, 'request.accept-actual', 'request', id, { employeeId: row.employee_id, out: row.act_out, ret: row.act_ret, minutes }),
+    ]);
+    await recomputePairs(db, [{ e: row.employee_id, d: row.from_date }], settings);
     return json({ ok: true });
   });
 

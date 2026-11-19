@@ -169,7 +169,7 @@ test('الإقفال لـ 250 موظفاً ضمن حدود D1 (≤ 50 استعل
   const r = await closeDay(env, '2026-03-02');
   const ms = performance.now() - t;
   assert.equal(r.employees, 250);
-  assert.ok(db.queries <= 26, `استعلامات الإقفال: ${db.queries}`);
+  assert.ok(db.queries <= 27, `استعلامات الإقفال: ${db.queries}`);
   assert.ok(ms < 500, `${ms.toFixed(0)}ms`);
   assert.equal(await db.prepare('SELECT COUNT(*) AS n FROM daily_results').first('n'), 250);
 });
