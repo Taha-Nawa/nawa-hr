@@ -19,15 +19,17 @@ export function h(tag, attrs, ...kids) {
 function append(el, kids) {
   for (const k of kids.flat(Infinity)) {
     if (k === null || k === undefined || k === false) continue;
-    el.append(k instanceof Node ? k : document.createTextNode(String(k)));
+    Element.prototype.append.call(el, k instanceof Node ? k : document.createTextNode(String(k)));
   }
 }
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
+/** يفرّغ العنصر ويجعل append عليه يتخطى null وfalse (يكتبهما المتصفح نصاً «null»/«false») ويفرد المصفوفات. */
 export function clear(el) {
   el.replaceChildren();
+  el.append = (...kids) => append(el, kids);
   return el;
 }
 

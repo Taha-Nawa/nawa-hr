@@ -29,7 +29,8 @@ export function mySummary({ employeeId, own = false, title = 'أدائي هذا 
     const cards = balanceCards(row);
     const mine = reqs?.requests?.slice(0, 4) || [];
     const pending = reqs?.requests?.filter((r) => r.status === 'pending').length || 0;
-    clear(box).append(
+    // append() يكتب النص «null» لو مُرِّر null، فتُرشَّح العناصر الفارغة (قسم بلا رصيد أو بلا طلبات).
+    clear(box).append(...[
       h('div', { class: 'ms-head' }, h('h2', null, title), h('span', { class: 'muted' }, monthLabel(ym))),
       h('div', { class: 'ms-grid' },
         tile('حضور', `${s.present}`, `من ${s.workDays} يوم عمل`, 'ok'),
@@ -47,7 +48,7 @@ export function mySummary({ employeeId, own = false, title = 'أدائي هذا 
           const [t, g] = STATUS[r.status] || [r.status, 'none'];
           return h('li', { class: 'badge-row' }, h('strong', null, KIND[r.kind] || r.kind), h('span', { class: 'muted' }, r.kind === 'leave' ? `${dmy(r.fromDate)} ← ${dmy(r.toDate)}` : dmy(r.fromDate)), h('span', { class: `chip chip-${g}` }, t));
         })) : h('p', { class: 'muted' }, 'لا طلبات بعد.')) : null,
-    );
+    ].filter(Boolean));
   })();
   return box;
 }
