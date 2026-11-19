@@ -79,7 +79,7 @@ export default async function render({ user }) {
   };
 
   return h('section', null,
-    h('header', { class: 'page-head' }, h('div', null, h('h1', null, 'التقارير'), h('p', { class: 'muted' }, 'التايم شيت الشهري بصيغة ملف الممولين، من ساعات الدوام المعتمدة وتوزيع الموظف على المشاريع.'))),
+    h('header', { class: 'page-head' }, h('div', null, h('h1', null, 'Timesheet'), h('p', { class: 'muted' }, 'التايم شيت الشهري بصيغة ملف الممولين، من ساعات الدوام المعتمدة وتوزيع الموظف على المشاريع.'))),
     h('div', { class: 'fieldset' },
       h('div', { class: 'inline-form' },
         field('الشهر', month),

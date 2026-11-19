@@ -11,7 +11,7 @@ export default async function render() {
   const q = new URLSearchParams(location.hash.split('?')[1] || '');
   const month = q.get('month') || '';
   const ids = (q.get('employees') || '').split(',').map(Number).filter((n) => Number.isInteger(n) && n > 0);
-  const back = h('a', { class: 'btn', href: '#/reports' }, 'رجوع إلى التقارير');
+  const back = h('a', { class: 'btn', href: '#/reports' }, 'رجوع إلى Timesheet');
   if (!/^\d{4}-\d{2}$/.test(month) || !ids.length) {
     return h('section', { class: 'page' }, h('div', { class: 'notice notice-err' }, 'اختر الشهر والموظفين من صفحة التقارير أولاً.'), back);
   }

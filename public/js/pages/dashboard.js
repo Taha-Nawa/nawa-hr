@@ -14,8 +14,8 @@ const firstName = (n) => String(n || '').trim().split(/\s+/)[0] || '';
 const ACTIONS = {
   employee: [['خطتي للإجازات', '#/plans']],
   manager: [['طلبات فريقي', '#/requests', true], ['متابعة الفريق', '#/work-log/team'], ['سجلي اليومي', '#/work-log']],
-  hr: [['الموظفون', '#/employees', true], ['طلبات الإجازة', '#/requests'], ['التقارير', '#/reports']],
-  director: [['التقارير', '#/reports', true], ['طلبات الإجازة', '#/requests'], ['المؤشرات', '#/insights']],
+  hr: [['الموظفون', '#/employees', true], ['طلبات الإجازة', '#/requests'], ['Timesheet', '#/reports']],
+  director: [['Timesheet', '#/reports', true], ['طلبات الإجازة', '#/requests'], ['المؤشرات', '#/insights']],
   admin: [['الموظفون', '#/employees', true], ['الإعدادات', '#/settings'], ['النسخ الاحتياطي', '#/backup']],
 };
 
