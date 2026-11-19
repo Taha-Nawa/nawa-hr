@@ -5,7 +5,7 @@
  * قراءة فقط.
  */
 import { loadMaternityMap, applyMatHours } from './maternity.js';
-import { json, localDate, addDays } from './util.js';
+import { json, localDate, addDays, nowOf } from './util.js';
 import { can, employeeScope, ACTIONS } from './authz.js';
 import { tzOf } from './close.js';
 import { loadWorkSettings } from './settings.js';
@@ -200,7 +200,7 @@ export function registerInsightRoutes(add, { bad, forbidden }) {
   add('GET', '/api/insights/locations', async ({ env, db, user, url }) => {
     if (!['manager', 'hr', 'director', 'admin'].includes(user.role)) return forbidden();
     const n = Math.min(31, Math.max(1, Number(url.searchParams.get('days')) || 14));
-    const since = addDays(localDate(tzOf(env)), -n);
+    const since = addDays(localDate(tzOf(env), nowOf(env)), -n);
     const sc = employeeScope(user, 'e');
     const SRC = [
       { kind: 'employee', sql: `SELECT m.employee_id AS id, e.code, e.name, m.date, m.type, m.time, m.lat, m.lng, m.acc, m.offline, c.name AS center, c.lat AS cLat, c.lng AS cLng, c.radius_m AS radius

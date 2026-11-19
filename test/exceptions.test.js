@@ -147,7 +147,7 @@ test('الموقع: يُحفظ مع الحركة، ويُعلَّم الخروج
   assert.equal(r.status, 200, JSON.stringify(r.body));
   const row = await db.prepare("SELECT lat, acc FROM movements WHERE code = 'NW-002' AND type = 'حضور'").first();
   assert.equal(row.acc, 12);
-  const res = await call(env, 'GET', '/api/insights/locations?days=31', { cookie: u.hr.cookie });
+  const res = await call(env, 'GET', '/api/insights/locations?days=14', { cookie: u.hr.cookie });
   assert.equal(res.status, 200, JSON.stringify(res.body));
   const by = Object.fromEntries(res.body.days.map((d) => [d.code, d.flags]));
   assert.equal(by['NW-002'].spread, true);
