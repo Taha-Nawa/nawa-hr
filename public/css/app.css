@@ -462,7 +462,7 @@ textarea { width: 100%; resize: vertical; }
 a.btn.is-disabled { opacity: 0.5; }
 
 /* كشف المتطوع الشهري (عمودي): ثمانية أعمدة كالنموذج الأصلي */
-.vol-paper { padding: 12mm 17.8mm 12mm; gap: 0; }
+.vol-paper { padding: 9mm 17.8mm 9mm; gap: 0; }
 .vol-paper .phead img { width: 27mm; }
 .vol-paper .phead h2 { margin: 1mm 0 1mm; }
 .vol-month { text-align: center; font-weight: 700; margin: 0 0 3mm; }
@@ -471,7 +471,7 @@ a.btn.is-disabled { opacity: 0.5; }
 .vol-tbl { width: 100%; table-layout: fixed; border-collapse: collapse; }
 .vol-tbl th, .vol-tbl td { border: 0.5pt solid #000; text-align: center; padding: 0 0.6mm; vertical-align: middle; }
 .vol-tbl th { font-weight: 700; font-size: 10pt; height: 9mm; line-height: 1.1; }
-.vol-tbl td { height: 5.4mm; font-size: 9.5pt; white-space: nowrap; }
+.vol-tbl td { height: 6.4mm; font-size: 10pt; white-space: nowrap; }
 .vol-tbl .c-day { width: 15mm; } .vol-tbl .c-date { width: 21mm; } .vol-tbl .c-time { width: 20mm; } .vol-tbl .c-sign { width: 18mm; } .vol-tbl .c-why { width: auto; }
 .vol-tbl tr.off td { background: #f3efe9; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .vol-foot { display: flex; justify-content: space-between; gap: 8mm; margin-top: 6mm; font-weight: 700; }
