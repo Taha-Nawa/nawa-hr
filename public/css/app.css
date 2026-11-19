@@ -1689,3 +1689,18 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
 .id-card:not(.id-portrait) .id-bd { padding-block: 2.4mm 2.2mm; }
 .ann-repeat { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
 .ann-repeat input[type=number] { width: 84px; }
+
+/* وضع الموظفين الآن داخل المركز (داخل / خرج مؤقتاً / انصرف / لم يحضر) */
+.pres { display: flex; flex-direction: column; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+.pres-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.pres-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.pres-tile { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 8px 12px; background: var(--canvas); border: 1px solid var(--line); border-inline-start: 4px solid var(--line); border-radius: var(--radius-sm); font: inherit; color: var(--ink); cursor: pointer; text-align: start; }
+.pres-tile b { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.pres-tile span { font-size: 0.85rem; color: var(--muted); }
+.pres-tile:disabled { opacity: 0.5; cursor: default; }
+.pres-tile.on { outline: 2px solid var(--gold); outline-offset: 1px; background: var(--surface); }
+.pres-in { border-inline-start-color: var(--olive); }
+.pres-out { border-inline-start-color: var(--gold); }
+.pres-gone { border-inline-start-color: var(--red); }
+.pres-wait { border-inline-start-color: var(--muted); }
+.dg-center-now { font-size: 0.8rem; margin-top: 4px; }

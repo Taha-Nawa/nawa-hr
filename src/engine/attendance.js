@@ -11,6 +11,7 @@
  *  - الساعات المعتمدة لا تتجاوز الساعات المطلوبة؛ ما زاد عنها يظهر إضافياً.
  *  - «الخروج» المعروض هو أول خروج و«العودة» هي آخر عودة، لكن ساعات المغادرة تُجمع من كل الأزواج
  *    إذا تساوى عدد الخروج وعدد العودة، وإلا تُحتسب صفراً ويظهر تنبيه «خروج بلا عودة».
+ *  - يوم مضى انتهى دوامه وآخر حركة فيه «خروج» بلا عودة: يُعدّ وقت ذلك الخروج وقت الانصراف الفعلي (input.dayEnded)، فلا يبقى في «لم ينصرفوا».
  *  - يوم فيه حضور بلا انصراف: ساعات التواجد = 0 (يظهر عجز كامل + تنبيه) حتى يُصحَّح يدوياً.
  */
 
@@ -72,6 +73,7 @@ const sum = (a) => a.reduce((s, x) => s + x, 0);
  *                                            ومن لم يسجّل انصرافه يُعدّ منصرفاً عنده. لا أثر له على يوم عليه إجازة (تُحتسب الإجازة يوماً كاملاً).
  * @param {'start'|'end'|null} [input.matHour] ساعة الأمومة سارية في هذا اليوم: تُقصَّر ساعات الدوام المطلوبة ساعة من أوله أو آخره
  * @param {boolean} [input.exception]       دوام استثنائي معتمد (work_exceptions.counted = 1) في يوم عطلة
+ * @param {boolean} [input.dayEnded]        انتهى هذا اليوم (تاريخه قبل اليوم الحالي): الخروج الأخير بلا عودة يصير انصرافاً
  * @param {object} settings
  */
 export function computeDay(input, settings) {
@@ -81,14 +83,24 @@ export function computeDay(input, settings) {
 
   const times = (type) => input.movements.filter((m) => m.type === type).map((m) => toMin(m.time));
   const ins = times(MOVE.IN);
-  const outs = times(MOVE.OUT);
+  let outs = times(MOVE.OUT);
   const rets = times(MOVE.RETURN);
   const deps = times(MOVE.DEPART);
 
   const checkIn = has(manual.in) ? toMin(manual.in) : ins.length ? Math.min(...ins) : null;
-  const exitFirst = has(manual.out) ? toMin(manual.out) : outs.length ? Math.min(...outs) : null;
+  let exitFirst = has(manual.out) ? toMin(manual.out) : outs.length ? Math.min(...outs) : null;
   const returnLast = has(manual.ret) ? toMin(manual.ret) : rets.length ? Math.max(...rets) : null;
   let departure = has(manual.dep) ? toMin(manual.dep) : deps.length ? Math.max(...deps) : null;
+
+  // خرج ولم يعد حتى انتهى اليوم: وقت آخر خروج هو انصرافه الفعلي، ولا يُحسب خروجاً مفتوحاً (فلا تنبيه «خروج بلا عودة» ولا «انصراف غير مسجّل»)
+  if (input.dayEnded === true && departure === null && checkIn !== null && outs.length > 0 && !has(manual.out) && !has(manual.ret)) {
+    const lastOut = Math.max(...outs);
+    if (lastOut > (rets.length ? Math.max(...rets) : -1) && lastOut > checkIn) {
+      departure = lastOut;
+      outs = outs.filter((x, i) => i !== outs.lastIndexOf(lastOut));
+      exitFirst = outs.length ? Math.min(...outs) : null;
+    }
+  }
 
   // الإخلاء الفوري: يسري على يوم دوام بلا إجازة فقط. نهاية الدوام الفعلية = وقت الإخلاء، ومن حضر قبله ولم يسجّل انصرافاً يُعدّ منصرفاً عنده.
   const dismissMin = has(input.dismissAt) && dayType === DAY_WORK && leaveType === '' ? toMin(input.dismissAt) : null;

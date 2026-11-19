@@ -45,16 +45,13 @@ test('الموظفون: حضور بلا انصراف يظهر يوماً بيو�
   const r = await api(env, u.hr, '/api/unclosed');
   assert.equal(r.status, 200, JSON.stringify(r.body));
   assert.equal(r.body.today, TODAY);
-  assert.deepEqual(names(r.body), [`${TODAY}:NW-003`, `${SUN}:NW-004,NW-005`, `${THU}:NW-002`]);
-  assert.equal(r.body.total, 4);
-  assert.equal(r.body.past, 3, 'أيام سابقة فقط تُعدّ تنبيهاً');
+  assert.deepEqual(names(r.body), [`${TODAY}:NW-003`, `${SUN}:NW-005`, `${THU}:NW-002`]);
+  assert.equal(r.body.total, 3);
+  assert.equal(r.body.past, 2, 'أيام سابقة فقط تُعدّ تنبيهاً');
   assert.equal(r.body.days[0].isToday, true);
-  const four = r.body.days[1].items.find((i) => i.code === 'NW-004');
-  assert.deepEqual({ k: four.kind, ci: four.checkIn, lt: four.lastType, tm: four.lastTime, c: four.center }, { k: 'employee', ci: '08:30', lt: 'خروج', tm: '11:00', c: 'المبنى الرئيسي' });
-
-  // تسجيل الانصراف يُسقطه من القائمة فوراً
-  await gatePost(env, [mv('NW-004', 'انصراف', SUN, '15:00')]);
-  assert.deepEqual(names((await api(env, u.hr, '/api/unclosed')).body), [`${TODAY}:NW-003`, `${SUN}:NW-005`, `${THU}:NW-002`]);
+  // NW-004 خرج 11:00 ولم يعد حتى انتهى اليوم: يُعدّ خروجه انصرافاً فعلياً فلا يظهر في القائمة
+  const four = await db.prepare("SELECT departure, alert FROM daily_results WHERE employee_id = 4 AND date = ?").bind(SUN).first();
+  assert.deepEqual({ dep: four.departure, alert: four.alert }, { dep: '11:00', alert: '' });
 
   // وكذلك تصحيح الموارد البشرية اليدوي (حركة انصراف يدوية عبر المحرك نفسه)
   await db.prepare("INSERT INTO day_overrides (employee_id, date, dep_time) VALUES (5, ?, '15:00') ON CONFLICT(employee_id, date) DO UPDATE SET dep_time = '15:00'").bind(SUN).run();

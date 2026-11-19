@@ -5,6 +5,7 @@ import { donut, COLORS } from '../charts-lib.js';
 import { groupOf } from './today.js';
 
 const ROLE_LABEL = { employee: 'موظف', manager: 'مدير مباشر', hr: 'موارد بشرية', director: 'مدير عام', admin: 'مسؤول النظام' };
+import { presenceCounts } from '../presence-lib.js';
 const GROUP_LABEL = { present: 'حاضر', late: 'متأخر', absent: 'غياب', leave: 'إجازة أو مهمة', off: 'عطلة', none: 'بلا تسجيل' };
 const ORDER = ['present', 'late', 'absent', 'leave', 'off', 'none'];
 const dm = (d) => d.slice(5).split('-').reverse().join('/');
@@ -107,10 +108,12 @@ export function dashboard({ user, today, onPick = () => {}, onCenter = () => {} 
 
   function drawCenters() {
     const by = new Map();
+    const rowsBy = new Map();
     for (const r of state.rows) {
       const c = r.center || 'بلا مركز';
       if (!by.has(c)) by.set(c, Object.fromEntries(ORDER.map((g) => [g, 0])));
       by.get(c)[groupOf(r.status)]++;
+      (rowsBy.get(c) || rowsBy.set(c, []).get(c)).push(r);
     }
     if (!isOrg || by.size < 2) { centersCard.hidden = true; return; }
     centersCard.hidden = false;
@@ -120,7 +123,8 @@ export function dashboard({ user, today, onPick = () => {}, onCenter = () => {} 
         return h('button', { type: 'button', class: 'dg-center dg-pick', title: 'اعرض موظفي هذا المركز في الجدول', onclick: () => onCenter(name === 'بلا مركز' ? '' : name) },
           h('div', { class: 'dg-center-top' }, h('b', null, name), h('span', { class: 'muted' }, `${c.present + c.late} من ${tot} حاضر`)),
           h('div', { class: 'strip-bar dg-bar', role: 'img', 'aria-label': ORDER.map((g) => `${GROUP_LABEL[g]} ${c[g]}`).join('، ') },
-            ORDER.filter((g) => c[g]).map((g) => h('span', { class: `seg seg-${g}`, style: { flex: `${c[g]} 1 0` } }))));
+            ORDER.filter((g) => c[g]).map((g) => h('span', { class: `seg seg-${g}`, style: { flex: `${c[g]} 1 0` } }))),
+          (() => { const p = presenceCounts(rowsBy.get(name) || []); return h('div', { class: 'dg-center-now muted' }, `داخل ${p.in} · خرج ${p.out} · انصرف ${p.gone} · لم يحضر ${p.wait}`); })());
       })));
   }
 

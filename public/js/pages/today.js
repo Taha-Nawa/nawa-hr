@@ -7,6 +7,8 @@ import { unclosedPanel } from './unclosed-panel.js';
 import { dashboard } from './dashboard.js';
 
 // تصنيف الحالة القادمة من المحرك إلى مجموعة للعرض واللون.
+import { PRES, presenceOf, presenceCounts } from '../presence-lib.js';
+
 const GROUPS = [
   { id: 'present', label: 'حاضر' },
   { id: 'late', label: 'متأخر' },
@@ -38,6 +40,7 @@ export default async function render({ user }) {
   let filter = 'all';
   let q = '';
   let center = '';
+  let pres = ''; // تصفية «الآن» داخل المركز: in/out/gone/wait/rest
 
   // كل الطلبات تنطلق معاً من أول لحظة: كل طلب يكلّف رحلة ذهاب وإياب كاملة، فتسلسلها كان يضاعف زمن الفتح
   const settingsReq = ['hr', 'director', 'admin'].includes(user.role) ? get('/api/settings').catch(() => null) : Promise.resolve(null);
@@ -52,15 +55,16 @@ export default async function render({ user }) {
   const head = h('header', { class: 'page-head' });
   const notice = h('div');
   const strip = h('section', { class: 'daystrip', 'aria-label': 'ملخص اليوم' });
+  const presBox = h('section', { class: 'pres', 'aria-label': 'وضع الموظفين الآن' });
   const tools = h('div', { class: 'tools' });
   const tableBox = h('div', { class: 'table-wrap' });
   const unclosed = unclosedPanel({ user, work: settings?.work || null, onChange: () => go(date) });
   const dash2 = dashboard({
     user, today,
     onPick: (g) => { filter = g; q = ''; draw(); tools.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
-    onCenter: (c) => { center = c; filter = 'all'; q = ''; draw(); tools.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
+    onCenter: (c) => { center = c; filter = 'all'; pres = ''; q = ''; draw(); tools.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
   });
-  const root = h('div', { class: 'page' }, head, notice, dash2.el, user.employeeId != null ? mySummary({ employeeId: user.employeeId, own: true }) : null, strip, tools, tableBox, unclosed.el);
+  const root = h('div', { class: 'page' }, head, notice, dash2.el, user.employeeId != null ? mySummary({ employeeId: user.employeeId, own: true }) : null, strip, presBox, tools, tableBox, unclosed.el);
 
   const dateInput = h('input', { type: 'date', value: date, 'aria-label': 'التاريخ', onchange: (e) => e.target.value && go(e.target.value) });
 
@@ -143,6 +147,7 @@ export default async function render({ user }) {
           h('a', { class: 'btn', href: `#/employees/${user.employeeId}` }, 'سجل دوامي'),
           h('a', { class: 'btn', href: '#/work-log' }, 'ماذا أنجزت اليوم'))));
       clear(tools);
+      clear(presBox);
       clear(tableBox);
       return;
     }
@@ -159,18 +164,25 @@ export default async function render({ user }) {
           h('b', null, counts[g.id]), h('span', null, g.id === 'none' && date === today ? 'لم يسجّل بعد' : g.label)))),
     );
 
+    const scoped = rows.filter((r) => !center || r.center === center);
+    const pc = presenceCounts(scoped);
+    clear(presBox).append(
+      h('div', { class: 'pres-head' }, h('b', null, center ? `الآن في ${center}` : 'الآن في كل المراكز'), date !== today ? h('span', { class: 'muted' }, 'وضع نهاية ذلك اليوم') : null),
+      h('div', { class: 'pres-tiles' }, PRES.map((p) => h('button', { type: 'button', class: `pres-tile pres-${p.id}${pres === p.id ? ' on' : ''}`, disabled: !pc[p.id], onclick: () => { pres = pres === p.id ? '' : p.id; draw(); } },
+        h('b', null, pc[p.id]), h('span', null, p.id === 'wait' && date !== today ? 'لم يحضروا' : p.label)))));
+
     const centers = [...new Set(rows.map((r) => r.center).filter(Boolean))].sort();
     clear(tools).append(
       h('input', { type: 'search', class: 'search', placeholder: 'بحث بالاسم أو الكود', value: q, 'aria-label': 'بحث', oninput: (e) => { q = e.target.value.trim(); drawTable(); } }),
       ...(centers.length > 1
-        ? [h('select', { 'aria-label': 'المركز', onchange: (e) => { center = e.target.value; drawTable(); } }, h('option', { value: '' }, 'كل المراكز'), centers.map((c) => h('option', { value: c, selected: c === center }, c)))]
+        ? [h('select', { 'aria-label': 'المركز', onchange: (e) => { center = e.target.value; pres = ''; draw(); } }, h('option', { value: '' }, 'كل المراكز'), centers.map((c) => h('option', { value: c, selected: c === center }, c)))]
         : []), // لا نمرّر null إلى append الأصلية: تكتبه نصاً «null»
     );
     drawTable();
   }
 
   function drawTable() {
-    const list = rows.filter((r) => (filter === 'all' || groupOf(r.status) === filter) && (!center || r.center === center) && (!q || `${r.name} ${r.code}`.includes(q)));
+    const list = rows.filter((r) => (filter === 'all' || groupOf(r.status) === filter) && (!center || r.center === center) && (!pres || presenceOf(r) === pres) && (!q || `${r.name} ${r.code}`.includes(q)));
     clear(tableBox);
     if (!rows.length) {
       tableBox.append(h('p', { class: 'empty' }, 'لا موظفين ضمن صلاحياتك. أضف الموظفين من صفحة «الموظفون» أو استورد ملف إكسل.'));
@@ -181,7 +193,7 @@ export default async function render({ user }) {
       return;
     }
     tableBox.append(h('table', { class: 'tbl' },
-      h('thead', null, h('tr', null, ['الموظف', 'المركز', 'حضور', 'خروج', 'عودة', 'انصراف', 'الصافي', 'تأخر', 'الحالة'].map((t, i) => h('th', { class: i >= 2 && i <= 7 ? 'num' : '' }, t)))),
+      h('thead', null, h('tr', null, ['الموظف', 'المركز', 'حضور', 'خروج', 'عودة', 'انصراف', 'الصافي', 'تأخر', 'الحالة', 'الآن'].map((t, i) => h('th', { class: i >= 2 && i <= 7 ? 'num' : '' }, t)))),
       h('tbody', null, list.map((r) => h('tr', { class: r.alert ? 'has-alert' : '' },
         h('td', null, h('a', { href: `#/employees/${r.id}`, class: 'emp-link' }, r.name), h('div', { class: 'code' }, r.code)),
         h('td', { class: 'muted' }, dash(r.center)),
@@ -191,7 +203,8 @@ export default async function render({ user }) {
         h('td', { class: 'num' }, dash(fmt12(r.departure))),
         h('td', { class: 'num' }, r.netHours ? hrs(r.netHours) : '—'),
         h('td', { class: 'num' }, r.lateMinutes ? `${r.lateMinutes} د` : '—'),
-        h('td', null, statusChip(r.status, date === today), r.alert ? h('div', { class: 'alert-text' }, r.alert) : null))))));
+        h('td', null, statusChip(r.status, date === today), r.alert ? h('div', { class: 'alert-text' }, r.alert) : null),
+        h('td', { class: 'muted' }, PRES.find((p) => p.id === presenceOf(r)).label, r.lastTime && presenceOf(r) !== 'rest' && presenceOf(r) !== 'wait' ? ` · ${fmt12(r.lastTime)}` : ''))))));
   }
 
   // حالة البوابات وغيرها (لمن يملك الصلاحية): لا تعطّل اللوحة إن تعذّرت، وتُرسم عند وصولها دون انتظار

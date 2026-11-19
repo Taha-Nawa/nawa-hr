@@ -670,9 +670,11 @@ add('GET', '/api/day', async ({ db, user, url }) => {
   const scope = employeeScope(user);
   const r = await db
     .prepare(
-      `SELECT e.id, e.code, e.name, c.name AS center, e.department, ${DAY_COLS}
+      `SELECT e.id, e.code, e.name, c.name AS center, e.department, ${DAY_COLS},
+         (SELECT m.type FROM movements m WHERE m.employee_id = e.id AND m.date = ?1 ORDER BY m.time DESC, m.iso DESC LIMIT 1) AS lastType,
+         (SELECT m.time FROM movements m WHERE m.employee_id = e.id AND m.date = ?1 ORDER BY m.time DESC, m.iso DESC LIMIT 1) AS lastTime
        FROM employees e LEFT JOIN centers c ON c.id = e.center_id
-       LEFT JOIN daily_results r ON r.employee_id = e.id AND r.date = ?
+       LEFT JOIN daily_results r ON r.employee_id = e.id AND r.date = ?1
        WHERE e.status = 'active' AND ${scope.sql} ORDER BY e.code`,
     )
     .bind(date, ...scope.params)

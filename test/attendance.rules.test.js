@@ -174,3 +174,22 @@ test('الإخلاء الفوري لا يغيّر يوم الإجازة ولا �
   assert.deepEqual(day({ movements: [mv('حضور', '08:50'), mv('انصراف', '14:00')], dismissAt: null }), plain);
   assert.deepEqual(day({ movements: [mv('حضور', '08:50'), mv('انصراف', '14:00')], dismissAt: '' }), plain);
 });
+
+test('خرج ولم يعد حتى انتهى اليوم: آخر خروج هو الانصراف الفعلي، وبلا ذلك يبقى التنبيه', () => {
+  const m = [mv('حضور', '08:30'), mv('خروج', '12:05')];
+  const open = day({ movements: m });
+  assert.equal(open.alert, 'انصراف غير مسجّل', 'اليوم لم ينتهِ بعد');
+  const ended = day({ movements: m, dayEnded: true });
+  assert.equal(ended.departure, '12:05');
+  assert.equal(ended.alert, '');
+  assert.equal(ended.exitFirst, null);
+  assert.equal(ended.presenceHours, 3.58);
+  assert.equal(ended.earlyLeaveMinutes, 175);
+  // خروج وعودة سابقان ثم خروج أخير: الأول يُحتسب مغادرة والأخير انصرافاً
+  const two = day({ movements: [mv('حضور', '08:30'), mv('خروج', '10:00'), mv('عودة', '10:30'), mv('خروج', '13:00')], dayEnded: true });
+  assert.equal(two.departure, '13:00');
+  assert.equal(two.exitHours, 0.5);
+  assert.equal(two.alert, '');
+  // عودة بعد الخروج بلا انصراف: لا يتغير شيء (ما زال انصرافه غير مسجّل)
+  assert.equal(day({ movements: [mv('حضور', '08:30'), mv('خروج', '10:00'), mv('عودة', '10:30')], dayEnded: true }).alert, 'انصراف غير مسجّل');
+});

@@ -9,6 +9,7 @@
 import { computeDay, dayTypeOf } from '../engine/attendance.js';
 import { mergeRules } from '../engine/requests.js';
 import { hourPosOn } from '../engine/maternity.js';
+import { localDate } from './util.js';
 
 const CHUNK = 100;
 
@@ -61,6 +62,7 @@ export async function recomputePairs(db, pairs, settings, extraStatements = []) 
     const rows = (await db.prepare('SELECT employee_id AS e, delivery_date AS deliveryDate, leave_days AS leaveDays, hour_pos AS hourPos FROM maternity WHERE hour_pos IS NOT NULL AND employee_id IN (SELECT value FROM json_each(?))').bind(empIds).all()).results;
     for (const r of rows) matBy.set(r.e, [...(matBy.get(r.e) || []), r]);
   } catch { /* الترحيل 0025 لم يُطبَّق بعد */ }
+  const today = localDate(); // الأيام قبل اليوم انتهى دوامها
   let written = 0;
   for (let i = 0; i < list.length; i += CHUNK) {
     const chunk = list.slice(i, i + CHUNK);
@@ -144,6 +146,7 @@ export async function recomputePairs(db, pairs, settings, extraStatements = []) 
           permit: permits.get(k),
           dismissAt: dismiss.get(k),
           exception: exceptional.has(k),
+          dayEnded: p.d < today,
           matHour: hourPosOn(p.d, matBy.get(p.e)),
         },
         settings,
