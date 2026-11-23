@@ -204,3 +204,20 @@ test('فحص المكرّرات: يُبقي الأكمل برقم الأقدم،
   const n = await call(env, 'POST', '/api/contracts', { cookie: admin.cookie, body: fake({ name: 'جديد', idno: '444444444' }) });
   assert.equal(n.body.contract.seq, 4);
 });
+
+// ─── طباعة العقد وWord ───
+import { contractBody } from '../public/js/contract-doc.js';
+import { buildDocx, bodyXml } from '../public/js/contract-word.js';
+test('نص العقد يُملأ من السجل ويُولَّد منه Word سليم', async () => {
+  const { DAILY, NONE_TERM } = await import('../public/js/contracts-lib.js');
+  const r = { id: 1, seq: 7, name: 'مزوّد اختبار', idno: '100000001', gender: 'ذكر', title: 'السيد', ctype: 'خدمة مباشرة', csubject: 'عقد اتفاق على تقديم خدمات تربوية', dSign: '2026-07-01', dFrom: '2026-07-01', dTo: '2026-12-10', pricing: DAILY, rate: 40, sessPerDay: 2, daysBase: 80, bank: 'بنك', iban: 'PS00', termType: NONE_TERM };
+  const html = contractBody(r);
+  assert.match(html, /مزوّد اختبار/);
+  assert.match(html, /المادة \(14\)/);
+  assert.match(html, /6,400\.00/);
+  const xml = bodyXml(html);
+  assert.match(xml, /مزوّد اختبار/);
+  assert.doesNotMatch(xml, /&amp;lt;|<span/);
+  const bytes = buildDocx(r);
+  assert.equal(String.fromCharCode(bytes[0], bytes[1]), 'PK');
+});

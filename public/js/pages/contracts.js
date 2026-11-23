@@ -6,6 +6,7 @@ import { contractDialog } from './contract-form.js';
 import { importDialog } from './contract-import.js';
 import { dedupeDialog } from './contract-dedupe.js';
 import { drawDash } from './contracts-dash.js';
+import { printContract, wordContract } from './contract-actions.js';
 
 const dmy = (s) => (s ? s.split('-').reverse().join('/') : '—');
 
@@ -60,7 +61,10 @@ export default async function render({ user } = {}) {
         h('td', null, r.calc.delta !== null ? pct(r.calc.delta) : '—'),
         h('td', null, h('span', { class: `chip ${STATUS_CHIP[r.status] || 'chip-none'}` }, r.status)),
         h('td', null, r.warnings.length ? h('span', { class: 'chip chip-late', title: r.warnings.join('\n') }, `${r.warnings.length} ملاحظة`) : h('span', { class: 'chip chip-present' }, 'سليم')),
-        h('td', { class: 'row-actions' }, h('button', { type: 'button', class: 'btn btn-sm', onclick: () => open(r) }, 'تعديل')))))));
+        h('td', { class: 'row-actions' },
+          h('button', { type: 'button', class: 'btn btn-sm', onclick: () => open(r) }, 'تعديل'),
+          h('button', { type: 'button', class: 'btn btn-sm', title: 'طباعة العقد A4', onclick: () => printContract(r) }, 'طباعة'),
+          h('button', { type: 'button', class: 'btn btn-sm', title: 'تنزيل العقد بصيغة Word', onclick: () => wordContract(r) }, 'Word')))))));
   }
   function filter() {
     const hay = (r) => `${r.name} ${r.idno || ''} ${r.project || ''}`;
