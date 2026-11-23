@@ -163,7 +163,7 @@ export function drawList({ all, f, user, onEdit, redraw, onChanged }) {
         const meta = [r.ctype, r.project].filter(Boolean).join(' — ');
         const delta = r.calc.delta;
         return h('tr', null,
-          h('td', { class: 'c-no' }, h('span', { dir: 'ltr', class: 'no' }, contractNo(r)), h('span', { class: 'seq' }, `م ${r.seq ?? '—'}`)),
+          h('td', { class: 'c-no' }, h('span', { dir: 'ltr', class: 'no' }, contractNo(r))),
           h('td', { class: 'c-name' },
             h('div', { class: 'nm' }, h('strong', null, r.name), r.filesN ? h('span', { class: 'ct-clip', title: `${r.filesN} مستند مرفوع` }, ` 📎${r.filesN}`) : null),
             h('div', { class: 'meta', title: meta }, meta || '—'),

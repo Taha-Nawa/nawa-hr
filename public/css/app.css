@@ -1853,3 +1853,16 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
 .ct-toolrow .sp { margin-inline-start: auto; }
 .ct-list .row-actions > .btn.edit { font-weight: 800; color: var(--red); border-color: var(--red); background: var(--surface); }
 .ct-list .row-actions > .btn.edit:hover { background: var(--red-soft); }
+
+/* توزيع الأعمدة بنسب ثابتة: لا فراغ كبير بين الاسم والفترة، والقيم متوسّطة في أعمدتها */
+.ct-list { table-layout: fixed; }
+.ct-list th:nth-child(1) { width: 14%; } .ct-list th:nth-child(2) { width: 29%; } .ct-list th:nth-child(3) { width: 19%; }
+.ct-list th:nth-child(4) { width: 14%; } .ct-list th:nth-child(5) { width: 11%; } .ct-list th:nth-child(6) { width: 13%; }
+.ct-list th, .ct-list td { text-align: center; }
+.ct-list th:nth-child(2), .ct-list td.c-name { text-align: start; }
+.ct-list td.c-no, .ct-list td.c-per, .ct-list td.c-val, .ct-list td.c-st, .ct-list td.row-actions { width: auto; }
+.ct-list .c-name { min-width: 0; max-width: none; }
+.ct-list .c-name .meta { max-width: 100%; }
+.ct-list .c-name .idno { text-align: start; }
+.ct-list .c-st .chip { margin-inline: auto; }
+.ct-list .row-actions { padding-inline: 10px; }
