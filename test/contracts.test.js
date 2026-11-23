@@ -206,19 +206,21 @@ test('فحص المكرّرات: يُبقي الأكمل برقم الأقدم،
 });
 
 // ─── طباعة العقد وWord ───
-import { contractBody } from '../public/js/contract-doc.js';
+import { composeDoc } from '../public/js/contract-compose.js';
+import { defaultRevData } from '../src/worker/contract-templates.js';
 import { buildDocx, bodyXml } from '../public/js/contract-word.js';
 test('نص العقد يُملأ من السجل ويُولَّد منه Word سليم', async () => {
   const { DAILY, NONE_TERM } = await import('../public/js/contracts-lib.js');
   const r = { id: 1, seq: 7, name: 'مزوّد اختبار', idno: '100000001', gender: 'ذكر', title: 'السيد', ctype: 'خدمة مباشرة', csubject: 'عقد اتفاق على تقديم خدمات تربوية', dSign: '2026-07-01', dFrom: '2026-07-01', dTo: '2026-12-10', pricing: DAILY, rate: 40, sessPerDay: 2, daysBase: 80, bank: 'بنك', iban: 'PS00', termType: NONE_TERM };
-  const html = contractBody(r);
+  const d = { contract: r, rev: defaultRevData(), header: null };
+  const html = composeDoc(d).body;
   assert.match(html, /مزوّد اختبار/);
   assert.match(html, /المادة \(14\)/);
   assert.match(html, /6,400\.00/);
-  const xml = bodyXml(html);
+  const xml = bodyXml(html, composeDoc(d).fmt);
   assert.match(xml, /مزوّد اختبار/);
   assert.doesNotMatch(xml, /&amp;lt;|<span/);
-  const bytes = buildDocx(r);
+  const bytes = buildDocx(d);
   assert.equal(String.fromCharCode(bytes[0], bytes[1]), 'PK');
 });
 
@@ -237,4 +239,28 @@ test('إعادة الترقيم: يصلح القفزات ويُبقي المتس
   assert.equal((await rn(admin, true)).body.committed, true);
   assert.deepEqual((await db.prepare('SELECT seq FROM contracts ORDER BY seq').all()).results.map((x) => x.seq), [1, 2, 3, 4]);
   assert.equal((await rn(admin, false)).body.changed, 0);
+});
+
+test('حذف عقد نهائياً: لمن يدير العقود فقط، ويُسجَّل في سجل التدقيق', async () => {
+  const { db, env } = await apiEnv();
+  const admin = await login(db, 'adm@nawaculture.org', 'admin');
+  const emp = await login(db, 'emp@nawaculture.org', 'employee');
+  const mk = await call(env, 'POST', '/api/contracts', { cookie: admin.cookie, body: fake({ name: 'للحذف', idno: '555555555' }) });
+  const id = mk.body.contract.id;
+  assert.equal((await call(env, 'DELETE', `/api/contracts/${id}`, { cookie: emp.cookie })).status, 403);
+  assert.equal((await call(env, 'DELETE', `/api/contracts/${id}`, { cookie: admin.cookie })).body.ok, true);
+  assert.equal(await db.prepare('SELECT COUNT(*) AS n FROM contracts').first('n'), 0);
+  assert.equal(await db.prepare("SELECT COUNT(*) AS n FROM audit_log WHERE action = 'contract.delete'").first('n'), 1);
+  assert.equal((await call(env, 'DELETE', `/api/contracts/${id}`, { cookie: admin.cookie })).status, 404);
+});
+
+test('سجل الحركات: يعرض حركات العقود لمن يديرها فقط', async () => {
+  const { db, env } = await apiEnv();
+  const admin = await login(db, 'adm@nawaculture.org', 'admin');
+  const emp = await login(db, 'emp@nawaculture.org', 'employee');
+  await call(env, 'POST', '/api/contracts', { cookie: admin.cookie, body: fake({ name: 'س', idno: '666666666' }) });
+  assert.equal((await call(env, 'GET', '/api/contracts/log', { cookie: emp.cookie })).status, 403);
+  const r = await call(env, 'GET', '/api/contracts/log', { cookie: admin.cookie });
+  assert.equal(r.status, 200);
+  assert.ok(r.body.log.some((x) => x.action === 'contract.create'));
 });

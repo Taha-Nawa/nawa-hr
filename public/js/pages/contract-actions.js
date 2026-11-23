@@ -2,6 +2,16 @@
 import { get } from '../api.js';
 import { toast } from '../dom.js';
 import { buildDocx, wordFileName } from '../contract-word.js';
+import { composeDoc } from '../contract-compose.js';
+
+export function saveBlob(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.append(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+}
 
 export function printContract(c) {
   const w = window.open(`/contract-print.html?id=${c.id}&auto=1`, '_blank');
@@ -10,19 +20,16 @@ export function printContract(c) {
 
 export async function wordContract(c) {
   try {
-    const { contract: r } = await get(`/api/contracts/${c.id}`);
-    let logo = null;
-    try {
-      const res = await fetch('/logo.png');
-      if (res.ok) logo = { bytes: new Uint8Array(await res.arrayBuffer()), hMm: 24 };
-    } catch { /* بلا شعار */ }
-    const blob = new Blob([buildDocx(r, { logo })], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = wordFileName(r);
-    document.body.append(a);
-    a.click();
-    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    const d = await get(`/api/contracts/${c.id}/doc`);
+    const images = {};
+    for (const l of composeDoc(d).logos) {
+      try {
+        const res = await fetch(l.src, { credentials: 'same-origin' });
+        if (res.ok) images[l.id] = new Uint8Array(await res.arrayBuffer());
+      } catch { /* يُترك هذا الشعار */ }
+    }
+    const blob = new Blob([buildDocx(d, images)], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    saveBlob(blob, wordFileName(d.contract));
     toast('تم تنزيل ملف Word');
   } catch (e) {
     toast(e.message || 'تعذّر تجهيز الملف', 'err');

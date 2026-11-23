@@ -56,11 +56,11 @@ function auditStmt(db, user, action, entity, entityId, detail) {
     .bind(user?.email || 'system', action, entity ?? null, entityId == null ? null : String(entityId), detail == null ? null : JSON.stringify(detail).slice(0, 2000));
 }
 
-async function readJson(request) {
+async function readJson(request, limit = MAX_BODY) {
   const ct = request.headers.get('content-type') || '';
   if (!ct.includes('application/json')) return { error: bad('نوع المحتوى يجب أن يكون JSON', 415) };
   const text = await request.text();
-  if (text.length > MAX_BODY) return { error: bad('الطلب أكبر من المسموح', 413) };
+  if (text.length > limit) return { error: bad('الطلب أكبر من المسموح', 413) };
   try {
     const v = JSON.parse(text);
     return v && typeof v === 'object' && !Array.isArray(v) ? { body: v } : { error: bad('صيغة الطلب غير صالحة') };

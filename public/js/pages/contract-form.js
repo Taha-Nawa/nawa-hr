@@ -1,6 +1,9 @@
 // نموذج العقد (إضافة وتعديل): المجموعات نفسها في سجل العقود القديم، والحقول المحسوبة تتحدّث أثناء الكتابة بالمعادلات نفسها.
-import { h, dialog, field, toast } from '../dom.js';
-import { post, patch } from '../api.js';
+import { h, dialog, field, toast, confirmBox } from '../dom.js';
+import { get, post, patch, del } from '../api.js';
+import { formWarnings } from '../contracts-people.js';
+import { printContract, wordContract } from './contract-actions.js';
+import { filesPanel } from './contract-files-ui.js';
 import { compute, audit, money, pct, NONE_TERM, LUMP, DAILY, STATUSES, TERM_ARTICLE } from '../contracts-lib.js';
 
 let seq = 0;
@@ -13,7 +16,7 @@ const GROUPS = [
   ['التعريف بالعقد والمشروع والتمويل', [
     ['ctype', 'نوع العقد', 'list:ctype'], ['csubject', 'موضوع / عنوان العقد', 'list:csubject'], ['service', 'وصف الخدمة المتعاقد عليها', 'sug', { wide: 1 }],
     ['project', 'اسم المشروع', 'sug', { wide: 1 }], ['partner', 'جهة التعاون / الشريك المنفّذ', 'sug', { wide: 1 }], ['donor', 'اسم الممول', 'sug', { wide: 1 }],
-    ['hdr', 'مجموعة الترويسة', 'sug', { hint: 'اتركه فارغاً ليتبع الربط التلقائي' }]]],
+    ]],
   ['الإجراء التعاقدي والتواريخ', [
     ['rfqno', 'رقم استدراج العرض / العطاء', 'text', { hint: 'إلزامي لعرض السعر والعطاء' }], ['dRfq', 'تاريخ إعلان عرض السعر / العطاء', 'date'],
     ['dOffer', 'تاريخ تقديم العرض من مزوّد الخدمة', 'date'], ['dSign', 'تاريخ توقيع العقد من مزوّد الخدمة', 'date']]],
@@ -32,7 +35,7 @@ const GROUPS = [
     ['_due', 'المستحق حتى الإنهاء ($)', 'calc'], ['notes', 'ملاحظات', 'textarea', { wide: 1 }]]],
 ];
 
-export function contractDialog({ c = null, lists, onDone }) {
+export function contractDialog({ c = null, lists, people = {}, tpls = null, onDone }) {
   const id = ++seq;
   const inputs = {};
   const calcs = {};
@@ -41,6 +44,7 @@ export function contractDialog({ c = null, lists, onDone }) {
     pricing: lists.lists.pricing, status: STATUSES, termType: Object.keys(TERM_ARTICLE), termReason: lists.lists.termReason,
   };
   const warn = h('ul', { class: 'ct-warn' });
+  const dup = h('div', { class: 'ct-dup', hidden: true });
   const err = h('div', { class: 'notice notice-err', role: 'alert', hidden: true });
   const init = { status: 'مسودة', termType: NONE_TERM, pricing: DAILY, sessPerDay: 1, termReason: 'لا يوجد', ...(c || {}) };
 
@@ -70,7 +74,48 @@ export function contractDialog({ c = null, lists, onDone }) {
     return f;
   }
 
+  // الصيغة والترويسة: العقد مثبّت على نسخة من صيغة؛ حقولها الخاصة تظهر هنا
+  const live = (tpls?.tpls || []).filter((t) => !t.archived || t.id === c?.tplId);
+  const tplSel = h('select', { 'aria-label': 'صيغة العقد' }, h('option', { value: '' }, 'الصيغة الافتراضية'), live.map((t) => h('option', { value: t.id, selected: t.id === c?.tplId }, t.name)));
+  const hdrSel = h('select', { 'aria-label': 'مجموعة الترويسة' }, h('option', { value: '' }, '— تلقائي (حسب الربط أو شعارات الصيغة) —'),
+    (tpls?.headers?.sets || []).map((s) => h('option', { value: s.name, selected: s.name === c?.hdr }, s.name)),
+    c?.hdr && !(tpls?.headers?.sets || []).some((s) => s.name === c.hdr) ? h('option', { value: c.hdr, selected: true }, c.hdr) : null);
+  const curRev = c?.revId ? tpls?.revs?.find((r) => r.id === c.revId) : null;
+  const latest = c?.tplId ? tpls?.tpls?.find((t) => t.id === c.tplId)?.curRev : null;
+  const outdated = !!(c && curRev && latest && latest !== c.revId);
+  const repin = h('input', { type: 'checkbox' });
+  const xBox = h('div', { class: 'form-grid' });
+  const xIn = {};
+  async function drawX() {
+    const t = tplSel.value ? tpls.tpls.find((x) => x.id === tplSel.value) : (tpls?.tpls || []).find((x) => !x.archived);
+    const same = c && (tplSel.value || c.tplId) === c.tplId;
+    const revId = same && c.revId && !repin.checked ? c.revId : t?.curRev;
+    xBox.replaceChildren();
+    for (const k of Object.keys(xIn)) delete xIn[k];
+    if (!revId) return;
+    try {
+      const { rev } = await get(`/api/contracts/templates/revs/${revId}`);
+      for (const f of rev.fields || []) {
+        const v = c?.x?.[f.k] ?? '';
+        const el = f.type === 'sel' ? h('select', null, h('option', { value: '' }, '—'), (f.opts || []).map((o) => h('option', { value: o, selected: o === v }, o)))
+          : h('input', { type: f.type === 'num' ? 'number' : f.type === 'date' ? 'date' : 'text', value: v, step: 'any', autocomplete: 'off' });
+        xIn[f.k] = el;
+        xBox.append(field(f.label || f.k, el));
+      }
+    } catch { /* الحقول الخاصة اختيارية */ }
+  }
+  tplSel.addEventListener('change', drawX);
+  repin.addEventListener('change', drawX);
+  const tplGroup = tpls ? h('fieldset', { class: 'ct-group' }, h('legend', null, 'الصيغة والترويسة'),
+    h('div', { class: 'form-grid' },
+      field('صيغة العقد', tplSel, c ? `مثبّت على النسخة ${curRev?.ver ?? '—'}${outdated ? ' (يوجد نسخة أحدث)' : ''}` : 'تُثبَّت النسخة الحالية للصيغة'),
+      field('مجموعة الترويسة', hdrSel, 'تتحكم بالشعارات والتذييل في الطباعة وWord'),
+      outdated ? h('label', { class: 'chk span-all' }, repin, ' تحديث هذا العقد إلى أحدث نسخة من الصيغة (يتغيّر نصه المطبوع)') : null),
+    xBox) : null;
+  drawX();
+
   const read = () => Object.fromEntries(Object.entries(inputs).map(([k, el]) => [k, el.value === '' ? null : el.value]));
+  const readX = () => Object.fromEntries(Object.entries(xIn).map(([k, el]) => [k, el.value]).filter(([, v]) => v !== ''));
   function refresh() {
     const r = read();
     const k = compute(r);
@@ -88,28 +133,44 @@ export function contractDialog({ c = null, lists, onDone }) {
     const w = r.name ? audit(r) : [];
     warn.replaceChildren(...w.map((x) => h('li', null, x)));
     warn.hidden = !w.length;
+    const fw = formWarnings(people, r, c?.id);
+    dup.hidden = !fw.msgs.length && !fw.info;
+    dup.className = `ct-dup${fw.msgs.length ? ' bad' : ''}`;
+    dup.replaceChildren(fw.msgs.length ? h('div', null, h('strong', null, 'يحتاج مراجعة قبل الحفظ'), h('ul', null, fw.msgs.map((m) => h('li', null, m)))) : h('div', null, h('strong', null, 'مزوّد خدمة سابق. '), fw.info.replace('مزوّد خدمة سابق ', '')));
   }
 
+  let viewAfter = false;
+  async function drop() {
+    if (!(await confirmBox(`حذف عقد «${c.name}» نهائياً؟ لا يمكن التراجع، ولا سلة محذوفات.`, 'احذف نهائياً', true))) return;
+    try { await del(`/api/contracts/${c.id}`); toast('حُذف العقد'); dlg.close(); onDone?.(null); } catch (ex) { err.textContent = ex.message; err.hidden = false; }
+  }
   const body = h('form', { class: 'ct-form', onsubmit: async (e) => {
     e.preventDefault();
     err.hidden = true;
     try {
-      const payload = read();
+      const payload = { ...read(), ...(tpls ? { tplId: tplSel.value || (c?.tplId ?? undefined), hdr: hdrSel.value || null, x: readX(), ...(repin.checked ? { repin: true } : {}) } : {}) };
       const res = c ? await patch(`/api/contracts/${c.id}`, payload) : await post('/api/contracts', payload);
       toast('حُفظ العقد');
       dlg.close();
       onDone?.(res.contract);
+      if (viewAfter) printContract(res.contract);
     } catch (ex) {
       err.textContent = ex.message;
       err.hidden = false;
     }
   } },
   GROUPS.map(([title, fields]) => h('fieldset', { class: 'ct-group' }, h('legend', null, title), h('div', { class: 'form-grid' }, fields.map(make)))),
+  tplGroup,
+  c ? filesPanel(c, () => onDone?.(null, true)) : h('p', { class: 'hint' }, 'بعد حفظ العقد يمكنك رفع مستنداته (العقد الموقّع، الهوية…) بفتحه للتعديل.'),
+  dup,
   h('div', { class: 'ct-audit' }, h('strong', null, 'ملاحظات التدقيق (لا تمنع الحفظ)'), warn),
   err,
   h('div', { class: 'dlg-actions' },
+    c ? h('button', { type: 'button', class: 'btn btn-danger', onclick: drop }, 'حذف هذا العقد') : null,
+    c ? h('button', { type: 'button', class: 'btn', onclick: () => wordContract(c) }, 'Word') : null,
     h('button', { type: 'button', class: 'btn', onclick: () => dlg.close() }, 'إلغاء'),
-    h('button', { type: 'submit', class: 'btn btn-primary' }, c ? 'حفظ التعديلات' : 'إضافة العقد')));
+    h('button', { type: 'submit', class: 'btn', onclick: () => { viewAfter = true; } }, 'حفظ وعرض نص العقد'),
+    h('button', { type: 'submit', class: 'btn btn-primary', onclick: () => { viewAfter = false; } }, c ? 'حفظ التعديلات' : 'إضافة العقد')));
   const dlg = dialog({ title: c ? `تعديل عقد — ${c.name}` : 'عقد جديد', content: body, wide: true });
   refresh();
   return dlg;

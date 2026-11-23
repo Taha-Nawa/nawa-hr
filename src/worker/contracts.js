@@ -6,10 +6,12 @@
 import { clip, isDate, json } from './util.js';
 import { canContracts, can } from './authz.js';
 import { syncProviderFor } from './contracts-sync.js';
+import { registerContractFileRoutes, dropStatements } from './contract-files.js';
+import { registerTemplateRoutes, defaultTemplate, docFor, stampLegacy } from './contract-templates.js';
 import { TEXT_FIELDS, DATE_FIELDS, NUM_FIELDS, STATUSES, TERM_ARTICLE, NONE_TERM, LISTS, SUGGEST_FIELDS, compute, audit } from '../engine/contracts.js';
 
 const COLS = { ...Object.fromEntries(Object.entries(TEXT_FIELDS).map(([k, [col]]) => [k, col])), ...DATE_FIELDS, ...NUM_FIELDS };
-const SELECT = `SELECT id, legacy_id AS legacyId, seq, ${Object.entries(COLS).map(([k, col]) => `${col} AS ${k}`).join(', ')}, created_at AS createdAt, updated_at AS updatedAt FROM contracts`;
+const SELECT = `SELECT id, legacy_id AS legacyId, seq, ${Object.entries(COLS).map(([k, col]) => `${col} AS ${k}`).join(', ')}, tpl_id AS tplId, rev_id AS revId, cf, (SELECT COUNT(*) FROM contract_files f WHERE f.contract_id = contracts.id) AS filesN, created_at AS createdAt, updated_at AS updatedAt FROM contracts`;
 
 /** يحوّل جسم الطلب إلى قيم جاهزة للتخزين، أو يُرجع { error }. partial: تعديل جزئي. */
 export function parseContract(b, { partial = false } = {}) {
@@ -65,7 +67,28 @@ export function planDedupe(rows) {
   return { groups: multi, keep, remove, renumber };
 }
 
-const present = (row) => ({ ...row, calc: compute(row), warnings: audit(row) });
+const present = (row) => {
+  const { cf, ...r } = row;
+  let x = {};
+  try { x = cf ? JSON.parse(cf) : {}; } catch { x = {}; }
+  return { ...r, x, calc: compute(r), warnings: audit(r) };
+};
+
+/** حقول الصيغة المخصّصة: كائن نصوص قصيرة (≤ 40 مفتاحاً). يُرجع JSON أو null */
+function cleanCf(v) {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+  const o = {};
+  for (const [k, val] of Object.entries(v).slice(0, 40)) if (val !== null && val !== undefined && String(val) !== '') o[clip(k, 40)] = clip(String(val), 300);
+  return Object.keys(o).length ? JSON.stringify(o) : null;
+}
+
+/** يثبّت العقد على صيغة ونسخة: الصيغة المطلوبة (فعّالة) أو الافتراضية؛ وتُقفل النسخة فلا تُعدَّل في مكانها بعد اليوم */
+async function pinTemplate(db, tplId, _unused) {
+  if (!tplId) { const d = await defaultTemplate(db); return { tplId: d.id, revId: d.curRev }; }
+  const t = await db.prepare('SELECT id, archived, cur_rev AS curRev FROM contract_tpls WHERE id = ?').bind(String(tplId)).first();
+  if (!t) return { error: 'الصيغة غير موجودة' };
+  return { tplId: t.id, revId: t.curRev };
+}
 
 export function registerContractRoutes(add, { bad, forbidden, notFound, readJson, auditStmt }) {
   // فشل المزامنة لا يُفشل حفظ العقد: يُسجَّل ويُرجع سبباً، وزر المزامنة يعيدها
@@ -73,6 +96,8 @@ export function registerContractRoutes(add, { bad, forbidden, notFound, readJson
     try { return await syncProviderFor(db, user, idno, auditStmt); } catch (e) { console.error('contract sync failed', e); return { skipped: 'تعذّرت المزامنة' }; }
   };
   const gate = (user) => canContracts(user);
+  registerContractFileRoutes(add, { bad, forbidden, notFound, auditStmt });
+  registerTemplateRoutes(add, { bad, forbidden, notFound, readJson, auditStmt }); // قبل /:id كي لا تُلتقط كمعرّف
 
   add('GET', '/api/contracts', async ({ db, user, url }) => {
     if (!gate(user)) return forbidden();
@@ -97,6 +122,21 @@ export function registerContractRoutes(add, { bad, forbidden, notFound, readJson
     return json({ ok: true, statuses: STATUSES, noneTerm: NONE_TERM, termTypes: Object.keys(TERM_ARTICLE), lists: LISTS, suggestions });
   });
 
+  // سجل الحركات: من أضاف أو عدّل أو حذف أو استورد، ومتى (آخر 500 حركة على العقود).
+  add('GET', '/api/contracts/log', async ({ db, user }) => {
+    if (!gate(user)) return forbidden();
+    const rows = (await db.prepare("SELECT id, at, actor, action, entity_id AS entityId, detail FROM audit_log WHERE action LIKE 'contract.%' ORDER BY id DESC LIMIT 500").all()).results;
+    return json({ ok: true, log: rows.map((r) => ({ ...r, detail: (() => { try { return r.detail ? JSON.parse(r.detail) : null; } catch { return null; } })() })) });
+  });
+
+  // العقد + نسخة صيغته + ترويسته: مصدر صفحة الطباعة وملف Word
+  add('GET', '/api/contracts/:id/doc', async ({ db, user, params }) => {
+    if (!gate(user)) return forbidden();
+    const row = await db.prepare(`${SELECT} WHERE id = ?`).bind(Number(params.id)).first();
+    if (!row) return notFound('العقد');
+    return json({ ok: true, contract: present(row), ...(await docFor(db, row)) });
+  });
+
   add('GET', '/api/contracts/:id', async ({ db, user, params }) => {
     if (!gate(user)) return forbidden();
     const row = await db.prepare(`${SELECT} WHERE id = ?`).bind(Number(params.id)).first();
@@ -113,9 +153,11 @@ export function registerContractRoutes(add, { bad, forbidden, notFound, readJson
     v.termType = v.termType || NONE_TERM;
     const keys = Object.keys(v);
     const seq = ((await db.prepare('SELECT MAX(seq) AS m FROM contracts ').first('m')) || 0) + 1;
-    const res = await db.prepare(`INSERT INTO contracts (seq, ${keys.map((k) => COLS[k]).join(', ')}) VALUES (?, ${keys.map(() => '?').join(', ')})`).bind(seq, ...keys.map((k) => v[k])).run();
+    const pin = await pinTemplate(db, body.tplId, null);
+    if (pin.error) return bad(pin.error);
+    const res = await db.prepare(`INSERT INTO contracts (seq, ${keys.map((k) => COLS[k]).join(', ')}, tpl_id, rev_id, cf) VALUES (?, ${keys.map(() => '?').join(', ')}, ?, ?, ?)`).bind(seq, ...keys.map((k) => v[k]), pin.tplId, pin.revId, cleanCf(body.x)).run();
     const id = res.meta.last_row_id;
-    await auditStmt(db, user, 'contract.create', 'contract', id, { seq }).run();
+    await db.batch([db.prepare('UPDATE contract_revs SET locked = 1 WHERE id = ?').bind(pin.revId), auditStmt(db, user, 'contract.create', 'contract', id, { seq })]);
     const sync = await trySync(db, user, v.idno);
     const row = await db.prepare(`${SELECT} WHERE id = ?`).bind(id).first();
     return json({ ok: true, contract: present(row), provider: sync }, 201);
@@ -126,14 +168,27 @@ export function registerContractRoutes(add, { bad, forbidden, notFound, readJson
     const id = Number(params.id);
     const { body, error } = await readJson(request);
     if (error) return error;
-    const cur = await db.prepare('SELECT id FROM contracts WHERE id = ?').bind(id).first();
+    const cur = await db.prepare('SELECT id, tpl_id AS tplId, rev_id AS revId FROM contracts WHERE id = ?').bind(id).first();
     if (!cur) return notFound('العقد');
     const { value: v, error: err } = parseContract(body, { partial: true });
     if (err) return bad(err);
     const keys = Object.keys(v);
-    if (!keys.length) return bad('لا شيء للتعديل');
+    const sets = keys.map((k) => `${COLS[k]} = ?`);
+    const vals = keys.map((k) => v[k]);
+    const extra = [];
+    // تغيير الصيغة أو «تحديث إلى أحدث نسخة» يعيد التثبيت؛ وإلا يبقى العقد على نسخته
+    if ((body.tplId !== undefined && body.tplId !== cur.tplId) || body.repin === true) {
+      const pin = await pinTemplate(db, body.tplId ?? cur.tplId, null);
+      if (pin.error) return bad(pin.error);
+      sets.push('tpl_id = ?', 'rev_id = ?'); vals.push(pin.tplId, pin.revId);
+      extra.push(db.prepare('UPDATE contract_revs SET locked = 1 WHERE id = ?').bind(pin.revId));
+      keys.push(body.repin === true ? 'revId' : 'tplId');
+    }
+    if (body.x !== undefined) { sets.push('cf = ?'); vals.push(cleanCf(body.x)); keys.push('x'); }
+    if (!sets.length) return bad('لا شيء للتعديل');
     await db.batch([
-      db.prepare(`UPDATE contracts SET ${keys.map((k) => `${COLS[k]} = ?`).join(', ')}, updated_at = datetime('now') WHERE id = ?`).bind(...keys.map((k) => v[k]), id),
+      db.prepare(`UPDATE contracts SET ${sets.join(', ')}, updated_at = datetime('now') WHERE id = ?`).bind(...vals, id),
+      ...extra,
       auditStmt(db, user, 'contract.update', 'contract', id, { fields: keys }), // أسماء الحقول فقط
     ]);
     const row = await db.prepare(`${SELECT} WHERE id = ?`).bind(id).first();
@@ -159,6 +214,21 @@ export function registerContractRoutes(add, { bad, forbidden, notFound, readJson
     return json({ ok: true, total, next, done: next >= total, ...res });
   });
 
+  // حذف عقد نهائياً (قرار صاحب النظام: لا سلة محذوفات). المزوّد المشتقّ منه يبقى ويُعاد احتساب بياناته من عقوده الباقية.
+  add('DELETE', '/api/contracts/:id', async ({ db, user, params }) => {
+    if (!gate(user)) return forbidden();
+    const id = Number(params.id);
+    const row = await db.prepare('SELECT id, seq, idno FROM contracts WHERE id = ?').bind(id).first();
+    if (!row) return notFound('العقد');
+    await db.batch([
+      ...dropStatements(db, [id]),
+      db.prepare('DELETE FROM contracts WHERE id = ?').bind(id),
+      auditStmt(db, user, 'contract.delete', 'contract', String(row.seq ?? id), { seq: row.seq }),
+    ]);
+    const sync = row.idno ? await trySync(db, user, row.idno) : null;
+    return json({ ok: true, sync });
+  });
+
   // فحص المكرّرات (مسؤول النظام): العقد نفسه (الهوية + الفترة + المشروع + موضوع العقد) المتكرر بسبب استعادة نسخ احتياطية.
   // يُحتفظ بأكمل نسخة (وعند التساوي أحدثها) برقم أقدم نسخة، وتُحذف البقية نهائياً (قرار صاحب النظام: لا حاجة لها).
   add('POST', '/api/contracts/dedupe', async ({ request, db, user }) => {
@@ -169,6 +239,7 @@ export function registerContractRoutes(add, { bad, forbidden, notFound, readJson
     const plan = planDedupe(rows);
     if (body.commit === true && plan.remove.length) {
       await db.batch([
+        ...dropStatements(db, plan.remove),
         db.prepare('DELETE FROM contracts WHERE id IN (SELECT value FROM json_each(?))').bind(JSON.stringify(plan.remove)),
         db.prepare('UPDATE contracts SET seq = (SELECT json_extract(j.value, \'$.seq\') FROM json_each(?1) j WHERE json_extract(j.value, \'$.id\') = contracts.id) WHERE id IN (SELECT json_extract(value, \'$.id\') FROM json_each(?1))').bind(JSON.stringify(plan.renumber)),
         auditStmt(db, user, 'contract.dedupe', 'contract', null, { removed: plan.remove.length, kept: plan.keep }),
@@ -219,6 +290,7 @@ export function registerContractRoutes(add, { bad, forbidden, notFound, readJson
     }
     out.added = fresh.length;
     if (commit && fresh.length) {
+      await stampLegacy(db);
       let next = Math.max((await db.prepare('SELECT MAX(seq) AS m FROM contracts ').first('m')) || 0, ...fresh.map((x) => x.seq || 0)) + 1;
       const stmts = fresh.map((x) => {
         const v = { ...x.value, status: x.value.status || 'مسودة', termType: x.value.termType || NONE_TERM };
