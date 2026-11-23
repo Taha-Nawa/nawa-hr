@@ -177,6 +177,22 @@ export function registerContractRoutes(add, { bad, forbidden, notFound, readJson
     return json({ ok: true, committed: body.commit === true && plan.remove.length > 0, total: rows.length, groups: plan.groups, kept: plan.keep, duplicates: plan.remove.length });
   });
 
+  // إعادة ترقيم العقود تسلسلياً 1..N بترتيب أرقامها الحالية (مسؤول النظام): تُصلح قفزات مثل 9903 دون المساس بالأرقام المتسلسلة أصلاً.
+  add('POST', '/api/contracts/renumber', async ({ request, db, user }) => {
+    if (!can(user, 'user.manage')) return forbidden();
+    const { body, error } = await readJson(request);
+    if (error) return error;
+    const rows = (await db.prepare('SELECT id, seq FROM contracts ORDER BY COALESCE(seq, 999999999), id').all()).results;
+    const plan = rows.map((r, i) => ({ id: r.id, seq: i + 1, from: r.seq })).filter((x) => x.seq !== x.from);
+    if (body.commit === true && plan.length) {
+      await db.batch([
+        db.prepare('UPDATE contracts SET seq = (SELECT json_extract(j.value, \'$.seq\') FROM json_each(?1) j WHERE json_extract(j.value, \'$.id\') = contracts.id) WHERE id IN (SELECT json_extract(value, \'$.id\') FROM json_each(?1))').bind(JSON.stringify(plan.map(({ id, seq }) => ({ id, seq })))),
+        auditStmt(db, user, 'contract.renumber', 'contract', null, { changed: plan.length, total: rows.length }),
+      ]);
+    }
+    return json({ ok: true, committed: body.commit === true && plan.length > 0, total: rows.length, changed: plan.length, changes: plan.slice(0, 20).map((x) => ({ from: x.from, to: x.seq })) });
+  });
+
   // استيراد من ملف النسخة الاحتياطية للسجل القديم (JSON): للمسؤول فقط، على دفعات صغيرة، ومرّتان لا تكرّران شيئاً.
   add('POST', '/api/contracts/import', async ({ request, db, user }) => {
     if (!can(user, 'user.manage')) return forbidden();

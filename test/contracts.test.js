@@ -221,3 +221,20 @@ test('نص العقد يُملأ من السجل ويُولَّد منه Word س
   const bytes = buildDocx(r);
   assert.equal(String.fromCharCode(bytes[0], bytes[1]), 'PK');
 });
+
+test('إعادة الترقيم: يصلح القفزات ويُبقي المتسلسل، للمسؤول فقط، والمعاينة لا تغيّر', async () => {
+  const { db, env } = await apiEnv();
+  const admin = await login(db, 'adm@nawaculture.org', 'admin');
+  const hr = await login(db, 'hr@nawaculture.org', 'hr');
+  await call(env, 'POST', '/api/contracts/import', { cookie: admin.cookie, body: { commit: true, records: [
+    { id: 'r1', seq: 1, name: 'أ', idno: '1' }, { id: 'r2', seq: 2, name: 'ب', idno: '2' }, { id: 'r3', seq: 9505, name: 'ج', idno: '3' }, { id: 'r4', seq: 9903, name: 'د', idno: '4' },
+  ] } });
+  const rn = (who, commit) => call(env, 'POST', '/api/contracts/renumber', { cookie: who.cookie, body: { commit } });
+  assert.equal((await rn(hr, false)).status, 403);
+  const prev = await rn(admin, false);
+  assert.deepEqual([prev.body.total, prev.body.changed, prev.body.committed], [4, 2, false]);
+  assert.deepEqual((await db.prepare('SELECT seq FROM contracts ORDER BY seq').all()).results.map((x) => x.seq), [1, 2, 9505, 9903]);
+  assert.equal((await rn(admin, true)).body.committed, true);
+  assert.deepEqual((await db.prepare('SELECT seq FROM contracts ORDER BY seq').all()).results.map((x) => x.seq), [1, 2, 3, 4]);
+  assert.equal((await rn(admin, false)).body.changed, 0);
+});

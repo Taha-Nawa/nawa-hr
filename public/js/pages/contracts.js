@@ -4,7 +4,7 @@ import { get } from '../api.js';
 import { money, pct, STATUSES, STATUS_CHIP } from '../contracts-lib.js';
 import { contractDialog } from './contract-form.js';
 import { importDialog } from './contract-import.js';
-import { dedupeDialog } from './contract-dedupe.js';
+import { dedupeDialog, renumberDialog } from './contract-dedupe.js';
 import { drawOverview, drawReport, GROUPS } from './contracts-dash.js';
 import { printContract, wordContract } from './contract-actions.js';
 
@@ -71,6 +71,7 @@ export default async function render({ user } = {}) {
       h('div', { class: 'date-nav' },
         user?.role === 'admin' ? h('button', { type: 'button', class: 'btn', onclick: () => importDialog({ onDone: load }) }, icon('upload'), 'استيراد من القديم') : null,
         user?.role === 'admin' ? h('button', { type: 'button', class: 'btn', onclick: () => dedupeDialog({ onDone: load }) }, icon('check'), 'فحص المكرّرات') : null,
+        user?.role === 'admin' ? h('button', { type: 'button', class: 'btn', onclick: () => renumberDialog({ onDone: load }) }, icon('check'), 'إعادة الترقيم') : null,
         h('button', { type: 'button', class: 'btn btn-primary', onclick: () => open() }, icon('plus'), 'عقد جديد')));
   }
   function drawTable(box) {
