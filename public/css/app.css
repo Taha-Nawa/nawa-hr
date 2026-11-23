@@ -1714,8 +1714,6 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
 .ct-audit strong { color: var(--gold-d); }
 .ct-warn { margin: 6px 0 0; padding-inline-start: 20px; color: var(--ink-2); }
 .ct-warn[hidden] { display: none; }
-.ct-list td:nth-child(2) { min-width: 170px; }
-.ct-list td:nth-child(5), .ct-list td:nth-child(7), .ct-list td:nth-child(8) { white-space: nowrap; }
 .ct-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 10px 0 18px; }
 .ct-tile { background: var(--paper, #fff); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ct-tile.accent { background: var(--red-soft); }
@@ -1740,12 +1738,6 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
 .linkish { background: none; border: 0; padding: 0; font: inherit; color: var(--red); text-decoration: underline; cursor: pointer; }
 .linkchip { border: 0; font: inherit; cursor: pointer; }
 .ct-flt { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.ct-list { font-size: .88rem; }
-.ct-list td, .ct-list th { padding-inline: 6px; }
-.ct-list td:nth-child(4) { white-space: nowrap; }
-.ct-list .row-actions { white-space: nowrap; }
-.ct-list .row-actions .btn { padding: 3px 8px; }
-.ct-list .chip { white-space: nowrap; }
 .ct-adv { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px 14px; padding: 14px; margin: 10px 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper, #fff); }
 .ct-adv .f { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; color: var(--ink-2); min-width: 0; }
 .ct-adv .f input, .ct-adv .f select { height: 36px; min-width: 0; }
@@ -1832,3 +1824,32 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
 .ct-file-list li a { flex: 1 1 12rem; min-width: 0; overflow-wrap: anywhere; }
 .ct-file-add { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; }
 .ct-clip { font-size: .8em; color: var(--muted, #667); white-space: nowrap; }
+
+/* سجل العقود: ستة أعمدة بأسطر محكومة، لا تنكسر الكلمات ولا يتضخّم الصف، ويتّسع للعرض دون تمرير أفقي */
+.ct-list { font-size: .9rem; border-collapse: separate; border-spacing: 0; width: 100%; }
+.ct-list thead th { background: var(--surface); font-size: .78rem; color: var(--muted); font-weight: 700; padding: 9px 8px; border-bottom: 2px solid var(--line); white-space: nowrap; text-align: start; }
+.ct-list td { padding: 10px 8px; vertical-align: middle; border-bottom: 1px solid var(--line); }
+.ct-list tbody tr:hover td { background: var(--gold-soft); }
+.ct-list .meta { color: var(--muted); font-size: .78rem; line-height: 1.5; }
+.ct-list .c-no { white-space: nowrap; width: 1%; }
+.ct-list .c-no .no { display: block; font-weight: 700; font-size: .85rem; font-variant-numeric: tabular-nums; unicode-bidi: isolate; }
+.ct-list .c-no .seq { color: var(--muted); font-size: .75rem; }
+.ct-list .c-name { min-width: 180px; max-width: 250px; }
+.ct-list .c-name .nm { font-size: .98rem; line-height: 1.4; }
+.ct-list .c-name .meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 24ch; }
+.ct-list .c-name .idno { color: var(--muted); font-size: .75rem; text-align: right; font-variant-numeric: tabular-nums; }
+.ct-list .c-per, .ct-list .c-val, .ct-list .c-st { white-space: nowrap; width: 1%; font-variant-numeric: tabular-nums; }
+.ct-list .c-per div:first-child { font-size: .85rem; }
+.ct-list .c-val .amt { font-weight: 800; font-size: .98rem; color: var(--ink); }
+.ct-list .dl { color: var(--red); font-weight: 700; }
+.ct-list .dl.up { color: var(--gold-d); }
+.ct-list .c-st .chip { display: block; width: fit-content; margin: 2px 0; }
+.ct-list .row-actions { white-space: nowrap; width: 1%; }
+.ct-list .row-actions > .btn { display: block; width: 100%; margin-bottom: 4px; }
+.ct-list .row-actions .sec { display: flex; gap: 4px; }
+.ct-list .row-actions .sec .btn { flex: 1; padding-inline: 8px; }
+
+.ct-toolrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.ct-toolrow .sp { margin-inline-start: auto; }
+.ct-list .row-actions > .btn.edit { font-weight: 800; color: var(--red); border-color: var(--red); background: var(--surface); }
+.ct-list .row-actions > .btn.edit:hover { background: var(--red-soft); }

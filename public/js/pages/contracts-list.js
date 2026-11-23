@@ -140,11 +140,11 @@ export function drawList({ all, f, user, onEdit, redraw, onChanged }) {
     ...chips.map(([l, v, clr]) => h('span', { class: 'chip chip-none' }, `${l}: ${v} `, h('button', { type: 'button', class: 'linkish', 'aria-label': 'إزالة', onclick: () => { clr(); f.page = 1; redraw(); } }, '✕'))),
     chips.length > 1 ? h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { Object.assign(f, { ...emptyFilter(), sort: f.sort, dir: f.dir, size: f.size, showAdv: f.showAdv }); redraw(); } }, 'مسح الكل') : null) : null;
 
-  const bar = h('div', { class: 'tools' },
+  const bar = h('div', { class: 'tools ct-toolrow' },
     h('label', { class: 'check-inline' }, 'ترتيب حسب ', sel('ترتيب', f.sort, SORTS, (v) => { f.sort = v; redraw(); })),
     h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { f.dir = -f.dir; redraw(); } }, f.dir === 1 ? 'تصاعدي ↑' : 'تنازلي ↓'),
     h('label', { class: 'check-inline' }, 'الصفوف في الصفحة ', sel('عدد الصفوف', String(f.size), [['25', '25'], ['50', '50'], ['100', '100'], ['0', 'الكل']], (v) => { f.size = Number(v); f.page = 1; redraw(); })),
-    h('button', { type: 'button', class: 'btn btn-sm', disabled: !filtered.length, onclick: () => saveBlob(xlsxBlob(EXPORT_COLS, filtered), `عقود نوى — النتائج (${filtered.length}).xlsx`) }, icon('download'), 'تصدير النتائج Excel'),
+    h('button', { type: 'button', class: 'btn btn-sm sp', disabled: !filtered.length, onclick: () => saveBlob(xlsxBlob(EXPORT_COLS, filtered), `عقود نوى — النتائج (${filtered.length}).xlsx`) }, icon('download'), 'تصدير النتائج Excel'),
     h('button', { type: 'button', class: 'btn btn-sm', disabled: !filtered.length, onclick: () => saveBlob(new Blob([toCSV(EXPORT_COLS, filtered)], { type: 'text/csv;charset=utf-8' }), `عقود نوى — النتائج (${filtered.length}).csv`) }, 'CSV'));
 
   bar.append(h('button', { type: 'button', class: 'btn btn-sm', disabled: !filtered.length, onclick: () => applyHeaderDialog(filtered, () => onChanged?.()) }, 'تطبيق ترويسة على النتائج'));
@@ -156,25 +156,32 @@ export function drawList({ all, f, user, onEdit, redraw, onChanged }) {
   const box = h('div', { class: 'table-wrap' });
   if (!filtered.length) box.append(h('p', { class: 'empty' }, 'لا عقود مطابقة.'));
   else {
-    const heads = ['م', 'رقم العقد', 'الاسم', 'الهوية', 'فترة التنفيذ', 'الأيام', 'سعر اليوم', 'القيمة المعتمدة', 'التغيّر', 'الحالة', ''];
+    const heads = ['رقم العقد', 'المتعاقد', 'فترة التنفيذ', 'القيمة', 'الحالة', ''];
     box.append(h('table', { class: 'tbl ct-list' },
       h('thead', null, h('tr', null, heads.map((t) => h('th', null, t)))),
-      h('tbody', null, slice.map((r) => h('tr', null,
-        h('td', null, r.seq ?? '—'),
-        h('td', { dir: 'ltr', class: 'ltr-cell' }, contractNo(r)),
-        h('td', null, h('strong', null, r.name), r.filesN ? h('span', { class: 'ct-clip', title: `${r.filesN} مستند مرفوع` }, ` 📎${r.filesN}`) : null, h('div', { class: 'code' }, [r.ctype, r.project].filter(Boolean).join(' — '))),
-        h('td', { dir: 'ltr', class: 'ltr-cell' }, r.idno || '—'),
-        h('td', null, `${dmy(r.dFrom)} ← ${dmy(r.dTo)}`),
-        h('td', null, `${r.daysBase ?? '—'} / ${r.daysAct ?? '—'}`),
-        h('td', null, r.calc.dayRate !== null ? money(r.calc.dayRate) : '—'),
-        h('td', null, r.calc.appr !== null ? money(r.calc.appr) : '—'),
-        h('td', null, r.calc.delta !== null ? pct(r.calc.delta) : '—'),
-        h('td', null, h('span', { class: `chip ${STATUS_CHIP[r.status] || 'chip-none'}` }, r.status), ' ',
-          r.warnings.length ? h('span', { class: 'chip chip-late', title: r.warnings.join('\n') }, `${r.warnings.length} ملاحظة`) : h('span', { class: 'chip chip-present' }, 'سليم')),
-        h('td', { class: 'row-actions' },
-          h('button', { type: 'button', class: 'btn btn-sm', onclick: () => onEdit(r) }, 'تعديل'),
-          h('button', { type: 'button', class: 'btn btn-sm', title: 'طباعة العقد A4', onclick: () => printContract(r) }, 'طباعة'),
-          h('button', { type: 'button', class: 'btn btn-sm', title: 'تنزيل العقد بصيغة Word', onclick: () => wordContract(r) }, 'Word')))))));
+      h('tbody', null, slice.map((r) => {
+        const meta = [r.ctype, r.project].filter(Boolean).join(' — ');
+        const delta = r.calc.delta;
+        return h('tr', null,
+          h('td', { class: 'c-no' }, h('span', { dir: 'ltr', class: 'no' }, contractNo(r)), h('span', { class: 'seq' }, `م ${r.seq ?? '—'}`)),
+          h('td', { class: 'c-name' },
+            h('div', { class: 'nm' }, h('strong', null, r.name), r.filesN ? h('span', { class: 'ct-clip', title: `${r.filesN} مستند مرفوع` }, ` 📎${r.filesN}`) : null),
+            h('div', { class: 'meta', title: meta }, meta || '—'),
+            r.idno ? h('div', { class: 'idno', dir: 'ltr' }, r.idno) : null),
+          h('td', { class: 'c-per' }, h('div', null, `${dmy(r.dFrom)} ← ${dmy(r.dTo)}`), h('div', { class: 'meta' }, `${r.daysBase ?? '—'} يوماً · الفعلي ${r.daysAct ?? '—'}`)),
+          h('td', { class: 'c-val' },
+            h('div', { class: 'amt' }, r.calc.appr !== null ? money(r.calc.appr) : '—'),
+            h('div', { class: 'meta' }, r.calc.dayRate !== null ? `${money(r.calc.dayRate)} / يوم` : '—',
+              delta !== null && Math.abs(delta) > 0.0001 ? h('span', { class: `dl${delta > 0 ? ' up' : ''}` }, ` ${pct(delta)}`) : null)),
+          h('td', { class: 'c-st' },
+            h('span', { class: `chip ${STATUS_CHIP[r.status] || 'chip-none'}` }, r.status),
+            r.warnings.length ? h('span', { class: 'chip chip-late', title: r.warnings.join('\n') }, `${r.warnings.length} ملاحظة`) : h('span', { class: 'chip chip-present' }, 'سليم')),
+          h('td', { class: 'row-actions' },
+            h('button', { type: 'button', class: 'btn btn-sm edit', onclick: () => onEdit(r) }, 'تعديل'),
+            h('div', { class: 'sec' },
+              h('button', { type: 'button', class: 'btn btn-sm', title: 'طباعة العقد A4', onclick: () => printContract(r) }, 'طباعة'),
+              h('button', { type: 'button', class: 'btn btn-sm', title: 'تنزيل العقد بصيغة Word', onclick: () => wordContract(r) }, 'Word'))));
+      }))));
   }
 
   // ترقيم الصفحات
