@@ -300,7 +300,7 @@ export function registerProviderRoutes(add, kit) {
     const schedule = (await loadSchedules(db, [id])).get(id);
     const manage = can(user, 'provider.manage');
     const card = manage ? await db.prepare("SELECT card, created_at AS createdAt FROM provider_badges WHERE provider_id = ? AND status = 'active' ORDER BY created_at DESC, card LIMIT 1").bind(id).first() : null;
-    return json({ ok: true, today, canManage: manage, provider: { ...p, contract: contractState(p, today) }, schedule, ...(manage ? { card } : {}) });
+    return json({ ok: true, today, canManage: manage, canDelete: user.role === 'admin', provider: { ...p, contract: contractState(p, today) }, schedule, ...(manage ? { card } : {}) });
   });
 
   add('POST', '/api/providers', async ({ request, db, user, env }) => {
@@ -365,6 +365,29 @@ export function registerProviderRoutes(add, kit) {
     }
     stmts.push(auditStmt(db, user, 'provider.update', 'provider', cur.code, { fields: Object.keys(body).filter((k) => k !== 'schedule'), schedule: !!v.schedule, active: body.active }));
     await db.batch(stmts);
+    return json({ ok: true });
+  });
+
+  // حذف مزوّد نهائياً (مسؤول النظام فقط): لإزالة سجل تجريبي. المزوّد المرتبط بعقود لا يُحذف (يُوقَف). حركاته وجدوله وبطاقاته تُحذف معه بعد تأكيد صريح.
+  add('DELETE', '/api/providers/:id', async ({ db, user, params, url }) => {
+    if (user.role !== 'admin') return forbidden();
+    const id = Number(params.id);
+    const p = await db.prepare('SELECT id, code, name FROM providers WHERE id = ?').bind(id).first();
+    if (!p) return notFound('المزوّد');
+    const contracts = await db.prepare('SELECT COUNT(*) AS n FROM contracts WHERE provider_id = ?').bind(id).first('n').catch(() => 0);
+    if (contracts > 0) return bad('هذا المزوّد مرتبط بعقود في وحدة العقود فلا يُحذف؛ أوقفه بدلاً من ذلك (أو عدّل حالة عقده).', 409);
+    const movements = await db.prepare('SELECT COUNT(*) AS n FROM provider_movements WHERE provider_id = ?').bind(id).first('n');
+    const extras = await db.prepare('SELECT COUNT(*) AS n FROM provider_extra_sessions WHERE provider_id = ?').bind(id).first('n');
+    if ((movements > 0 || extras > 0) && url.searchParams.get('force') !== '1') return json({ ok: false, needsConfirm: true, movements, extras, error: `للمزوّد ${movements} حركة حضور و${extras} حصة استثنائية ستُحذف معه نهائياً.` }, 409);
+    await db.batch([
+      db.prepare('DELETE FROM provider_movements WHERE provider_id = ?').bind(id),
+      db.prepare('DELETE FROM provider_extra_sessions WHERE provider_id = ?').bind(id),
+      db.prepare('DELETE FROM provider_badges WHERE provider_id = ?').bind(id),
+      db.prepare('DELETE FROM provider_schedule WHERE provider_id = ?').bind(id),
+      db.prepare('DELETE FROM provider_alerts WHERE provider_id = ?').bind(id),
+      db.prepare('DELETE FROM providers WHERE id = ?').bind(id),
+      auditStmt(db, user, 'provider.delete', 'provider', p.code, { name: p.name, movements, extras }),
+    ]);
     return json({ ok: true });
   });
 

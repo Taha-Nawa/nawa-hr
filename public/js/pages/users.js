@@ -28,7 +28,7 @@ export default async function render({ user }) {
       h('thead', null, h('tr', null, ['الحساب', 'الدور', 'مرتبط بالموظف', 'الحالة', ''].map((t) => h('th', null, t)))),
       h('tbody', null, users.map((u) => h('tr', { class: u.active ? '' : 'row-off' },
         h('td', { dir: 'ltr', class: 'ltr-cell' }, u.email),
-        h('td', null, ROLE_NAME[u.role] || u.role, u.medical ? h('span', { class: 'chip chip-present', title: 'يؤكّد الأوراق الطبية' }, 'أوراق طبية') : null),
+        h('td', null, ROLE_NAME[u.role] || u.role, u.medical ? h('span', { class: 'chip chip-present', title: 'يؤكّد الأوراق الطبية' }, 'أوراق طبية') : null, u.contracts ? h('span', { class: 'chip chip-present', title: 'يدير وحدة العقود' }, 'العقود') : null),
         h('td', { class: 'muted' }, dash(empName.get(u.employeeId))),
         h('td', null, h('span', { class: `chip ${u.active ? 'chip-present' : 'chip-absent'}` }, u.active ? 'فعّال' : 'موقوف')),
         h('td', { class: 'row-actions' }, h('button', { type: 'button', class: 'btn btn-sm', onclick: () => form(u) }, 'تعديل')))))));
@@ -131,6 +131,7 @@ export default async function render({ user }) {
     }
     const active = select([['1', 'فعّال'], ['0', 'موقوف']], u ? String(u.active) : '1');
     const medical = h('input', { type: 'checkbox', checked: !!u?.medical });
+    const contracts = h('input', { type: 'checkbox', checked: !!u?.contracts });
     const err = h('div', { class: 'notice notice-err', hidden: true, role: 'alert' });
     if (isNew) {
       const note = (msg) => { clear(hintLine).append(msg); };
@@ -157,8 +158,8 @@ export default async function render({ user }) {
         e.preventDefault();
         const employeeId = emp.value === '' ? null : Number(emp.value);
         try {
-          if (isNew) await post('/api/users', { email: fullMail(email.value), role: role.value, employeeId, medical: medical.checked });
-          else await patch(`/api/users/${u.id}`, { role: role.value, employeeId, active: active.value === '1', medical: medical.checked });
+          if (isNew) await post('/api/users', { email: fullMail(email.value), role: role.value, employeeId, medical: medical.checked, contracts: contracts.checked });
+          else await patch(`/api/users/${u.id}`, { role: role.value, employeeId, active: active.value === '1', medical: medical.checked, contracts: contracts.checked });
           toast('حُفظ');
           dlg.close();
           load();
@@ -172,6 +173,7 @@ export default async function render({ user }) {
       field('الموظف المرتبط', emp, 'يحدد «نفسه» و«فريقه» في الصلاحيات'),
       isNew ? null : field('الحالة', active, 'إيقاف الحساب ينهي جلساته فوراً'),
       h('div', { class: 'span-all' }, h('label', { class: 'check' }, medical, h('span', null, 'يؤكّد الأوراق الطبية للإجازات المرضية'))),
+      h('div', { class: 'span-all' }, h('label', { class: 'check' }, contracts, h('span', null, 'يدير العقود'))),
       h('p', { class: 'field-hint span-all' }, 'الإجازة المرضية بلا ورقة طبية تُقبل يوماً واحداً فقط؛ ما زاد عليه تؤكّد الورقةَ الموارد البشرية والمدير العام والمسؤول دائماً، ومن فُوِّض هنا (مثل مديرة الشؤون الإدارية والمالية) فيرى هذه الطلبات ويقرّرها وإن كان دوره «مدير مباشر» أو «موظف».'),
       h('div', { class: 'span-all' }, err),
       isNew ? null : h('div', { class: 'span-all' }, h('button', { type: 'button', class: 'btn btn-danger-ghost', onclick: async () => {

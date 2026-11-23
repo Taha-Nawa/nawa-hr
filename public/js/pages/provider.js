@@ -171,7 +171,22 @@ export default async function render({ params }) {
       detail.canManage ? h('div', { class: 'row-actions' },
         h('button', { type: 'button', class: 'btn btn-sm', onclick: edit }, 'تعديل البيانات والعقد والجدول'),
         h('a', { class: 'btn btn-sm', href: `#/providers/${id}/card` }, icon('qr'), 'طباعة البطاقة'),
-        h('button', { type: 'button', class: 'btn btn-sm', onclick: reissue }, icon('key'), 'إصدار بطاقة جديدة (ضاعت أو تلفت)')) : null);
+        h('button', { type: 'button', class: 'btn btn-sm', onclick: reissue }, icon('key'), 'إصدار بطاقة جديدة (ضاعت أو تلفت)'),
+        detail.canDelete ? h('button', { type: 'button', class: 'btn btn-sm btn-danger', onclick: dropProvider }, icon('trash'), 'حذف المزوّد نهائياً') : null) : null);
+  }
+
+  async function dropProvider() {
+    const name = detail.provider.name;
+    if (!(await confirmBox(`حذف المزوّد «${name}» نهائياً؟ لا يمكن التراجع، وتُسجَّل العملية في سجل التدقيق.`, 'احذفه', true))) return;
+    try {
+      await del(`/api/providers/${id}`);
+    } catch (e) {
+      if (!e.body?.needsConfirm) { toast(e.message, 'err'); return; }
+      if (!(await confirmBox(`${e.message} هل تحذف كل ذلك؟`, 'احذف كل شيء', true))) return;
+      try { await del(`/api/providers/${id}?force=1`); } catch (e2) { toast(e2.message, 'err'); return; }
+    }
+    toast('حُذف المزوّد');
+    location.hash = '#/providers';
   }
 
   function stat(label, value, sub, tone = '') {

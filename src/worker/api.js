@@ -23,6 +23,7 @@ import { registerUserBulk } from './users-bulk.js';
 import { registerGateRoutes } from './gates.js';
 import { registerVolunteerRoutes } from './volunteers.js';
 import { registerProviderRoutes } from './providers.js';
+import { registerContractRoutes } from './contracts.js';
 import { registerMaternityRoutes } from './maternity.js';
 import { registerSpecialLeaveRoutes } from './special-leaves.js';
 import { registerDeputyRoutes } from './deputies.js';
@@ -88,6 +89,7 @@ registerUserBulk(add, { bad, forbidden, readJson, auditStmt });
 registerGateRoutes(add, { forbidden });
 registerVolunteerRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 registerProviderRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
+registerContractRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 registerMaternityRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 registerSpecialLeaveRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
 registerDeputyRoutes(add, { bad, forbidden, notFound, readJson, auditStmt });
@@ -592,7 +594,7 @@ add('POST', '/api/devices/:id/deactivate', async ({ db, user, params }) => {
 // ---------------------------------------------------------------- المستخدمون
 add('GET', '/api/users', async ({ db, user }) => {
   if (!can(user, 'user.manage')) return forbidden();
-  const r = await db.prepare('SELECT id, email, role, employee_id AS employeeId, active, medical FROM users ORDER BY email').all();
+  const r = await db.prepare('SELECT id, email, role, employee_id AS employeeId, active, medical, contracts FROM users ORDER BY email').all();
   return json({ ok: true, users: r.results });
 });
 
@@ -605,8 +607,8 @@ add('POST', '/api/users', async ({ request, db, user }) => {
   if (!ROLES.includes(body.role)) return bad('الدور غير صالح');
   try {
     await db.batch([
-      db.prepare('INSERT INTO users (email, role, employee_id, medical) VALUES (?, ?, ?, ?)').bind(email, body.role, body.employeeId ?? null, body.medical === true ? 1 : 0),
-      auditStmt(db, user, 'user.create', 'user', email, { role: body.role, medical: body.medical === true }),
+      db.prepare('INSERT INTO users (email, role, employee_id, medical, contracts) VALUES (?, ?, ?, ?, ?)').bind(email, body.role, body.employeeId ?? null, body.medical === true ? 1 : 0, body.contracts === true ? 1 : 0),
+      auditStmt(db, user, 'user.create', 'user', email, { role: body.role, medical: body.medical === true, contracts: body.contracts === true }),
     ]);
   } catch (e) {
     if (isUnique(e)) return bad('المستخدم مسجّل من قبل', 409);
@@ -620,11 +622,12 @@ add('PATCH', '/api/users/:id', async ({ request, db, user, params }) => {
   const id = Number(params.id);
   const { body, error } = await readJson(request);
   if (error) return error;
-  const target = await db.prepare('SELECT id, role, active, employee_id AS employeeId, medical FROM users WHERE id = ?').bind(id).first();
+  const target = await db.prepare('SELECT id, role, active, employee_id AS employeeId, medical, contracts FROM users WHERE id = ?').bind(id).first();
   if (!target) return notFound('المستخدم');
   const role = body.role ?? target.role;
   const active = body.active === undefined ? target.active : body.active ? 1 : 0;
   const medical = body.medical === undefined ? target.medical : body.medical ? 1 : 0; // يؤكّد الأوراق الطبية للإجازات المرضية
+  const contracts = body.contracts === undefined ? target.contracts : body.contracts ? 1 : 0; // يدير وحدة العقود
   if (!ROLES.includes(role)) return bad('الدور غير صالح');
   // لا نسمح بترك النظام بلا مسؤول فعّال.
   const losesAdmin = target.role === 'admin' && target.active === 1 && (role !== 'admin' || active === 0);
@@ -633,11 +636,11 @@ add('PATCH', '/api/users/:id', async ({ request, db, user, params }) => {
     if (n <= 1) return bad('لا يمكن إزالة آخر مسؤول فعّال', 409);
   }
   await db.batch([
-    db.prepare('UPDATE users SET role = ?, active = ?, employee_id = ?, medical = ? WHERE id = ?').bind(role, active, body.employeeId === undefined ? target.employeeId : body.employeeId, medical, id),
+    db.prepare('UPDATE users SET role = ?, active = ?, employee_id = ?, medical = ?, contracts = ? WHERE id = ?').bind(role, active, body.employeeId === undefined ? target.employeeId : body.employeeId, medical, contracts, id),
     // إيقاف الحساب أو تغيير الدور يُنهي جلساته فوراً
     ...(active === 0 || role !== target.role ? [db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id)] : []),
     ...(active === 0 ? [db.prepare('DELETE FROM trusted_devices WHERE user_id = ?').bind(id)] : []),
-    auditStmt(db, user, 'user.update', 'user', id, { role, active, medical }),
+    auditStmt(db, user, 'user.update', 'user', id, { role, active, medical, contracts }),
   ]);
   return json({ ok: true });
 });

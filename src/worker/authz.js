@@ -55,6 +55,11 @@ export const ACTIONS = {
   'emergency.manage': ['hr', 'admin'], // إعلان طارئ أثناء الدوام (إخلاء فوري / احتساب اليوم كاملاً) وإلغاؤه
 };
 
+/** وحدة العقود: الموارد البشرية ومسؤول النظام دائماً، ومن مُنح صلاحية «يدير العقود» بالاسم أيّاً كان دوره. */
+export function canContracts(user) {
+  return !!user && (user.role === 'hr' || user.role === 'admin' || user.contracts === 1);
+}
+
 export function can(user, action) {
   const roles = ACTIONS[action];
   return !!user && !!roles && roles.includes(user.role);

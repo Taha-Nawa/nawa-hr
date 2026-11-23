@@ -40,6 +40,7 @@ const PAGES = [
   { path: 'volunteers/:id/card', title: 'بطاقة متطوع', roles: ['hr', 'admin'], nav: 'volunteers', load: () => import('./pages/volunteer-card.js') },
   { path: 'volunteers/:id/:month', title: 'حضور متطوع', roles: ['hr', 'director', 'admin'], nav: 'volunteers', load: () => import('./pages/volunteer-month.js') },
   { path: 'volunteers/:id/:month/print', title: 'كشف المتطوع', roles: ['hr', 'director', 'admin'], nav: 'volunteers', load: () => import('./pages/volunteer-print.js') },
+  { path: 'contracts', group: 'work', title: 'العقود', icon: 'briefcase', roles: ALL, access: (u) => u.role === 'hr' || u.role === 'admin' || u.contracts === 1, load: () => import('./pages/contracts.js') },
   { path: 'providers', group: 'work', title: 'مزوّدو الخدمة', icon: 'briefcase', roles: ['manager', 'hr', 'director', 'admin'], load: () => import('./pages/providers.js') },
   { path: 'providers/:id/card', title: 'بطاقة مزوّد الخدمة', roles: ['hr', 'admin'], nav: 'providers', load: () => import('./pages/provider-card.js') },
   { path: 'providers/:id/:month/print', title: 'كشف مزوّد الخدمة', roles: ['manager', 'hr', 'director', 'admin'], nav: 'providers', load: () => import('./pages/provider-print.js') },
@@ -86,7 +87,11 @@ async function showLogin(message, known) {
 }
 
 // ---------------------------------------------------------------- الإطار
-const listed = () => PAGES.filter((p) => p.icon && !p.path.includes(':') && p.roles.includes(me.role));
+const allowed = (p) => p.roles.includes(me.role) && (!p.access || p.access(me));
+// حساب «يدير العقود» غير المربوط بموظف (مثل مزوّد مكلّف بإدخال البيانات): يرى وحدة العقود وحدها
+const contractsOnly = () => me.contracts === 1 && me.employeeId == null && me.role !== 'hr' && me.role !== 'admin';
+const visible = (p) => allowed(p) && (!contractsOnly() || p.path === 'contracts' || p.path === 'account');
+const listed = () => PAGES.filter((p) => p.icon && !p.path.includes(':') && visible(p));
 const initial = () => ((me.employeeName || me.email || '؟').trim()[0] || '؟').toUpperCase();
 
 async function signOut(message) {
@@ -249,8 +254,8 @@ async function route() {
   const path = current();
   const found = match(path);
   const view = $('#view');
-  if (!found || !found.page.roles.includes(me.role)) {
-    location.replace('#/today');
+  if (!found || !visible(found.page)) {
+    location.replace(contractsOnly() ? '#/contracts' : '#/today');
     return;
   }
   const active = found.page.nav || found.page.path;

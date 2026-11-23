@@ -1704,3 +1704,15 @@ button.oc-sum:disabled { opacity: 0.5; cursor: default; }
 .pres-gone { border-inline-start-color: var(--red); }
 .pres-wait { border-inline-start-color: var(--muted); }
 .dg-center-now { font-size: 0.8rem; margin-top: 4px; }
+
+/* ---------- وحدة العقود ---------- */
+.ct-form { display: flex; flex-direction: column; gap: 14px; }
+.ct-group { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 14px 14px; margin: 0; min-width: 0; }
+.ct-group > legend { padding: 0 8px; font-weight: 700; color: var(--red); }
+.ct-calc { display: block; min-height: 38px; padding: 8px 10px; background: var(--gold-soft); border-radius: var(--radius-sm); font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.ct-audit { background: var(--gold-soft); border-radius: var(--radius-sm); padding: 8px 12px; }
+.ct-audit strong { color: var(--gold-d); }
+.ct-warn { margin: 6px 0 0; padding-inline-start: 20px; color: var(--ink-2); }
+.ct-warn[hidden] { display: none; }
+.ct-list td:nth-child(2) { min-width: 170px; }
+.ct-list td:nth-child(5), .ct-list td:nth-child(7), .ct-list td:nth-child(8) { white-space: nowrap; }
