@@ -1,7 +1,7 @@
 // بطاقة حضور مزوّد الخدمة للطباعة (85.6×54 مم): رمز QR سرّي يُمسح على بوابة المركز كبطاقة الموظف.
 // تُطبع على ورق عادي وتُقصّ، أو تُحفظ PDF وتُرسل لهاتف المزوّد ليعرضها على الكاميرا.
 import { h, icon, select } from '../dom.js';
-import { get } from '../api.js';
+import { get, post } from '../api.js';
 import { qrSvg } from '../qr.js';
 import { idCard, cardSheet, ORIENT_OPTIONS } from '../id-card.js';
 import { dmy, scheduleLines } from '../providers-lib.js';
@@ -10,7 +10,9 @@ const cardEl = (p, qr, orientation) => idCard({ kind: 'provider', name: p.name, 
 
 export default async function render({ params }) {
   const id = Number(params.id);
-  const d = await get(`/api/providers/${id}`);
+  let d = await get(`/api/providers/${id}`);
+  // مزوّد أُنشئ من العقود لا بطاقة له بعد: نصدر له بطاقته الأولى تلقائياً بدل رسالة خاطئة عن الصلاحية.
+  if (!d.card && d.canManage) { await post(`/api/providers/${id}/card`); d = await get(`/api/providers/${id}`); }
   const p = d.provider;
   if (!d.card) return h('div', { class: 'page' }, h('div', { class: 'notice notice-err' }, 'لا تملك صلاحية طباعة بطاقة المزوّد.'));
   const qr = await qrSvg(d.card.card);
