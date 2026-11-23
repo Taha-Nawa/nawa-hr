@@ -4,19 +4,23 @@ import { get } from '../api.js';
 import { money, pct, STATUSES, STATUS_CHIP } from '../contracts-lib.js';
 import { contractDialog } from './contract-form.js';
 import { importDialog } from './contract-import.js';
+import { dedupeDialog } from './contract-dedupe.js';
+import { drawDash } from './contracts-dash.js';
 
 const dmy = (s) => (s ? s.split('-').reverse().join('/') : '—');
 
 export default async function render({ user } = {}) {
+  let all = [];
   let rows = [];
   let lists = null;
   let q = '';
   let status = '';
   const head = h('header', { class: 'page-head' });
   const tools = h('div', { class: 'tools' });
+  const dash = h('div', null);
   const sum = h('div', { class: 'pv-summary' });
   const box = h('div', { class: 'table-wrap' });
-  const page = h('div', { class: 'page' }, head, sum, tools, box);
+  const page = h('div', { class: 'page' }, head, dash, h('h2', { class: 'section-title' }, 'سجل العقود'), sum, tools, box);
 
   const open = (c = null) => contractDialog({ c, lists, onDone: load });
 
@@ -25,12 +29,13 @@ export default async function render({ user } = {}) {
       h('div', null, h('h1', null, 'العقود'), h('p', { class: 'sub' }, 'سجل عقود اتفاق تقديم الخدمة التربوية: كل عقد يغذّي قائمة مزوّدي الخدمة')),
       h('div', { class: 'date-nav' },
         user?.role === 'admin' ? h('button', { type: 'button', class: 'btn', onclick: () => importDialog({ onDone: load }) }, icon('upload'), 'استيراد من القديم') : null,
+        user?.role === 'admin' ? h('button', { type: 'button', class: 'btn', onclick: () => dedupeDialog({ onDone: load }) }, icon('check'), 'فحص المكرّرات') : null,
         h('button', { type: 'button', class: 'btn btn-primary', onclick: () => open() }, icon('plus'), 'عقد جديد')));
   }
   function drawTools() {
     tools.replaceChildren(
-      h('input', { type: 'search', class: 'search', placeholder: 'بحث بالاسم أو الهوية أو المشروع', 'aria-label': 'بحث', value: q, onchange: (e) => { q = e.target.value.trim(); load(); } }),
-      h('select', { 'aria-label': 'الحالة', onchange: (e) => { status = e.target.value; load(); } }, h('option', { value: '' }, 'كل الحالات'), STATUSES.map((s) => h('option', { value: s, selected: s === status }, s))));
+      h('input', { type: 'search', class: 'search', placeholder: 'بحث بالاسم أو الهوية أو المشروع', 'aria-label': 'بحث', value: q, oninput: (e) => { q = e.target.value.trim(); filter(); } }),
+      h('select', { 'aria-label': 'الحالة', onchange: (e) => { status = e.target.value; filter(); } }, h('option', { value: '' }, 'كل الحالات'), STATUSES.map((s) => h('option', { value: s, selected: s === status }, s))));
   }
   function drawSummary() {
     const n = (s) => rows.filter((r) => r.status === s).length;
@@ -57,12 +62,18 @@ export default async function render({ user } = {}) {
         h('td', null, r.warnings.length ? h('span', { class: 'chip chip-late', title: r.warnings.join('\n') }, `${r.warnings.length} ملاحظة`) : h('span', { class: 'chip chip-present' }, 'سليم')),
         h('td', { class: 'row-actions' }, h('button', { type: 'button', class: 'btn btn-sm', onclick: () => open(r) }, 'تعديل')))))));
   }
+  function filter() {
+    const hay = (r) => `${r.name} ${r.idno || ''} ${r.project || ''}`;
+    rows = all.filter((r) => (!status || r.status === status) && (!q || hay(r).includes(q)));
+    drawSummary();
+    drawTable();
+  }
   async function load() {
     try {
-      const params = new URLSearchParams();
-      if (q) params.set('q', q);
-      if (status) params.set('status', status);
-      rows = (await get(`/api/contracts${params.size ? `?${params}` : ''}`)).contracts;
+      all = (await get('/api/contracts')).contracts;
+      const hay = (r) => `${r.name} ${r.idno || ''} ${r.project || ''}`;
+      rows = all.filter((r) => (!status || r.status === status) && (!q || hay(r).includes(q)));
+      dash.replaceChildren(drawDash(all));
       drawSummary();
       drawTable();
     } catch (e) {

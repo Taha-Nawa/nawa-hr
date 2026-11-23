@@ -172,3 +172,35 @@ test('حذف مزوّد تجريبي: لمسؤول النظام فقط، بتأ�
   assert.equal(await db.prepare('SELECT COUNT(*) AS n FROM provider_schedule').first('n'), 0);
   assert.equal((await del(admin, 1)).status, 404);
 });
+
+test('فحص المكرّرات: يُبقي الأكمل برقم الأقدم، ويحذف البقية نهائياً، ولا يمسّ المختلف، ويحدّث القوائم', async () => {
+  const { db, env } = await apiEnv();
+  const admin = await login(db, 'adm@nawaculture.org', 'admin');
+  const hr = await login(db, 'hr@nawaculture.org', 'hr');
+  const imp = (recs) => call(env, 'POST', '/api/contracts/import', { cookie: admin.cookie, body: { records: recs, commit: true } });
+  // عقد واحد بثلاث نسخ (ناقصة، ناقصة، كاملة) بأرقام 1 و1000 و9000، وعقد مختلف الفترة بالهوية نفسها، وعقد وحيد
+  const partial = { idno: '111111111', dFrom: '2026-01-02', dTo: '2026-03-01', name: 'أ', project: 'p', csubject: 'x' };
+  await imp([
+    { id: 'a1', seq: 1, ...partial },
+    { id: 'a2', seq: 1000, ...partial },
+    { id: 'a3', seq: 9000, ...fake({ name: 'أ', idno: '111111111', dFrom: '2026-01-02', dTo: '2026-03-01', daysAct: 20 }), project: 'p', csubject: 'x' },
+    { id: 'b1', seq: 2, ...partial, dFrom: '2026-04-01', dTo: '2026-05-01' },
+    { id: 'c1', seq: 3, name: 'بلا هوية' },
+  ]);
+  const dedupe = (who, commit) => call(env, 'POST', '/api/contracts/dedupe', { cookie: who.cookie, body: { commit } });
+  assert.equal((await dedupe(hr, false)).status, 403);
+  const prev = await dedupe(admin, false);
+  assert.deepEqual([prev.body.total, prev.body.groups, prev.body.duplicates, prev.body.committed], [5, 1, 2, false]);
+  assert.equal((await call(env, 'GET', '/api/contracts', { cookie: admin.cookie })).body.contracts.length, 5); // المعاينة لا تغيّر
+  const done = await dedupe(admin, true);
+  assert.equal(done.body.committed, true);
+  const list = (await call(env, 'GET', '/api/contracts', { cookie: admin.cookie })).body.contracts;
+  assert.equal(list.length, 3);
+  const a = list.find((c) => c.legacyId === 'id:a3');
+  assert.deepEqual([a.seq, a.daysAct], [1, 20]); // الأكمل برقم الأقدم
+  assert.equal(await db.prepare('SELECT COUNT(*) AS n FROM contracts').first('n'), 3); // حُذف نهائياً
+  assert.equal((await dedupe(admin, true)).body.duplicates, 0); // مرة ثانية: لا شيء
+  // العقد الجديد يأخذ رقماً بعد أكبر رقم موجود
+  const n = await call(env, 'POST', '/api/contracts', { cookie: admin.cookie, body: fake({ name: 'جديد', idno: '444444444' }) });
+  assert.equal(n.body.contract.seq, 4);
+});
